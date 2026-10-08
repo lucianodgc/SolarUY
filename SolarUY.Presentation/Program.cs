@@ -1,6 +1,18 @@
 using SolarUY.Presentation.Components;
+using FluentValidation;
+using Radzen;
+using SolarUY.Application.ParquesSolares;
+using SolarUY.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSolarInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IParqueSolarService, ParqueSolarService>();
+builder.Services.AddScoped<IValidator<CrearParqueSolarDto>, CrearParqueSolarDtoValidator>();
+builder.Services.AddRadzenComponents();
+// OpenID debe agregar su esquema externo en un requerimiento separado.
+builder.Services.AddAuthentication();
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -19,6 +31,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()

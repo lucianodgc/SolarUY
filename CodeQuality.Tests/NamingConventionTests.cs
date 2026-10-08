@@ -38,10 +38,12 @@ public class NamingConventionTests
     public void ApplicationServices_ShouldEndWithService()
     {
         IArchRule rule = Classes()
-            .That().ResideInNamespace(ApplicationNamespace)
-            // .And().AreAssignableTo("IService") 
+            .That().ResideInNamespaceMatching(ApplicationNamespace)
+            .And().AreAssignableTo(Interfaces().That().HaveNameEndingWith("Service"))
             .Should().HaveNameEndingWith("Service")
             .Because("Los casos de uso o coordinadores en la capa de Aplicación deben identificarse claramente con el sufijo 'Service'.");
+
+        rule.Check(_architecture);
 
     }
 }

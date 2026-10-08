@@ -17,9 +17,12 @@ public class RepositoryTests
     {
         IArchRule rule = Classes()
             .That().HaveNameEndingWith("Repository")
-            .Should().ResideInNamespace(InfrastructureNamespace)
-            .Because("Las implementaciones concretas de los repositorios deben estar en la capa de Infraestructura.");
+            .Should().ResideInNamespaceMatching(InfrastructureNamespace)
+            .Because("Las implementaciones concretas de los repositorios deben estar en la capa de Infraestructura.")
+            .WithoutRequiringPositiveResults();
 
+        // Este caso de uso usa IApplicationDbContext y no exige crear repositorios.
+        // Si existen repositorios, deben satisfacer la misma regla de ubicación.
         rule.Check(_architecture);
     }
 
@@ -29,8 +32,10 @@ public class RepositoryTests
         IArchRule rule = Interfaces()
             .That().HaveNameEndingWith("Repository")
             .Should().HaveNameStartingWith("I")
-            .Because("Las interfaces de repositorios deben seguir la convención 'IRepository'.");
+            .Because("Las interfaces de repositorios deben seguir la convención 'IRepository'.")
+            .WithoutRequiringPositiveResults();
 
+        // La ausencia de interfaces Repository es válida; sus nombres siguen controlados cuando existen.
         rule.Check(_architecture);
     }
 }

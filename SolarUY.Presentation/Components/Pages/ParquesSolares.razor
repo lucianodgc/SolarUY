@@ -1,0 +1,47 @@
+@page "/parques-solares"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+@inherits OwningComponentBase<IParqueSolarService>
+@inject ILogger<ParquesSolares> Logger
+
+<PageTitle>Parques solares</PageTitle>
+<h1>Parques solares</h1>
+@if (_error is not null)
+{
+    <p role="alert" class="text-danger">@_error</p>
+}
+else if (_parques is null)
+{
+    <p>Cargando...</p>
+}
+else if (_parques.Count == 0)
+{
+    <p>Todavía no hay parques registrados.</p>
+}
+else
+{
+    <table class="table">
+        <thead><tr><th>Nombre</th><th>Ubicación</th><th>Capacidad estimada (MW)</th></tr></thead>
+        <tbody>
+            @foreach (var parque in _parques)
+            {
+                <tr><td>@parque.Nombre</td><td>@parque.Ubicacion</td><td>@(parque.CapacidadEstimadaMW?.ToString() ?? "Sin especificar")</td></tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<SolarUY.Domain.Entities.ParqueSolar>? _parques;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _parques = await Service.ListarParquesSolaresAsync(); }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error al consultar los parques solares");
+            _error = "No se pudieron consultar los parques solares.";
+        }
+    }
+}
