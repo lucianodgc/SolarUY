@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SolarUY.Presentation", "Sol
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SolarUY.Domain.Tests", "SolarUY.Domain.Tests\SolarUY.Domain.Tests.csproj", "{69086FB3-58DC-41C0-977E-69E174F1A0E2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SolarUY.Application.Tests", "SolarUY.Application.Tests\SolarUY.Application.Tests.csproj", "{3BD940AC-4FC0-40D5-B613-3DA93CFA87CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{69086FB3-58DC-41C0-977E-69E174F1A0E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{69086FB3-58DC-41C0-977E-69E174F1A0E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{69086FB3-58DC-41C0-977E-69E174F1A0E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BD940AC-4FC0-40D5-B613-3DA93CFA87CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BD940AC-4FC0-40D5-B613-3DA93CFA87CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BD940AC-4FC0-40D5-B613-3DA93CFA87CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BD940AC-4FC0-40D5-B613-3DA93CFA87CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

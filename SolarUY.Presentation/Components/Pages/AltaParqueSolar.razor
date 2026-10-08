@@ -1,0 +1,62 @@
+@page "/parques-solares/alta"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+@inherits OwningComponentBase<IParqueSolarService>
+@inject NotificationService Notifications
+@inject NavigationManager Navigation
+@inject ILogger<AltaParqueSolar> Logger
+@using SolarUY.Application.Exceptions
+
+<PageTitle>Alta de parque solar</PageTitle>
+<h1>Alta de parque solar</h1>
+@if (_error is not null)
+{
+    <p role="alert" class="text-danger">@_error</p>
+}
+<RadzenTemplateForm TItem="CrearParqueSolarDto" Data="_modelo" Submit="OnValidSubmit">
+    <div class="mb-3">
+        <RadzenLabel Text="Nombre" Component="Nombre" />
+        <RadzenTextBox Name="Nombre" @bind-Value="_modelo.Nombre" MaxLength="100" Style="width:100%" Disabled="_guardando" />
+        <RadzenRequiredValidator Component="Nombre" Text="El nombre es obligatorio." />
+    </div>
+    <div class="mb-3">
+        <RadzenLabel Text="Ubicación / Dirección" Component="Ubicacion" />
+        <RadzenTextBox Name="Ubicacion" @bind-Value="_modelo.Ubicacion" MaxLength="200" Style="width:100%" Disabled="_guardando" />
+        <RadzenRequiredValidator Component="Ubicacion" Text="La ubicación es obligatoria." />
+    </div>
+    <div class="mb-3">
+        <RadzenLabel Text="Capacidad estimada (MW, opcional)" Component="Capacidad" />
+        <RadzenNumeric TValue="decimal?" Name="Capacidad" @bind-Value="_modelo.CapacidadEstimadaMW" Style="width:100%" Disabled="_guardando" />
+    </div>
+    <RadzenButton ButtonType="ButtonType.Submit" Text="Registrar parque" IsBusy="_guardando" Disabled="_guardando" />
+</RadzenTemplateForm>
+
+@code {
+    private readonly CrearParqueSolarDto _modelo = new();
+    private bool _guardando;
+    private string? _error;
+
+    private async Task OnValidSubmit(CrearParqueSolarDto dto)
+    {
+        if (_guardando) return;
+        _guardando = true;
+        _error = null;
+        try
+        {
+            await Service.CrearParqueSolarAsync(dto);
+            Notifications.Notify(NotificationSeverity.Success, "Parque registrado", "El parque solar se registró correctamente.");
+            Navigation.NavigateTo("/parques-solares");
+        }
+        catch (FluentValidation.ValidationException exception)
+        {
+            _error = string.Join(" ", exception.Errors.Select(error => error.ErrorMessage));
+        }
+        catch (NombreParqueDuplicadoException exception) { _error = exception.Message; }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error al registrar el parque solar");
+            _error = "No se pudo registrar el parque. Intenta nuevamente.";
+        }
+        finally { _guardando = false; }
+    }
+}
