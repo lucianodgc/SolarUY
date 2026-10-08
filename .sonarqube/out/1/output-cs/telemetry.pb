@@ -1,0 +1,1 @@
+@R3/app/SolarUY.Application/SolarUY.Application.csprojòCSharp12

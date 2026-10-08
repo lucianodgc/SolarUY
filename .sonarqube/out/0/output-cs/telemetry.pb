@@ -1,0 +1,1 @@
+6R)/app/SolarUY.Domain/SolarUY.Domain.csprojòCSharp12

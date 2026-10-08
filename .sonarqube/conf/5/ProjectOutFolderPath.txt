@@ -1,0 +1,1 @@
+/app/.sonarqube/out/5
