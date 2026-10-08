@@ -484,4 +484,8 @@ $RECYCLE.BIN/
 *.swp
 
 # SonarQube / SonarScanner
+<<<<<<< HEAD
 .sonarqube/
+=======
+.sonarqube/
+>>>>>>> main

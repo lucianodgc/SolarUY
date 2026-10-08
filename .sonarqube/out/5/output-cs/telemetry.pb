@@ -1,0 +1,1 @@
+<R//app/CodeQuality.Tests/CodeQuality.Tests.csprojòCSharp12

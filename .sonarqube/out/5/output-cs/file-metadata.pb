@@ -1,0 +1,10 @@
+T
+I/app/CodeQuality.Tests/obj/Debug/net8.0/CodeQuality.Tests.AssemblyInfo.csutf-8a
+V/app/CodeQuality.Tests/obj/Debug/net8.0/.NETCoreApp,Version=v8.0.AssemblyAttributes.csutf-8V
+K/app/CodeQuality.Tests/obj/Debug/net8.0/CodeQuality.Tests.GlobalUsings.g.csutf-8t
+i/root/.nuget/packages/microsoft.net.test.sdk/17.9.0/build/netcoreapp3.1/Microsoft.NET.Test.Sdk.Program.csutf-82
+)/app/CodeQuality.Tests/RepositoryTests.csutf-88
+//app/CodeQuality.Tests/NamingConventionTests.csutf-8-
+$/app/CodeQuality.Tests/LayerTests.csutf-8.
+%/app/CodeQuality.Tests/DomainTests.csutf-84
++/app/CodeQuality.Tests/ArchitectureSetup.csutf-8

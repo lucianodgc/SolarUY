@@ -1,0 +1,1 @@
+BR5/app/SolarUY.Domain.Tests/SolarUY.Domain.Tests.csprojòCSharp12
