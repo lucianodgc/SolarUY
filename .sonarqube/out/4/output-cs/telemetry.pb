@@ -1,1 +1,0 @@
-BR5/app/SolarUY.Presentation/SolarUY.Presentation.csprojòCSharp12

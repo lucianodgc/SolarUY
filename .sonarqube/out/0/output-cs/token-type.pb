@@ -1,4 +1,0 @@
-^
-(/app/SolarUY.Domain/AssemblyReference.cs
- 	
-   

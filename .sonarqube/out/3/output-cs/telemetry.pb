@@ -1,1 +1,0 @@
-FR9/app/SolarUY.Infrastructure/SolarUY.Infrastructure.csprojòCSharp12
