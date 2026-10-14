@@ -1,17 +1,76 @@
-using SolarUY.Presentation.Components;
+using System.Security.Claims;
+using System.Text.Json;
 using FluentValidation;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
 using Radzen;
 using SolarUY.Application.ParquesSolares;
 using SolarUY.Infrastructure;
+using SolarUY.Presentation.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSolarInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IParqueSolarService, ParqueSolarService>();
 builder.Services.AddScoped<IValidator<CrearParqueSolarDto>, CrearParqueSolarDtoValidator>();
 builder.Services.AddRadzenComponents();
-// OpenID debe agregar su esquema externo en un requerimiento separado.
-builder.Services.AddAuthentication();
-builder.Services.AddAuthorization();
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+    })
+    .AddCookie()
+    .AddOpenIdConnect(options =>
+    {
+        var openIdConnect = builder.Configuration.GetSection("Authentication:OpenIdConnect");
+        options.Authority = openIdConnect["Authority"]
+            ?? throw new InvalidOperationException("Falta Authentication:OpenIdConnect:Authority.");
+        options.ClientId = openIdConnect["ClientId"]
+            ?? throw new InvalidOperationException("Falta Authentication:OpenIdConnect:ClientId.");
+        options.ClientSecret = openIdConnect["ClientSecret"];
+        options.ResponseType = "code";
+        options.SaveTokens = true;
+        options.GetClaimsFromUserInfoEndpoint = true;
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            NameClaimType = "preferred_username",
+            RoleClaimType = ClaimTypes.Role
+        };
+        options.Events.OnTokenValidated = context =>
+        {
+            var realmAccess = context.Principal?.FindFirst("realm_access")?.Value;
+            if (!string.IsNullOrWhiteSpace(realmAccess))
+            {
+                using var document = JsonDocument.Parse(realmAccess);
+                if (document.RootElement.TryGetProperty("roles", out var roles)
+                    && roles.ValueKind == JsonValueKind.Array
+                    && context.Principal?.Identity is ClaimsIdentity identity)
+                {
+                    foreach (var role in roles.EnumerateArray())
+                    {
+                        if (role.ValueKind == JsonValueKind.String && role.GetString() is { } roleName
+                            && !identity.HasClaim(ClaimTypes.Role, roleName))
+                        {
+                            identity.AddClaim(new Claim(ClaimTypes.Role, roleName));
+                        }
+                    }
+                }
+            }
+
+            return Task.CompletedTask;
+        };
+    });
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 builder.Services.AddCascadingAuthenticationState();
 
 // Add services to the container.
@@ -34,6 +93,16 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
+
+app.MapPost("/Account/Logout", async (HttpContext context, IAntiforgery antiforgery) =>
+{
+    await antiforgery.ValidateRequestAsync(context);
+    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    await context.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme, new AuthenticationProperties
+    {
+        RedirectUri = "/"
+    });
+}).AllowAnonymous();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

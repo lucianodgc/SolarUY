@@ -1,0 +1,89 @@
+{
+  "realm": "solaruy",
+  "enabled": true,
+  "displayName": "SolarUY",
+  "roles": {
+    "realm": [
+      { "name": "Administrador" },
+      { "name": "Tecnico" },
+      { "name": "Consulta" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "solaruy-web",
+      "name": "SolarUY Blazor Server",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5219/signin-oidc",
+        "https://localhost:7271/signin-oidc"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:5219/*##https://localhost:7271/*"
+      },
+      "webOrigins": [
+        "http://localhost:5219",
+        "https://localhost:7271"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin.test",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin.test@solaruy.local",
+      "firstName": "Administrador",
+      "lastName": "Prueba",
+      "credentials": [
+        { "type": "password", "value": "${KEYCLOAK_TEST_ADMIN_PASSWORD}", "temporary": false }
+      ],
+      "realmRoles": ["Administrador"]
+    },
+    {
+      "username": "tecnico.test",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "tecnico.test@solaruy.local",
+      "firstName": "Técnico",
+      "lastName": "Prueba",
+      "credentials": [
+        { "type": "password", "value": "${KEYCLOAK_TEST_TECH_PASSWORD}", "temporary": false }
+      ],
+      "realmRoles": ["Tecnico"]
+    },
+    {
+      "username": "consulta.test",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "consulta.test@solaruy.local",
+      "firstName": "Consulta",
+      "lastName": "Prueba",
+      "credentials": [
+        { "type": "password", "value": "${KEYCLOAK_TEST_VIEWER_PASSWORD}", "temporary": false }
+      ],
+      "realmRoles": ["Consulta"]
+    }
+  ]
+}

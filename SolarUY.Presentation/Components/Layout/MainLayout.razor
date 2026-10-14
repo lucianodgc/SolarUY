@@ -9,7 +9,23 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <AuthorizeView>
+                <Authorized Context="sesion">
+                    <details>
+                        <summary>@(sesion.User.Identity?.Name ?? "Usuario")</summary>
+                        <ul>
+                            @foreach (var claim in sesion.User.Claims)
+                            {
+                                <li><strong>@claim.Type:</strong> @claim.Value</li>
+                            }
+                        </ul>
+                        <form method="post" action="/Account/Logout">
+                            <AntiforgeryToken />
+                            <button type="submit">Cerrar sesión</button>
+                        </form>
+                    </details>
+                </Authorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">
