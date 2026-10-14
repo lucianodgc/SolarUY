@@ -1,0 +1,15 @@
+﻿services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.1
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:?Define KEYCLOAK_ADMIN_USERNAME en .env}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Define KEYCLOAK_ADMIN_PASSWORD en .env}
+      KC_HOSTNAME: localhost
+      KEYCLOAK_TEST_ADMIN_PASSWORD: ${KEYCLOAK_TEST_ADMIN_PASSWORD:?Define KEYCLOAK_TEST_ADMIN_PASSWORD en .env}
+      KEYCLOAK_TEST_TECH_PASSWORD: ${KEYCLOAK_TEST_TECH_PASSWORD:?Define KEYCLOAK_TEST_TECH_PASSWORD en .env}
+      KEYCLOAK_TEST_VIEWER_PASSWORD: ${KEYCLOAK_TEST_VIEWER_PASSWORD:?Define KEYCLOAK_TEST_VIEWER_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./keycloak/realm:/opt/keycloak/data/import:ro
