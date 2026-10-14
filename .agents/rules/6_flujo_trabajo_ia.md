@@ -28,3 +28,8 @@ Solo debes reportar tu trabajo al usuario cuando todas las pruebas pasen en verd
 - **Regla de Inmutabilidad:** Tienes estrictamente **PROHIBIDO** modificar los archivos del proyecto `CodeQuality.Tests` (los tests de ArchUnitNET) para lograr que una prueba pase. 
 - **Resolución de Conflictos:** Si un test arquitectónico falla, tu obligación es SIEMPRE corregir el código fuente del sistema para que cumpla con el test. NUNCA debes relajar ni alterar el test para adaptarlo al código mal diseñado.
 - **Intervención Humana:** Si tras analizar un error crees genuinamente que la regla de ArchUnitNET está mal planteada, está desactualizada, o se requiere una excepción justificada para el diseño actual, debes **DETENERTE**. Explica la situación al usuario humano y solicita su autorización explícita antes de editar cualquier archivo de pruebas de calidad.
+
+## 6. Escritura de Archivos y Codificación
+    - NUNCA utilices comandos de terminal (como echo, Set-Content, Out-File o redirecciones >) para crear o editar archivos de código, de configuración o de documentación (.md).
+    - Utiliza siempre las herramientas nativas de escritura de archivos (File System API / Write File) del entorno.
+    - Todos los archivos deben guardarse estrictamente en UTF-8 sin BOM, conservando las tildes y los caracteres especiales del español.
