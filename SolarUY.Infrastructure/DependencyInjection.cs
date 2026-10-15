@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SolarUY.Application.Abstractions;
+using SolarUY.Infrastructure.Inversores;
 using SolarUY.Infrastructure.Persistence;
 
 namespace SolarUY.Infrastructure;
@@ -20,6 +21,8 @@ public static class DependencyInjection
             options.UseMySql(connectionString, new MariaDbServerVersion(version));
         });
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IInversorClient, InversorSimulador>();
         return services;
     }
 }
