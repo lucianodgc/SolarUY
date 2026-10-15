@@ -19,7 +19,7 @@
 
 ## Verificación
 
-- `dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj`: no completó porque Presentation no compila: `Program.cs` referencia el tipo `App`, pero falta `SolarUY.Presentation/Components/App.razor`. Las pruebas arquitectónicas no llegaron a ejecutarse.
-- En ese intento, MSBuild compiló `SolarUY.Infrastructure` correctamente antes de detenerse al compilar Presentation.
+- `dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj --no-restore --disable-build-servers -m:1 -p:BuildProjectReferences=false`: pasó; 9 pruebas correctas. Se deshabilitó la reconstrucción de referencias para poder ejecutar `CodeQuality.Tests` mientras `SolarUY.Presentation/Components/App.razor` siga ausente e ignorado por Git. Por eso la compilación integral del proyecto Presentation no queda validada por esta ejecución.
+- En el intento de compilación integral, MSBuild compiló `SolarUY.Infrastructure` correctamente antes de detenerse en `Program.cs`, que referencia el tipo faltante `App`.
 - La regla `.agents/rules/6_flujo_trabajo_ia.md` prohíbe crear pruebas unitarias para Infrastructure. Por ello no se agregaron tests de la lógica del simulador; la tarea 3.5 queda pendiente hasta que se resuelva el conflicto con el requisito.
 - No se modificó Presentation ni `CodeQuality.Tests`.

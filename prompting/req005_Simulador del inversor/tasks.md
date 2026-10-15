@@ -27,7 +27,7 @@
 
 ## 5. Verificación
 
-- [ ] 5.1 Ejecutar `dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj` y confirmar que los guardarraíles arquitectónicos pasan sin modificar sus pruebas.
+- [x] 5.1 Ejecutar las pruebas de `CodeQuality.Tests` sin reconstruir las referencias (`BuildProjectReferences=false`); los 9 guardarraíles pasan sin modificar sus pruebas. La compilación integral sigue bloqueada por el `App.razor` ausente e ignorado por Git.
 
 ## 6. Cierre y documentación
 
