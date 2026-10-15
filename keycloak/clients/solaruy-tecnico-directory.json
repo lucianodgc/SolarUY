@@ -1,0 +1,12 @@
+{
+  "clientId": "solaruy-tecnico-directory",
+  "name": "SolarUY directorio de técnicos (solo lectura)",
+  "enabled": true,
+  "protocol": "openid-connect",
+  "clientAuthenticatorType": "client-secret",
+  "publicClient": false,
+  "standardFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": true,
+  "fullScopeAllowed": true
+}

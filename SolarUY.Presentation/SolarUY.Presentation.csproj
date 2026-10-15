@@ -2,6 +2,11 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.30" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.31">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Radzen.Blazor" Version="6.0.0" />
     <ProjectReference Include="..\SolarUY.Application\SolarUY.Application.csproj" />
     <ProjectReference Include="..\SolarUY.Infrastructure\SolarUY.Infrastructure.csproj" />
@@ -11,7 +16,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>solaruy-presentation-local</UserSecretsId>
+    <UserSecretsId>$(SolarUyUserSecretsId)</UserSecretsId>
   </PropertyGroup>
 
 </Project>
