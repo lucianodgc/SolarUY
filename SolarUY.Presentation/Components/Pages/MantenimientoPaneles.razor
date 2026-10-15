@@ -1,0 +1,185 @@
+@page "/mantenimiento"
+@attribute [Authorize(Roles = "Administrador,Tecnico")]
+@rendermode InteractiveServer
+@inject ITareaMantenimientoService Mantenimiento
+@inject SolarUY.Application.Abstractions.IUsuarioActual UsuarioActual
+@inject ILogger<MantenimientoPaneles> Logger
+@using SolarUY.Application.Mantenimiento
+@using SolarUY.Application.Exceptions
+@using SolarUY.Domain.Enums
+
+<PageTitle>Mantenimiento de paneles</PageTitle>
+<h1>Mantenimiento de paneles</h1>
+<AuthorizeView Roles="Administrador">
+    <p><a class="btn btn-primary" href="/mantenimiento/crear">Crear tarea</a></p>
+</AuthorizeView>
+@if (_error is not null)
+{
+    <p role="alert" class="text-danger">@_error</p>
+}
+<div class="d-flex flex-wrap gap-3 mb-3">
+    <div>
+        <RadzenLabel Text="Estado" Component="FiltroEstado" />
+        <RadzenDropDown TValue="EstadoTareaMantenimiento?" Name="FiltroEstado" Data="_estados" AllowClear="true"
+                        @bind-Value="_filtro.Estado" Placeholder="Todos" Disabled="_ocupado" />
+    </div>
+    <div>
+        <RadzenLabel Text="Panel" Component="FiltroPanel" />
+        <RadzenDropDown TValue="Guid?" Name="FiltroPanel" Data="_paneles" TextProperty="NumeroSerie" ValueProperty="Id"
+                        AllowClear="true" @bind-Value="_filtro.PanelId" Placeholder="Todos" Disabled="_ocupado" />
+    </div>
+    @if (_esAdministrador)
+    {
+        <div>
+            <RadzenLabel Text="Técnico" Component="FiltroTecnico" />
+            <RadzenDropDown TValue="string" Name="FiltroTecnico" Data="_tecnicos" TextProperty="Nombre" ValueProperty="Id"
+                            AllowClear="true" @bind-Value="_filtro.ResponsableId" Placeholder="Todos" Disabled="_ocupado" />
+        </div>
+    }
+    <div>
+        <RadzenCheckBox TValue="bool" Name="SoloVencidas" @bind-Value="_filtro.SoloVencidas" Disabled="_ocupado" />
+        <RadzenLabel Text="Solo vencidas" Component="SoloVencidas" />
+    </div>
+    <RadzenButton Text="Consultar / Actualizar" Click="CargarAsync" IsBusy="_ocupado" Disabled="_ocupado" />
+</div>
+@if (_editandoId.HasValue)
+{
+    <section class="border rounded p-3 mb-3">
+        <h2>Editar tarea</h2>
+        <RadzenTemplateForm TItem="EditarTareaMantenimientoDto" Data="_edicion" Submit="GuardarEdicionAsync">
+            <div class="mb-3">
+                <RadzenLabel Text="Tipo de mantenimiento" Component="EditarTipo" />
+                <RadzenTextBox Name="EditarTipo" @bind-Value="_edicion.Tipo" Style="width:100%" Disabled="_ocupado" />
+                <RadzenRequiredValidator Component="EditarTipo" Text="El tipo es obligatorio." />
+            </div>
+            <div class="mb-3">
+                <RadzenLabel Text="Descripción / Observaciones" Component="EditarDescripcion" />
+                <RadzenTextArea Name="EditarDescripcion" @bind-Value="_edicion.Descripcion" Style="width:100%" Disabled="_ocupado" />
+                <RadzenRequiredValidator Component="EditarDescripcion" Text="La descripción es obligatoria." />
+            </div>
+            <div class="mb-3">
+                <RadzenLabel Text="Fecha programada (UTC)" Component="EditarFecha" />
+                <RadzenDatePicker TValue="DateTime?" Name="EditarFecha" @bind-Value="_fechaEdicionUtc" ShowTime="true"
+                                  HourFormat="24" DateFormat="yyyy-MM-dd HH:mm" Disabled="_ocupado" />
+                <RadzenRequiredValidator Component="EditarFecha" Text="La fecha es obligatoria." />
+            </div>
+            <div class="mb-3">
+                <RadzenLabel Text="Técnico responsable" Component="EditarResponsable" />
+                <RadzenDropDown TValue="string" Name="EditarResponsable" Data="_tecnicos" TextProperty="Nombre" ValueProperty="Id"
+                                @bind-Value="_edicion.ResponsableId" Style="width:100%" Disabled="_ocupado" />
+                <RadzenRequiredValidator Component="EditarResponsable" Text="Selecciona un técnico." />
+            </div>
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar cambios" Disabled="_ocupado" />
+            <RadzenButton Text="Cerrar edición" Click="@(() => _editandoId = null)" Disabled="_ocupado" ButtonStyle="ButtonStyle.Secondary" />
+        </RadzenTemplateForm>
+    </section>
+}
+<RadzenDataGrid TItem="TareaMantenimientoDto" Data="_tareas" AllowPaging="true" PageSize="15"
+                EmptyText="No hay tareas para esta consulta." IsLoading="_ocupado">
+    <Columns>
+        <RadzenDataGridColumn TItem="TareaMantenimientoDto" Property="NumeroSerie" Title="Panel" />
+        <RadzenDataGridColumn TItem="TareaMantenimientoDto" Property="Tipo" Title="Tipo" />
+        <RadzenDataGridColumn TItem="TareaMantenimientoDto" Property="Descripcion" Title="Descripción" />
+        <RadzenDataGridColumn TItem="TareaMantenimientoDto" Property="ResponsableId" Title="Responsable" />
+        <RadzenDataGridColumn TItem="TareaMantenimientoDto" Property="Estado" Title="Estado" />
+        <RadzenDataGridColumn TItem="TareaMantenimientoDto" Property="FechaProgramada" Title="Programada (UTC)" FormatString="{0:yyyy-MM-dd HH:mm}" />
+        <RadzenDataGridColumn TItem="TareaMantenimientoDto" Property="FechaRealizacion" Title="Realizada (UTC)" FormatString="{0:yyyy-MM-dd HH:mm}" />
+        <RadzenDataGridColumn TItem="TareaMantenimientoDto" Title="Vencida">
+            <Template Context="tarea">@(tarea.Vencida ? "Sí" : "No")</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="TareaMantenimientoDto" Title="Acciones">
+            <Template Context="tarea">
+                @if (tarea.PuedeIniciar)
+                {
+                    <RadzenButton Text="Iniciar" Click="@(() => EjecutarAsync(() => Mantenimiento.IniciarAsync(tarea.Id)))" Disabled="_ocupado" />
+                }
+                @if (tarea.PuedeCompletar)
+                {
+                    <RadzenButton Text="Completar" Click="@(() => EjecutarAsync(() => Mantenimiento.CompletarAsync(tarea.Id)))" Disabled="_ocupado" />
+                }
+                @if (tarea.PuedeCancelar)
+                {
+                    <RadzenButton Text="Cancelar tarea" Click="@(() => EjecutarAsync(() => Mantenimiento.CancelarAsync(tarea.Id)))"
+                                  Disabled="_ocupado" ButtonStyle="ButtonStyle.Danger" />
+                }
+                @if (tarea.PuedeEditar)
+                {
+                    <RadzenButton Text="Editar / Reasignar" Click="@(() => AbrirEdicion(tarea))" Disabled="_ocupado" ButtonStyle="ButtonStyle.Secondary" />
+                }
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    private readonly FiltroTareasDto _filtro = new();
+    private readonly EstadoTareaMantenimiento[] _estados = Enum.GetValues<EstadoTareaMantenimiento>();
+    private IReadOnlyList<TareaMantenimientoDto> _tareas = Array.Empty<TareaMantenimientoDto>();
+    private IReadOnlyList<PanelDto> _paneles = Array.Empty<PanelDto>();
+    private IReadOnlyList<TecnicoDto> _tecnicos = Array.Empty<TecnicoDto>();
+    private EditarTareaMantenimientoDto _edicion = new();
+    private Guid? _editandoId;
+    private DateTime? _fechaEdicionUtc;
+    private bool _esAdministrador;
+    private bool _ocupado;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var usuario = await UsuarioActual.ObtenerAsync();
+        _esAdministrador = usuario.Roles.Contains("Administrador");
+        await CargarAsync();
+    }
+
+    private Task CargarAsync() => EjecutarAsync(async () =>
+    {
+        _editandoId = null;
+        _paneles = await Mantenimiento.ListarPanelesAsync();
+        _tareas = await Mantenimiento.ListarAsync(_filtro);
+        if (_esAdministrador) _tecnicos = await Mantenimiento.ListarTecnicosAsync();
+    }, recargar: false);
+
+    private void AbrirEdicion(TareaMantenimientoDto tarea)
+    {
+        _editandoId = tarea.Id;
+        _fechaEdicionUtc = tarea.FechaProgramada;
+        _edicion = new EditarTareaMantenimientoDto
+        {
+            Tipo = tarea.Tipo, Descripcion = tarea.Descripcion,
+            FechaProgramada = tarea.FechaProgramada, ResponsableId = tarea.ResponsableId,
+            Original = new(tarea.Estado, tarea.ResponsableId, tarea.Tipo, tarea.Descripcion,
+                tarea.FechaProgramada, tarea.FechaRealizacion)
+        };
+    }
+
+    private async Task GuardarEdicionAsync(EditarTareaMantenimientoDto dto)
+    {
+        if (!_editandoId.HasValue || !_fechaEdicionUtc.HasValue) return;
+        var id = _editandoId.Value;
+        dto.FechaProgramada = DateTime.SpecifyKind(_fechaEdicionUtc.Value, DateTimeKind.Utc);
+        await EjecutarAsync(async () =>
+        {
+            await Mantenimiento.EditarAsync(id, dto);
+            _editandoId = null;
+        });
+    }
+
+    private async Task EjecutarAsync(Func<Task> accion, bool recargar = true)
+    {
+        if (_ocupado) return;
+        _ocupado = true;
+        _error = null;
+        try
+        {
+            await accion();
+            if (recargar) _tareas = await Mantenimiento.ListarAsync(_filtro);
+        }
+        catch (MantenimientoException exception) { _error = exception.Message; }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error en mantenimiento de paneles");
+            _error = "No se pudo realizar la operación. Actualiza los datos e intenta nuevamente.";
+        }
+        finally { _ocupado = false; }
+    }
+}

@@ -11,6 +11,9 @@ public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<ParqueSolar> ParquesSolares { get; set; } = null!;
+    public DbSet<Nodo> Nodos { get; set; } = null!;
+    public DbSet<Panel> Paneles { get; set; } = null!;
+    public DbSet<TareaMantenimiento> TareasMantenimiento { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);

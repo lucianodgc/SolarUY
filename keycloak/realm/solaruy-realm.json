@@ -11,6 +11,18 @@
   },
   "clients": [
     {
+      "clientId": "solaruy-tecnico-directory",
+      "name": "SolarUY directorio de técnicos (solo lectura)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true
+    },
+    {
       "clientId": "solaruy-web",
       "name": "SolarUY Blazor Server",
       "enabled": true,
@@ -49,6 +61,14 @@
     }
   ],
   "users": [
+    {
+      "username": "service-account-solaruy-tecnico-directory",
+      "enabled": true,
+      "serviceAccountClientId": "solaruy-tecnico-directory",
+      "clientRoles": {
+        "realm-management": ["view-users", "query-users"]
+      }
+    },
     {
       "username": "admin.test",
       "enabled": true,

@@ -1,0 +1,115 @@
+@page "/mantenimiento/crear"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+@inject ITareaMantenimientoService Mantenimiento
+@inject NavigationManager Navigation
+@inject ILogger<CrearTareaMantenimiento> Logger
+@using SolarUY.Application.Mantenimiento
+@using SolarUY.Application.Exceptions
+
+<PageTitle>Crear mantenimiento</PageTitle>
+<h1>Crear tarea de mantenimiento</h1>
+<p><a href="/mantenimiento">Volver a las tareas</a></p>
+@if (_error is not null)
+{
+    <p role="alert" class="text-danger">@_error</p>
+}
+@if (_cargando)
+{
+    <p>Cargando paneles y técnicos...</p>
+}
+else
+{
+    @if (_paneles.Count == 0)
+    {
+        <p>No hay paneles disponibles. Registra los paneles antes de crear tareas.</p>
+    }
+    @if (_tecnicos.Count == 0)
+    {
+        <p>No hay técnicos disponibles. Comprueba los usuarios habilitados y su rol en Keycloak.</p>
+    }
+    <RadzenTemplateForm TItem="CrearTareaMantenimientoDto" Data="_modelo" Submit="GuardarAsync">
+        <div class="mb-3">
+            <RadzenLabel Text="Panel" Component="Panel" />
+            <RadzenDropDown TValue="Guid" Name="Panel" Data="_paneles" TextProperty="NumeroSerie" ValueProperty="Id"
+                            @bind-Value="_modelo.PanelId" Style="width:100%" Disabled="_guardando" />
+            <RadzenRequiredValidator Component="Panel" DefaultValue="@(Guid.Empty)" Text="Selecciona un panel." />
+        </div>
+        <div class="mb-3">
+            <RadzenLabel Text="Tipo de mantenimiento" Component="Tipo" />
+            <RadzenTextBox Name="Tipo" @bind-Value="_modelo.Tipo" Style="width:100%" Disabled="_guardando" />
+            <RadzenRequiredValidator Component="Tipo" Text="El tipo es obligatorio." />
+        </div>
+        <div class="mb-3">
+            <RadzenLabel Text="Descripción / Observaciones" Component="Descripcion" />
+            <RadzenTextArea Name="Descripcion" @bind-Value="_modelo.Descripcion" Style="width:100%" Disabled="_guardando" />
+            <RadzenRequiredValidator Component="Descripcion" Text="La descripción es obligatoria." />
+        </div>
+        <div class="mb-3">
+            <RadzenLabel Text="Fecha programada (UTC)" Component="Fecha" />
+            <RadzenDatePicker TValue="DateTime?" Name="Fecha" @bind-Value="_fechaUtc" ShowTime="true"
+                              HourFormat="24" DateFormat="yyyy-MM-dd HH:mm" Style="width:100%" Disabled="_guardando" />
+            <RadzenRequiredValidator Component="Fecha" Text="La fecha es obligatoria." />
+        </div>
+        <div class="mb-3">
+            <RadzenLabel Text="Técnico responsable" Component="Responsable" />
+            <RadzenDropDown TValue="string" Name="Responsable" Data="_tecnicos" TextProperty="Nombre" ValueProperty="Id"
+                            @bind-Value="_modelo.ResponsableId" Style="width:100%" Disabled="_guardando" />
+            <RadzenRequiredValidator Component="Responsable" Text="Selecciona un técnico." />
+        </div>
+        <RadzenButton ButtonType="ButtonType.Submit" Text="Crear tarea" IsBusy="_guardando"
+                      Disabled="@(_guardando || _paneles.Count == 0 || _tecnicos.Count == 0)" />
+        <RadzenButton Text="Actualizar opciones" Click="CargarAsync" Disabled="_guardando" ButtonStyle="ButtonStyle.Secondary" />
+    </RadzenTemplateForm>
+}
+
+@code {
+    private readonly CrearTareaMantenimientoDto _modelo = new();
+    private IReadOnlyList<PanelDto> _paneles = Array.Empty<PanelDto>();
+    private IReadOnlyList<TecnicoDto> _tecnicos = Array.Empty<TecnicoDto>();
+    private DateTime? _fechaUtc;
+    private string? _error;
+    private bool _cargando;
+    private bool _guardando;
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        if (_cargando) return;
+        _cargando = true;
+        _error = null;
+        try
+        {
+            _paneles = await Mantenimiento.ListarPanelesAsync();
+            _tecnicos = await Mantenimiento.ListarTecnicosAsync();
+        }
+        catch (MantenimientoException exception) { _error = exception.Message; }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error al cargar opciones de mantenimiento");
+            _error = "No se pudieron cargar las opciones. Intenta nuevamente.";
+        }
+        finally { _cargando = false; }
+    }
+
+    private async Task GuardarAsync(CrearTareaMantenimientoDto dto)
+    {
+        if (_guardando || !_fechaUtc.HasValue) return;
+        _guardando = true;
+        _error = null;
+        dto.FechaProgramada = DateTime.SpecifyKind(_fechaUtc.Value, DateTimeKind.Utc);
+        try
+        {
+            await Mantenimiento.CrearAsync(dto);
+            Navigation.NavigateTo("/mantenimiento");
+        }
+        catch (MantenimientoException exception) { _error = exception.Message; }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error al crear mantenimiento");
+            _error = "No se pudo guardar la tarea. Intenta nuevamente.";
+        }
+        finally { _guardando = false; }
+    }
+}

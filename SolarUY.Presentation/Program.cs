@@ -8,13 +8,18 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Radzen;
+using SolarUY.Application.Abstractions;
+using SolarUY.Application.Mantenimiento;
 using SolarUY.Application.ParquesSolares;
 using SolarUY.Infrastructure;
+using SolarUY.Presentation.Authentication;
 using SolarUY.Presentation.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSolarInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IParqueSolarService, ParqueSolarService>();
+builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
+builder.Services.AddScoped<ITareaMantenimientoService, TareaMantenimientoService>();
 builder.Services.AddScoped<IValidator<CrearParqueSolarDto>, CrearParqueSolarDtoValidator>();
 builder.Services.AddRadzenComponents();
 builder.Services

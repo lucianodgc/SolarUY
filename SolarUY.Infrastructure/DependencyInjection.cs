@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SolarUY.Application.Abstractions;
+using SolarUY.Application.Mantenimiento;
+using SolarUY.Infrastructure.Identity;
 using SolarUY.Infrastructure.Inversores;
 using SolarUY.Infrastructure.Persistence;
 
@@ -11,7 +13,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddSolarInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<ApplicationDbContext>(options =>
+        services.AddDbContextFactory<ApplicationDbContext>(options =>
         {
             var connectionString = configuration.GetConnectionString("SolarUY");
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -21,6 +23,14 @@ public static class DependencyInjection
             options.UseMySql(connectionString, new MariaDbServerVersion(version));
         });
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<IPanelRepository, PanelRepository>();
+        services.AddScoped<ITareaMantenimientoRepository, TareaMantenimientoRepository>();
+        services.AddSingleton(_ => new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+        {
+            Timeout = TimeSpan.FromSeconds(30)
+        });
+        services.AddScoped<ITecnicoDirectory, KeycloakTecnicoDirectory>();
+
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IInversorClient, InversorSimulador>();
         return services;
