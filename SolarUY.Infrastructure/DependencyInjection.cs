@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SolarUY.Application.Abstractions;
 using SolarUY.Application.Mantenimiento;
 using SolarUY.Infrastructure.Identity;
+using SolarUY.Infrastructure.Inversores;
 using SolarUY.Infrastructure.Persistence;
 
 namespace SolarUY.Infrastructure;
@@ -29,6 +30,9 @@ public static class DependencyInjection
             Timeout = TimeSpan.FromSeconds(30)
         });
         services.AddScoped<ITecnicoDirectory, KeycloakTecnicoDirectory>();
+
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IInversorClient, InversorSimulador>();
         return services;
     }
 }
