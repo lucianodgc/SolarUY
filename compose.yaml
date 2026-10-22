@@ -11,10 +11,21 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin:5.2.3-apache
+    environment:
+      PMA_HOST: ${PMA_HOST:-mariadb}
+      PMA_PORT: ${PMA_PORT:-3306}
+    ports:
+      - "127.0.0.1:8081:80"
+    depends_on:
+      mariadb:
+        condition: service_healthy
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.1
