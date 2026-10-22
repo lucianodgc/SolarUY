@@ -1,4 +1,32 @@
-﻿services:
+services:
+  mariadb:
+    image: mariadb:11.8
+    environment:
+      MARIADB_DATABASE: ${MARIADB_DATABASE:?Define MARIADB_DATABASE en .env}
+      MARIADB_USER: ${MARIADB_USER:?Define MARIADB_USER en .env}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:?Define MARIADB_PASSWORD en .env}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?Define MARIADB_ROOT_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin:5.2.3-apache
+    environment:
+      PMA_HOST: ${PMA_HOST:-mariadb}
+      PMA_PORT: ${PMA_PORT:-3306}
+    ports:
+      - "127.0.0.1:8081:80"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.1
     command: start-dev --import-realm
@@ -13,3 +41,6 @@
       - "127.0.0.1:8080:8080"
     volumes:
       - ./keycloak/realm:/opt/keycloak/data/import:ro
+
+volumes:
+  mariadb_data:
