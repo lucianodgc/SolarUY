@@ -70,7 +70,7 @@ public sealed class ParqueSolarServiceTests
     }
 
     private static ParqueSolarService CrearService(TestDbContext context)
-        => new(context, new CrearParqueSolarDtoValidator());
+        => new(context, new CrearParqueSolarDtoValidator(), new ActualizarParqueSolarDtoValidator());
 
     private static CrearParqueSolarDto Dto() => new() { Nombre = "Parque Norte", Ubicacion = "Salto" };
 
@@ -82,13 +82,26 @@ public sealed class ParqueSolarServiceTests
         public ParqueSolar? ParqueAgregado { get; private set; }
         public bool Guardado { get; private set; }
 
-        public Task<bool> ExisteNombreParqueSolarAsync(string nombre, CancellationToken cancellationToken = default)
+        public Task<bool> ExisteNombreParqueSolarAsync(
+            string nombre,
+            Guid? parqueIdExcluido = null,
+            CancellationToken cancellationToken = default)
         {
             NombreConsultado = nombre;
             return Task.FromResult(NombreExiste);
         }
 
+        public Task<ParqueSolar?> ObtenerParqueSolarPorIdAsync(Guid id, CancellationToken cancellationToken = default)
+            => Task.FromResult<ParqueSolar?>(null);
+
         public void AgregarParqueSolar(ParqueSolar parque) => ParqueAgregado = parque;
+
+        public void ActualizarParqueSolar(ParqueSolar parque) { }
+
+        public Task EliminarParqueSolarEnCascadaAsync(
+            ParqueSolar parque,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -99,6 +112,11 @@ public sealed class ParqueSolarServiceTests
         }
 
         public Task<IReadOnlyList<ParqueSolar>> ListarParquesSolaresAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<ParqueSolar>>(Array.Empty<ParqueSolar>());
+
+        public Task<IReadOnlyList<ParqueSolar>> BuscarParquesSolaresAsync(
+            string? criterio,
+            CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<ParqueSolar>>(Array.Empty<ParqueSolar>());
     }
 }

@@ -1,0 +1,104 @@
+@page "/parques-solares/{Id:guid}/editar"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+@inherits OwningComponentBase<IParqueSolarService>
+@inject NotificationService Notifications
+@inject NavigationManager Navigation
+@inject ILogger<EditarParqueSolar> Logger
+@using FluentValidation
+@using SolarUY.Application.Exceptions
+
+<PageTitle>Editar parque solar</PageTitle>
+<h1>Editar parque solar</h1>
+
+@if (_error is not null)
+{
+    <p role="alert" class="text-danger">@_error</p>
+}
+else if (_modelo is null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <RadzenTemplateForm TItem="ActualizarParqueSolarDto" Data="_modelo" Submit="OnValidSubmit">
+        <div class="mb-3">
+            <RadzenLabel Text="Nombre" Component="Nombre" />
+            <RadzenTextBox Name="Nombre" @bind-Value="_modelo.Nombre" MaxLength="100" Style="width:100%" Disabled="_guardando" />
+            <RadzenRequiredValidator Component="Nombre" Text="El nombre es obligatorio." />
+        </div>
+        <div class="mb-3">
+            <RadzenLabel Text="Ubicación / Dirección" Component="Ubicacion" />
+            <RadzenTextBox Name="Ubicacion" @bind-Value="_modelo.Ubicacion" MaxLength="200" Style="width:100%" Disabled="_guardando" />
+            <RadzenRequiredValidator Component="Ubicacion" Text="La ubicación es obligatoria." />
+        </div>
+        <div class="mb-3">
+            <RadzenLabel Text="Capacidad estimada (MW, opcional)" Component="Capacidad" />
+            <RadzenNumeric TValue="decimal?" Name="Capacidad" @bind-Value="_modelo.CapacidadEstimadaMW" Style="width:100%" Disabled="_guardando" />
+        </div>
+        <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar cambios" IsBusy="_guardando" Disabled="_guardando" />
+        <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancelar" Click="Cancelar" Disabled="_guardando" />
+    </RadzenTemplateForm>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private ActualizarParqueSolarDto? _modelo;
+    private bool _guardando;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var parque = await Service.ObtenerParqueSolarPorIdAsync(Id);
+            if (parque is null)
+            {
+                _error = "El parque solar indicado no existe.";
+                return;
+            }
+
+            _modelo = new ActualizarParqueSolarDto
+            {
+                Nombre = parque.Nombre,
+                Ubicacion = parque.Ubicacion,
+                CapacidadEstimadaMW = parque.CapacidadEstimadaMW
+            };
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error al cargar el parque solar {ParqueId}", Id);
+            _error = "No se pudo cargar el parque solar. Intenta nuevamente.";
+        }
+    }
+
+    private async Task OnValidSubmit(ActualizarParqueSolarDto dto)
+    {
+        if (_guardando) return;
+
+        _guardando = true;
+        _error = null;
+        try
+        {
+            await Service.ActualizarParqueSolarAsync(Id, dto);
+            Notifications.Notify(NotificationSeverity.Success, "Parque actualizado", "El parque solar se actualizó correctamente.");
+            Navigation.NavigateTo("/parques-solares");
+        }
+        catch (ValidationException exception)
+        {
+            _error = string.Join(" ", exception.Errors.Select(error => error.ErrorMessage));
+        }
+        catch (NombreParqueDuplicadoException exception) { _error = exception.Message; }
+        catch (ParqueSolarNoEncontradoException exception) { _error = exception.Message; }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error al actualizar el parque solar {ParqueId}", Id);
+            _error = "No se pudo actualizar el parque solar. Intenta nuevamente.";
+        }
+        finally { _guardando = false; }
+    }
+
+    private void Cancelar() => Navigation.NavigateTo("/parques-solares");
+}

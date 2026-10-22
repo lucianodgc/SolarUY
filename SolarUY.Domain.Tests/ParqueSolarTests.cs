@@ -45,4 +45,40 @@ public sealed class ParqueSolarTests
         Assert.Equal("Salto", parque.Ubicacion);
         Assert.Equal(12.5m, parque.CapacidadEstimadaMW);
     }
+
+    [Fact]
+    public void ActualizarDatos_ActualizaConfiguracionYConservaIdentidadYFechaCreacion()
+    {
+        var parque = new ParqueSolar("Parque Norte", "Salto", 12.5m);
+        var id = parque.Id;
+        var fechaCreacion = parque.FechaCreacion;
+
+        parque.ActualizarDatos("Parque Sur", "Maldonado", null);
+
+        Assert.Equal("Parque Sur", parque.Nombre);
+        Assert.Equal("Maldonado", parque.Ubicacion);
+        Assert.Null(parque.CapacidadEstimadaMW);
+        Assert.Equal(id, parque.Id);
+        Assert.Equal(fechaCreacion, parque.FechaCreacion);
+    }
+
+    [Theory]
+    [InlineData(null, "Salto")]
+    [InlineData("", "Salto")]
+    [InlineData("Parque", null)]
+    [InlineData("Parque", "")]
+    public void ActualizarDatos_RechazaDatosObligatorios(string? nombre, string? ubicacion)
+    {
+        var parque = new ParqueSolar("Parque Norte", "Salto");
+
+        Assert.ThrowsAny<ArgumentException>(() => parque.ActualizarDatos(nombre!, ubicacion!, null));
+    }
+
+    [Fact]
+    public void ActualizarDatos_RechazaLongitudesExcesivas()
+    {
+        var parque = new ParqueSolar("Parque Norte", "Salto");
+
+        Assert.Throws<ArgumentException>(() => parque.ActualizarDatos(new string('a', 101), new string('a', 201), null));
+    }
 }

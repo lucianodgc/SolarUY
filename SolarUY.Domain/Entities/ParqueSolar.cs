@@ -6,12 +6,7 @@ public sealed class ParqueSolar
 
     public ParqueSolar(string nombre, string ubicacion, decimal? capacidadEstimadaMW = null)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(nombre);
-        ArgumentException.ThrowIfNullOrWhiteSpace(ubicacion);
-        if (nombre.Length > 100)
-            throw new ArgumentException("El nombre admite hasta 100 caracteres.", nameof(nombre));
-        if (ubicacion.Length > 200)
-            throw new ArgumentException("La ubicación admite hasta 200 caracteres.", nameof(ubicacion));
+        ValidarDatos(nombre, ubicacion);
 
         Id = Guid.NewGuid();
         Nombre = nombre;
@@ -25,4 +20,23 @@ public sealed class ParqueSolar
     public string Ubicacion { get; private set; } = string.Empty;
     public decimal? CapacidadEstimadaMW { get; private set; }
     public DateTime FechaCreacion { get; private set; }
+
+    public void ActualizarDatos(string nombre, string ubicacion, decimal? capacidadEstimadaMW)
+    {
+        ValidarDatos(nombre, ubicacion);
+
+        Nombre = nombre;
+        Ubicacion = ubicacion;
+        CapacidadEstimadaMW = capacidadEstimadaMW;
+    }
+
+    private static void ValidarDatos(string nombre, string ubicacion)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(nombre);
+        ArgumentException.ThrowIfNullOrWhiteSpace(ubicacion);
+        if (nombre.Length > 100)
+            throw new ArgumentException("El nombre admite hasta 100 caracteres.", nameof(nombre));
+        if (ubicacion.Length > 200)
+            throw new ArgumentException("La ubicación admite hasta 200 caracteres.", nameof(ubicacion));
+    }
 }

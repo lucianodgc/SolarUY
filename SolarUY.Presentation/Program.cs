@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSolarInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IParqueSolarService, ParqueSolarService>();
 builder.Services.AddScoped<IValidator<CrearParqueSolarDto>, CrearParqueSolarDtoValidator>();
+builder.Services.AddScoped<IValidator<ActualizarParqueSolarDto>, ActualizarParqueSolarDtoValidator>();
 builder.Services.AddRadzenComponents();
 builder.Services
     .AddAuthentication(options =>
