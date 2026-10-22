@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using SolarUY.Application.Abstractions;
+using SolarUY.Application.RecoleccionLecturas;
+using SolarUY.Domain.Enums;
 
 namespace SolarUY.Infrastructure.Inversores;
 
@@ -28,6 +30,27 @@ public sealed class InversorSimulador : IInversorClient
         cancellationToken.ThrowIfCancellationRequested();
         IReadOnlyList<string> nodos = _panelesPorNodo.Keys.Order(StringComparer.Ordinal).ToArray();
         return Task.FromResult(nodos);
+    }
+
+    public Task<IReadOnlyList<MedicionPanelDto>> ObtenerMedicionesRegistradasAsync(
+        IReadOnlyList<PanelMedicionDto> paneles, DateTime instanteUtc, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (instanteUtc.Kind != DateTimeKind.Utc) throw new ArgumentException("La medición requiere un instante UTC.", nameof(instanteUtc));
+        var zona = TimeZoneInfo.FindSystemTimeZoneById("America/Montevideo");
+        var horaLocal = TimeZoneInfo.ConvertTime(new DateTimeOffset(instanteUtc), zona);
+        IReadOnlyList<MedicionPanelDto> resultado = paneles.Select(panel => MedirPanelRegistrado(panel, horaLocal)).ToArray();
+        return Task.FromResult(resultado);
+    }
+
+    private MedicionPanelDto MedirPanelRegistrado(PanelMedicionDto panel, DateTimeOffset horaLocal)
+    {
+        if (panel.PotenciaNominalW < 0) throw new InvalidOperationException($"El panel {panel.Id} tiene una potencia nominal inválida.");
+        var fallado = panel.Estado == EstadoPanel.Falla || _panelesConFalla.Contains(panel.NumeroSerie)
+            || _panelesConFalla.Contains(panel.Id.ToString("D"));
+        var potencia = panel.Estado == EstadoPanel.Activo && !fallado
+            ? decimal.Round(panel.PotenciaNominalW * CalcularProporcionSolar(horaLocal), 6) : 0m;
+        return new MedicionPanelDto(panel.Id, potencia, fallado ? EstadoSaludLectura.Fallado : EstadoSaludLectura.Sano);
     }
 
     public Task<IReadOnlyList<PanelInversorEstadoDto>> ObtenerEstadoPanelesAsync(
@@ -121,12 +144,17 @@ public sealed class InversorSimulador : IInversorClient
         if (_panelesDesactivados.Contains((nodoId, panelId)) || _panelesConFalla.Contains(panelId))
             return 0m;
 
+        return decimal.Round(PotenciaMaximaPanelW * CalcularProporcionSolar(horaLocal), 2);
+    }
+
+    private static decimal CalcularProporcionSolar(DateTimeOffset horaLocal)
+    {
         var horaDecimal = horaLocal.TimeOfDay.TotalHours;
         if (horaDecimal <= HoraInicioSolar || horaDecimal >= HoraFinSolar)
             return 0m;
 
         var proporcion = Math.Sin(Math.PI * (horaDecimal - HoraInicioSolar) / (HoraFinSolar - HoraInicioSolar));
-        return decimal.Round(PotenciaMaximaPanelW * (decimal)Math.Max(0d, proporcion), 2);
+        return (decimal)Math.Max(0d, proporcion);
     }
 
     private HashSet<string> ObtenerPaneles(string nodoId)

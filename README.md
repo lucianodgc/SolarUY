@@ -10,12 +10,14 @@ El código incluye:
 - Autenticación OpenID Connect con Keycloak y autorización por roles (`Administrador`, `Tecnico` y `Consulta`).
 - Alta, listado, búsqueda, edición y baja con confirmación de parques solares; acceso restringido al rol `Administrador`.
 - Autorización de las seis operaciones de parques en Application mediante `IUsuarioActual`, además de la protección de las páginas. Cada componente conserva su ámbito de datos y recibe la identidad del circuito Blazor.
-- Persistencia de parques, nodos, paneles y tareas de mantenimiento con Entity Framework Core 8, Pomelo y MariaDB.
+- Persistencia de parques, nodos, paneles, lecturas y tareas de mantenimiento con Entity Framework Core 8, Pomelo y MariaDB.
 - Mantenimiento con programación, edición/reasignación, inicio, finalización y cancelación; filtros por estado, panel, técnico y vencimiento. Las fechas son UTC y las tareas completadas/canceladas son inmutables.
 - Inicio y navegación por rol, perfil con identidad/roles/claims y cierre de sesión visible.
 - Contrato `IInversorClient` y un simulador en memoria para consultar y cambiar estados de paneles y del volcado a red. La topología predeterminada es `nodo-1` con cuatro paneles; la potencia simulada varía entre las 06:00 y las 18:00, hasta 400 W por panel.
+- Histórico de generación por parque, nodo o panel, con consultas diarias, mensuales, anuales y por rango, comparación de períodos y máximos/mínimos en kWh.
+- Recolección automática de mediciones simuladas de los paneles registrados, persistidas cada minuto mientras la aplicación está en ejecución, con exclusión entre instancias para evitar duplicados.
 
-El simulador dispone de pantalla: los tres roles consultan y solo Administrador puede activar/desactivar paneles y el volcado. La simulación es independiente del inventario y su estado se reinicia con el proceso. Quedan fuera del alcance actual el alta de nodos/paneles, históricos, reportes y chat con IA. Nginx y el despliegue con varias instancias forman parte de la arquitectura objetivo, pero no están configurados en este repositorio.
+El simulador dispone de pantalla: los tres roles consultan y solo Administrador puede activar/desactivar paneles y el volcado. La simulación de esa pantalla es independiente del inventario y su estado se reinicia con el proceso; el recolector mide por separado los paneles persistidos. Quedan fuera del alcance actual el alta de nodos/paneles, reportes y chat con IA. Nginx y el despliegue con varias instancias forman parte de la arquitectura objetivo, pero no están configurados en este repositorio.
 
 ### Pantallas disponibles
 
@@ -28,6 +30,7 @@ El simulador dispone de pantalla: los tres roles consultan y solo Administrador 
 | `/mantenimiento` | Tareas y acciones según responsable/rol | Administrador, Técnico |
 | `/mantenimiento/crear` | Programación de mantenimiento | Administrador |
 | `/simulador` | Estado y potencia simulados | Administrador, Técnico, Consulta; controles solo para Administrador |
+| `/historico-generacion` | Energía observada, comparación de períodos y extremos | Administrador, Técnico, Consulta; todos los parques, nodos y paneles |
 | `/mi-cuenta` | Identidad, roles y claims | Usuario autenticado |
 
 ### Permisos por perfil
@@ -37,11 +40,18 @@ El simulador dispone de pantalla: los tres roles consultan y solo Administrador 
 | Gestión de parques | Listar, buscar, crear, editar y eliminar con confirmación | Sin acceso | Sin acceso |
 | Mantenimiento | Consultar todas las tareas, programar, editar/reasignar tareas abiertas y cambiar estados permitidos | Consultar e iniciar/completar/cancelar únicamente tareas propias | Sin acceso |
 | Simulador | Consultar y activar/desactivar paneles y volcado a red | Solo consultar | Solo consultar |
+| Histórico de generación | Consultar todos los parques, nodos y paneles | Consultar todos los parques, nodos y paneles | Consultar todos los parques, nodos y paneles |
 | Perfil y sesión | Identidad, roles, claims y logout | Identidad, roles, claims y logout | Identidad, roles, claims y logout |
 
-Los permisos de parques, mantenimiento y simulador se comprueban en los servicios de Application; no dependen únicamente de ocultar botones. Los técnicos disponibles para asignación se consultan en Keycloak mediante una cuenta de servicio de solo lectura.
+Los permisos de parques, mantenimiento, simulador e histórico se comprueban en los servicios de Application; no dependen únicamente de ocultar botones. Los técnicos disponibles para asignación se consultan en Keycloak mediante una cuenta de servicio de solo lectura.
 
 La [verificación del entorno habitual](prompting/verificacion_entorno_habitual.md) registra los últimos recorridos locales. La [integración del frontend](prompting/frontend_integracion.md) conserva los antecedentes y su alcance.
+
+### Histórico de generación
+
+Las consultas usan fechas de Uruguay (`America/Montevideo`) y rangos con fin exclusivo. La vista diaria agrupa por hora; la mensual y los rangos, por día; la anual, por mes. Los cálculos se agregan en MariaDB y los resultados muestran energía observada y cobertura completa, parcial o sin datos. Los huecos de medición no se consideran generación cero.
+
+El recolector comienza cuando la web termina de arrancar y usa la potencia nominal y el estado de los paneles registrados. La fuente es simulada; las lecturas quedan guardadas entre reinicios. No se reconstruyen períodos anteriores a su activación ni las mediciones omitidas mientras la aplicación estuvo detenida. Para ver los primeros resultados, consultar el día actual; la cobertura será parcial hasta disponer de mediciones para todo el período.
 
 ## Arquitectura
 
@@ -126,7 +136,7 @@ Con la cadena de conexión configurada, aplicar las migraciones existentes con E
 dotnet ef database update --project SolarUY.Infrastructure/SolarUY.Infrastructure.csproj --startup-project SolarUY.Presentation/SolarUY.Presentation.csproj
 ```
 
-El historial conserva `AddParqueSolar` y `AddMantenimientoPaneles`. Se comprobó su aplicación sobre una base vacía; la aplicación no ejecuta migraciones automáticamente al arrancar. Si no hay migraciones pendientes, no hace falta recrear la base.
+El historial conserva `AddParqueSolar`, `AddMantenimientoPaneles` y `AddLecturaPanel`; esta última crea la tabla de lecturas utilizada por el histórico y el recolector. Se comprobó su aplicación sobre una base vacía; la aplicación no ejecuta migraciones automáticamente al arrancar. Si no hay migraciones pendientes, no hace falta recrear la base.
 
 `solaruy.sql` es un volcado histórico, no el mecanismo de aprovisionamiento de la aplicación. Sus nombres de tablas coinciden con las migraciones, incluyendo mayúsculas. Conserva responsables de ejemplo o de otro entorno: importarlo no asigna automáticamente las tareas a los usuarios del Keycloak de destino. No debe reemplazar una base existente para intentar corregir un problema de carga.
 
@@ -151,6 +161,8 @@ Si la aplicación estaba ejecutándose mientras se modificaba el código, detene
 - `Keycloak__Directory__ClientSecret`: secreto externo del cliente de directorio; user-secrets en desarrollo y variables de entorno en despliegue.
 - `InversorSimulador__Nodos__<identificador>`: lista de paneles simulados del nodo, separados por comas; si no se configura, se utiliza la topología predeterminada.
 - `InversorSimulador__PanelesConFalla`: identificadores de panel que el simulador debe marcar como fallados.
+- `RecoleccionLecturas__Habilitada`: activa la recolección automática; por defecto, `true`.
+- `RecoleccionLecturas__Intervalo`: intervalo de recolección; por defecto, `00:01:00`, configurable entre un segundo y cinco minutos. Se guarda como máximo una lectura por panel/minuto. Reiniciar la aplicación después de modificar estas opciones.
 
 ## Pruebas
 
@@ -162,15 +174,13 @@ dotnet test SolarUY.sln
 
 Las pruebas arquitectónicas están en `CodeQuality.Tests`. El simulador y sus permisos tienen [19 casos permanentes de integración](SolarUY.Integration.Tests/README.md), incluidos en la solución. La evidencia adicional de navegador y persistencia está en [la auditoría](prompting/auditoria_integral.md) y [su seguimiento](prompting/seguimiento_auditoria.md).
 
-Último resultado registrado, el **22/10/2026**:
+El histórico y el recolector tienen pruebas de integración con MariaDB 11.8. Requieren `SOLARUY_HISTORICO_TEST_CONNECTION` apuntando a una base exclusiva de pruebas cuyo nombre comience con `solaruy_req007_test`; el fixture reinicia sus datos. Sin esta variable, esos casos se omiten. La preparación se detalla en [SolarUY.Integration.Tests/README.md](SolarUY.Integration.Tests/README.md).
 
-| Proyecto | Aprobadas | Fallidas | Omitidas |
-| --- | ---: | ---: | ---: |
-| `SolarUY.Domain.Tests` | 42 | 0 | 0 |
-| `SolarUY.Application.Tests` | 8 | 0 | 0 |
-| `CodeQuality.Tests` | 9 | 0 | 0 |
-| `SolarUY.Integration.Tests` | 19 | 0 | 0 |
-| **Total** | **78** | **0** | **0** |
+Resultados registrados el **22/10/2026** para REQ007:
+
+- Regresión funcional con MariaDB aislada: **122 pruebas correctas, sin omisiones**, excluyendo volumen.
+- Corrección posterior del arranque: **9 controles arquitectónicos y 16 casos del recolector correctos**, incluido el fallo por puerto ocupado. La solución completa no se repitió tras esa corrección.
+- **Pendiente de rendimiento:** el escenario de un millón de lecturas y cuatro consultas concurrentes alcanzó **5,487 s** en parque/mes frente al límite de 5 s. La tarea 6.8 sigue abierta; ver [el registro de implementación](prompting/req007_Hist%C3%B3rico_generaci%C3%B3n/implementations.md).
 
 La suite permanente del simulador no necesita Docker ni credenciales. Para comprobar el proyecto mientras otra instancia mantiene sus binarios en uso, se puede utilizar una salida separada y ejecución secuencial:
 
@@ -211,6 +221,7 @@ La documentación funcional y técnica está organizada por requerimiento dentro
 | [`req004_Mantenimiento_de_paneles`](prompting/req004_Mantenimiento_de_paneles/) | Mantenimiento de paneles. | Implementado con permisos por responsable, estados y filtros; quedan asignaciones de datos locales por revisar. El requerimiento conserva el nombre `requierements.md`. |
 | [`req005_Simulador del inversor`](prompting/req005_Simulador%20del%20inversor/) | Contrato y simulador sustituible de inversor. | Pantalla de consulta/control, autorización en Application y 19 casos permanentes de integración. |
 | [`req006_gestion_multiparque`](prompting/req006_gestion_multiparque/) | Gestión multiparque. | ABM y búsqueda, confirmación de baja y autorización administrativa en las seis operaciones del servicio. |
+| [`req007_Histórico_generación`](prompting/req007_Hist%C3%B3rico_generaci%C3%B3n/) | Histórico de energía y recolección periódica. | Consultas, comparación, extremos y recolección del inventario implementados; pendiente el umbral de rendimiento de la tarea 6.8. |
 
 Los estados de esta tabla son una orientación general. Para conocer el detalle y los bloqueos vigentes, prevalecen las casillas y notas de `tasks.md` y el informe de implementación de cada carpeta.
 
