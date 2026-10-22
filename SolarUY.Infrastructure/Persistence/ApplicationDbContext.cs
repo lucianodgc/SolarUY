@@ -15,6 +15,7 @@ public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<ParqueSolar> ParquesSolares { get; set; } = null!;
     public DbSet<Nodo> Nodos { get; set; } = null!;
     public DbSet<Panel> Paneles { get; set; } = null!;
+    public DbSet<LecturaPanel> LecturasPanel { get; set; } = null!;
     public DbSet<TareaMantenimiento> TareasMantenimiento { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

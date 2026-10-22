@@ -1,7 +1,12 @@
+using SolarUY.Application.RecoleccionLecturas;
+
 namespace SolarUY.Application.Abstractions;
 
 public interface IInversorClient
 {
+    Task<IReadOnlyList<MedicionPanelDto>> ObtenerMedicionesRegistradasAsync(
+        IReadOnlyList<PanelMedicionDto> paneles, DateTime instanteUtc, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<string>> ListarNodosAsync(CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<PanelInversorEstadoDto>> ObtenerEstadoPanelesAsync(

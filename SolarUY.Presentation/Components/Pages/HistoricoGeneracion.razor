@@ -1,0 +1,139 @@
+@page "/historico-generacion"
+@attribute [Authorize(Roles = "Administrador,Tecnico,Consulta")]
+@using SolarUY.Application.HistoricoGeneracion
+@implements IDisposable
+@inject IHistoricoGeneracionService Historico
+@inject ILogger<HistoricoGeneracion> Logger
+
+<PageTitle>Histórico de generación | SolarUY</PageTitle>
+<PageHeader Title="Histórico de generación" Section="Energía" Description="Consultá energía por parque, nodo o panel y compará períodos." />
+<section class="surface">
+    <p class="note">Fechas de Uruguay. El fin de un rango personalizado es exclusivo. Los huecos de medición no se consideran generación cero.</p>
+    <div class="filter-bar">
+        <label>Tipo de instalación
+            <RadzenDropDown Name="TipoHistorico" TValue="TipoObjetivoHistorico" Data="@(Enum.GetValues<TipoObjetivoHistorico>())"
+                @bind-Value="_tipo" Change="CambiarTipo" Disabled="_ocupado" />
+        </label>
+        <label>Instalación
+            <RadzenDropDown Name="ObjetivoHistorico" TValue="Guid" Data="_opcionesVisibles" TextProperty="Etiqueta" ValueProperty="Id"
+                @bind-Value="_objetivoId" AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                Disabled="_ocupado" Style="min-width:280px" />
+        </label>
+        <label>Período
+            <RadzenDropDown Name="PeriodoHistorico" TValue="PeriodoHistorico" Data="@(Enum.GetValues<PeriodoHistorico>())"
+                @bind-Value="_periodo" Disabled="_ocupado" />
+        </label>
+    </div>
+    <div class="filter-bar">
+        <label>Fecha del período / inicio
+            <RadzenDatePicker Name="InicioHistorico" TValue="DateTime" @bind-Value="_inicio" ShowTime="@(_periodo == PeriodoHistorico.Rango)"
+                DateFormat="yyyy-MM-dd HH:mm" Disabled="_ocupado" />
+        </label>
+        @if (_periodo == PeriodoHistorico.Rango)
+        {
+            <label>Fin exclusivo
+                <RadzenDatePicker Name="FinHistorico" TValue="DateTime" @bind-Value="_fin" ShowTime="true" DateFormat="yyyy-MM-dd HH:mm" Disabled="_ocupado" />
+            </label>
+        }
+        <label><RadzenCheckBox Name="CompararHistorico" TValue="bool" @bind-Value="_comparar" Disabled="_ocupado" /> Comparar otro período</label>
+    </div>
+    @if (_comparar)
+    {
+        <div class="filter-bar">
+            <label>Segundo período / inicio
+                <RadzenDatePicker Name="SegundoInicioHistorico" TValue="DateTime" @bind-Value="_segundoInicio" ShowTime="@(_periodo == PeriodoHistorico.Rango)"
+                    DateFormat="yyyy-MM-dd HH:mm" Disabled="_ocupado" />
+            </label>
+            @if (_periodo == PeriodoHistorico.Rango)
+            {
+                <label>Segundo fin exclusivo
+                    <RadzenDatePicker Name="SegundoFinHistorico" TValue="DateTime" @bind-Value="_segundoFin" ShowTime="true" DateFormat="yyyy-MM-dd HH:mm" Disabled="_ocupado" />
+                </label>
+            }
+        </div>
+    }
+    <RadzenButton Text="Consultar histórico" Icon="history" Click="ConsultarAsync" Disabled="@(_ocupado || _objetivoId == Guid.Empty)" IsBusy="_ocupado" />
+</section>
+@if (_ocupado) { <p class="loading-state" role="status">Consultando histórico…</p> }
+@if (_error is not null) { <p class="alert alert-danger" role="alert">@_error</p> }
+@if (!_ocupado && _opcionesVisibles.Count == 0 && _error is null)
+{
+    <p class="empty-state">No hay instalaciones de este tipo disponibles.</p>
+}
+@if (_resultado is not null)
+{
+    <ResultadoHistorico Resultado="_resultado" Titulo="@_etiquetaConsultada" />
+}
+@if (_segundoResultado is not null)
+{
+    <ResultadoHistorico Resultado="_segundoResultado" Titulo="Segundo período" />
+    <p class="note">Se comparan los totales observados sin normalizar la duración. Revisá la cobertura de ambos períodos.</p>
+}
+
+@code {
+    private IReadOnlyList<OpcionHistoricoDto> _opciones = Array.Empty<OpcionHistoricoDto>();
+    private IReadOnlyList<OpcionHistoricoDto> _opcionesVisibles = Array.Empty<OpcionHistoricoDto>();
+    private TipoObjetivoHistorico _tipo;
+    private Guid _objetivoId;
+    private PeriodoHistorico _periodo;
+    private DateTime _inicio = DateTime.Today;
+    private DateTime _fin = DateTime.Today.AddDays(1);
+    private DateTime _segundoInicio = DateTime.Today.AddDays(-1);
+    private DateTime _segundoFin = DateTime.Today;
+    private bool _comparar;
+    private bool _ocupado;
+    private string? _error;
+    private string _etiquetaConsultada = "Generación histórica";
+    private ResultadoHistoricoDto? _resultado;
+    private ResultadoHistoricoDto? _segundoResultado;
+    private readonly CancellationTokenSource _cancelacion = new();
+
+    protected override Task OnInitializedAsync() => EjecutarAsync(async () =>
+    {
+        _opciones = await Historico.ListarOpcionesAsync(_cancelacion.Token);
+        CambiarTipo();
+    });
+
+    private void CambiarTipo(object? valor = null)
+    {
+        _opcionesVisibles = _opciones.Where(opcion => opcion.Tipo == _tipo).ToArray();
+        _objetivoId = _opcionesVisibles.FirstOrDefault()?.Id ?? Guid.Empty;
+    }
+
+    private Task ConsultarAsync() => EjecutarAsync(async () =>
+    {
+        _resultado = null;
+        _segundoResultado = null;
+        _etiquetaConsultada = _opcionesVisibles.FirstOrDefault(opcion => opcion.Id == _objetivoId)?.Etiqueta ?? "Generación histórica";
+        var primero = CrearFiltro(_inicio, _fin);
+        if (_comparar)
+        {
+            var comparacion = await Historico.CompararAsync(primero, CrearFiltro(_segundoInicio, _segundoFin), _cancelacion.Token);
+            _resultado = comparacion.Primero;
+            _segundoResultado = comparacion.Segundo;
+        }
+        else _resultado = await Historico.ConsultarAsync(primero, _cancelacion.Token);
+    });
+
+    private FiltroHistoricoDto CrearFiltro(DateTime inicio, DateTime fin) => new(_tipo, _objetivoId, _periodo,
+        DateTime.SpecifyKind(inicio, DateTimeKind.Unspecified), DateTime.SpecifyKind(fin, DateTimeKind.Unspecified));
+
+    private async Task EjecutarAsync(Func<Task> accion)
+    {
+        if (_ocupado) return;
+        _ocupado = true;
+        _error = null;
+        try { await accion(); }
+        catch (OperationCanceledException) when (_cancelacion.IsCancellationRequested) { }
+        catch (Exception exception) when (exception is ArgumentException or UnauthorizedAccessException or KeyNotFoundException)
+        { _error = exception.Message; }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error al consultar el histórico de generación");
+            _error = "No se pudo consultar el histórico. Volvé a intentarlo.";
+        }
+        finally { _ocupado = false; }
+    }
+
+    public void Dispose() { _cancelacion.Cancel(); _cancelacion.Dispose(); }
+}

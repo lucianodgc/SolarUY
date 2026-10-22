@@ -3,6 +3,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SolarUY.Application.Abstractions;
 using SolarUY.Application.Mantenimiento;
+using SolarUY.Application.HistoricoGeneracion;
+using SolarUY.Application.RecoleccionLecturas;
 using SolarUY.Infrastructure.Identity;
 using SolarUY.Infrastructure.Inversores;
 using SolarUY.Infrastructure.Persistence;
@@ -24,6 +26,8 @@ public static class DependencyInjection
         });
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IPanelRepository, PanelRepository>();
+        services.AddScoped<IHistoricoGeneracionRepository, HistoricoGeneracionRepository>();
+        services.AddScoped<IRecoleccionLecturasRepository, RecoleccionLecturasRepository>();
         services.AddScoped<ITareaMantenimientoRepository, TareaMantenimientoRepository>();
         services.AddSingleton(_ => new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
         {

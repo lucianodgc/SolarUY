@@ -22,6 +22,32 @@ namespace SolarUY.Infrastructure.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("SolarUY.Domain.Entities.LecturaPanel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("EstadoSalud")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("PanelId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("PotenciaGeneradaW")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PanelId", "FechaHora", "PotenciaGeneradaW");
+
+                    b.ToTable("LecturasPanel", (string)null);
+                });
+
             modelBuilder.Entity("SolarUY.Domain.Entities.Nodo", b =>
                 {
                     b.Property<Guid>("Id")
@@ -154,6 +180,17 @@ namespace SolarUY.Infrastructure.Migrations
                     b.HasIndex("PanelId");
 
                     b.ToTable("TareasMantenimiento", (string)null);
+                });
+
+            modelBuilder.Entity("SolarUY.Domain.Entities.LecturaPanel", b =>
+                {
+                    b.HasOne("SolarUY.Domain.Entities.Panel", "Panel")
+                        .WithMany()
+                        .HasForeignKey("PanelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Panel");
                 });
 
             modelBuilder.Entity("SolarUY.Domain.Entities.Nodo", b =>

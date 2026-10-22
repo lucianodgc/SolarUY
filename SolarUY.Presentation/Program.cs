@@ -11,10 +11,13 @@ using Radzen;
 using SolarUY.Application.Abstractions;
 using SolarUY.Application.Mantenimiento;
 using SolarUY.Application.Inversores;
+using SolarUY.Application.HistoricoGeneracion;
+using SolarUY.Application.RecoleccionLecturas;
 using SolarUY.Application.ParquesSolares;
 using SolarUY.Infrastructure;
 using SolarUY.Presentation.Authentication;
 using SolarUY.Presentation.Components;
+using SolarUY.Presentation.BackgroundServices;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSolarInfrastructure(builder.Configuration);
@@ -22,6 +25,14 @@ builder.Services.AddScoped<IParqueSolarService, ParqueSolarService>();
 builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
 builder.Services.AddScoped<ITareaMantenimientoService, TareaMantenimientoService>();
 builder.Services.AddScoped<IInversorService, InversorService>();
+builder.Services.AddScoped<IHistoricoGeneracionService, HistoricoGeneracionService>();
+builder.Services.AddScoped<IRecoleccionLecturasService, RecoleccionLecturasService>();
+builder.Services.AddOptions<RecoleccionLecturasOptions>()
+    .Bind(builder.Configuration.GetSection("RecoleccionLecturas"))
+    .Validate(options => options.Intervalo >= TimeSpan.FromSeconds(1) && options.Intervalo <= TimeSpan.FromMinutes(5),
+        "RecoleccionLecturas:Intervalo debe estar entre un segundo y cinco minutos.")
+    .ValidateOnStart();
+builder.Services.AddHostedService<RecoleccionLecturasWorker>();
 builder.Services.AddScoped<IValidator<CrearParqueSolarDto>, CrearParqueSolarDtoValidator>();
 builder.Services.AddScoped<IValidator<ActualizarParqueSolarDto>, ActualizarParqueSolarDtoValidator>();
 builder.Services.AddRadzenComponents();

@@ -1,0 +1,38 @@
+@using SolarUY.Application.HistoricoGeneracion
+
+<section class="surface" aria-label="@Titulo">
+    <h2>@Titulo</h2>
+    <p>@Resultado.InicioLocal → @Resultado.FinLocal (fin exclusivo) · @Resultado.ZonaHoraria</p>
+    <p><strong>Energía observada: @(Resultado.EnergiaKWh?.ToString("N3") ?? "Sin datos") @Resultado.Unidad</strong></p>
+    <p role="status">Cobertura: @Resultado.Cobertura</p>
+    @if (Resultado.Cobertura == CoberturaHistorico.Parcial)
+    {
+        <p class="note">La medición es parcial. El total y los extremos incluyen únicamente la energía observada; los huecos no se estiman.</p>
+    }
+    @if (Resultado.Cobertura == CoberturaHistorico.SinDatos)
+    {
+        <p class="empty-state">No hay lecturas con cobertura en este período.</p>
+    }
+    <RadzenDataGrid Data="@Resultado.Serie" TItem="PuntoHistoricoDto" AllowPaging="true" PageSize="31" AllowSorting="false" AllowColumnResize="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="PuntoHistoricoDto" Title="Intervalo (Uruguay)">
+                <Template Context="punto">@punto.Intervalo.Etiqueta</Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="PuntoHistoricoDto" Title="Energía (kWh)">
+                <Template Context="punto">@(punto.EnergiaKWh?.ToString("N3") ?? "Sin datos")</Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="PuntoHistoricoDto" Property="Cobertura" Title="Cobertura" />
+            <RadzenDataGridColumn TItem="PuntoHistoricoDto" Title="Extremos de energía observada">
+                <Template Context="punto">
+                    @if (punto.EsMaximo) { <span class="state-badge">Máximo</span> }
+                    @if (punto.EsMinimo) { <span class="state-badge state-neutral">Mínimo</span> }
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public ResultadoHistoricoDto Resultado { get; set; } = null!;
+    [Parameter] public string Titulo { get; set; } = "Generación histórica";
+}
