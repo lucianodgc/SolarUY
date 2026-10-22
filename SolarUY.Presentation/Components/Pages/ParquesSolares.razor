@@ -3,9 +3,17 @@
 @rendermode InteractiveServer
 @inherits OwningComponentBase<IParqueSolarService>
 @inject ILogger<ParquesSolares> Logger
+@inject NotificationService Notifications
+@inject DialogService Dialogs
+@using SolarUY.Application.Exceptions
 
 <PageTitle>Parques solares</PageTitle>
 <h1>Parques solares</h1>
+<div class="d-flex gap-2 mb-3">
+    <RadzenTextBox @bind-Value="_criterioBusqueda" Placeholder="Buscar por nombre o ubicación" Style="width: 320px" />
+    <RadzenButton ButtonType="ButtonType.Button" Text="Buscar" Click="BuscarParquesAsync" />
+    <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Light" Text="Limpiar" Click="LimpiarBusquedaAsync" />
+</div>
 @if (_error is not null)
 {
     <p role="alert" class="text-danger">@_error</p>
@@ -21,11 +29,20 @@ else if (_parques.Count == 0)
 else
 {
     <table class="table">
-        <thead><tr><th>Nombre</th><th>Ubicación</th><th>Capacidad estimada (MW)</th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Ubicación</th><th>Capacidad estimada (MW)</th><th>Acciones</th></tr></thead>
         <tbody>
             @foreach (var parque in _parques)
             {
-                <tr><td>@parque.Nombre</td><td>@parque.Ubicacion</td><td>@(parque.CapacidadEstimadaMW?.ToString() ?? "Sin especificar")</td></tr>
+                <tr>
+                    <td>@parque.Nombre</td>
+                    <td>@parque.Ubicacion</td>
+                    <td>@(parque.CapacidadEstimadaMW?.ToString() ?? "Sin especificar")</td>
+                    <td class="d-flex gap-2">
+                        <a class="btn btn-outline-primary btn-sm" href="@($"/parques-solares/{parque.Id}/editar")">Editar</a>
+                        <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
+                                      Text="Eliminar" Click="async () => await ConfirmarBajaAsync(parque.Id)" />
+                    </td>
+                </tr>
             }
         </tbody>
     </table>
@@ -33,15 +50,49 @@ else
 
 @code {
     private IReadOnlyList<SolarUY.Domain.Entities.ParqueSolar>? _parques;
+    private string? _criterioBusqueda;
     private string? _error;
 
     protected override async Task OnInitializedAsync()
+        => await BuscarParquesAsync();
+
+    private async Task BuscarParquesAsync()
     {
-        try { _parques = await Service.ListarParquesSolaresAsync(); }
+        _error = null;
+        try { _parques = await Service.BuscarParquesSolaresAsync(_criterioBusqueda); }
         catch (Exception exception)
         {
-            Logger.LogError(exception, "Error al consultar los parques solares");
+            Logger.LogError(exception, "Error al buscar los parques solares");
             _error = "No se pudieron consultar los parques solares.";
+        }
+    }
+
+    private async Task LimpiarBusquedaAsync()
+    {
+        _criterioBusqueda = null;
+        await BuscarParquesAsync();
+    }
+
+    private async Task ConfirmarBajaAsync(Guid id)
+    {
+        var confirmar = await Dialogs.Confirm(
+            "Se eliminarán el parque y todas sus dependencias. Esta acción no se puede deshacer.",
+            "Confirmar baja",
+            new ConfirmOptions { OkButtonText = "Eliminar", CancelButtonText = "Cancelar" });
+        if (confirmar != true) return;
+
+        _error = null;
+        try
+        {
+            await Service.EliminarParqueSolarAsync(id);
+            Notifications.Notify(NotificationSeverity.Success, "Parque eliminado", "El parque solar y sus dependencias se eliminaron correctamente.");
+            await BuscarParquesAsync();
+        }
+        catch (ParqueSolarNoEncontradoException exception) { _error = exception.Message; }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error al eliminar el parque solar {ParqueId}", id);
+            _error = "No se pudo eliminar el parque solar. Intenta nuevamente.";
         }
     }
 }

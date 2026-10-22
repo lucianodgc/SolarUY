@@ -21,6 +21,7 @@ builder.Services.AddScoped<IParqueSolarService, ParqueSolarService>();
 builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
 builder.Services.AddScoped<ITareaMantenimientoService, TareaMantenimientoService>();
 builder.Services.AddScoped<IValidator<CrearParqueSolarDto>, CrearParqueSolarDtoValidator>();
+builder.Services.AddScoped<IValidator<ActualizarParqueSolarDto>, ActualizarParqueSolarDtoValidator>();
 builder.Services.AddRadzenComponents();
 builder.Services
     .AddAuthentication(options =>
