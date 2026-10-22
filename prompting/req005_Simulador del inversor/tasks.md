@@ -7,7 +7,7 @@
 - [x] 1.3 Definir potencia en watts, curva sinusoidal de 06:00 a 18:00 locales y máximo de 400 W por panel.
 - [x] 1.4 Configurar fallas mediante identificadores de panel; los paneles fallados reportan salud `Fallado` y potencia cero.
 - [x] 1.5 Registrar el simulador como singleton por proceso; el estado no persiste entre reinicios ni se coordina entre instancias.
-- [ ] 1.6 Resolver cómo verificar la lógica del simulador respetando el requisito de pruebas y la regla del proyecto que prohíbe pruebas unitarias para Infrastructure.
+- [x] 1.6 Incorporar la verificación permanente pedida explícitamente por el usuario mediante pruebas de integración en `SolarUY.Integration.Tests`: xUnit, composición real de Application/Infrastructure, reloj e identidad controlados y sin nuevas pruebas unitarias de Infrastructure.
 
 ## 2. Application
 
@@ -19,15 +19,18 @@
 - [x] 3.2 Implementar el cálculo de potencia diario, excluyendo paneles desactivados.
 - [x] 3.3 Implementar estado de salud y fallas configurables.
 - [x] 3.4 Registrar la implementación simulada en la composición de dependencias existente de Infrastructure.
-- [ ] 3.5 Incorporar la verificación de los comportamientos aprobados por el mecanismo que resuelva la aclaración 1.6, sin alterar las pruebas arquitectónicas.
+- [x] 3.5 Incorporar y ejecutar la suite permanente: 19 casos de integración para topología, potencia según hora/zona, fallas, activar/desactivar, aislamiento por panel/nodo, volcado compartido entre ámbitos, permisos, entradas inválidas y cancelación. Se ejecuta con `dotnet test SolarUY.sln`.
 
 ## 4. Presentation
 
-- [x] 4.1 Registrar el puerto desde `AddSolarInfrastructure`; no se agregaron UI ni referencias de Application/Domain a la clase concreta.
+- [x] 4.1 Registrar el puerto desde `AddSolarInfrastructure`, sin referencias de Application/Domain a la clase concreta.
+- [x] 4.2 Incorporar `/simulador`, acceso desde inicio/menú, selector de nodos, potencia/estado de paneles y volcado, controles de actualización y mensajes de carga/error.
+- [x] 4.3 Incorporar casos de uso de Application que validan identidad/roles: Administrador opera; Técnico y Consulta solo consultan, según confirmación del usuario.
+- [x] 4.4 Enumerar la topología configurada desde `IInversorClient` y mantener la UI independiente del adaptador y del inventario real.
 
 ## 5. Verificación
 
-- [x] 5.1 Ejecutar las pruebas de `CodeQuality.Tests` sin reconstruir las referencias (`BuildProjectReferences=false`); los 9 guardarraíles pasan sin modificar sus pruebas. La compilación integral sigue bloqueada por el `App.razor` ausente e ignorado por Git.
+- [x] 5.1 Ejecutar las pruebas de `CodeQuality.Tests` reconstruyendo la aplicación en una salida separada: los 9 guardarraíles pasan sin modificar sus pruebas y el host compila con App.razor restaurado.
 
 ## 6. Cierre y documentación
 

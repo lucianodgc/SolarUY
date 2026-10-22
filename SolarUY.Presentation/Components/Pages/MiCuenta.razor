@@ -1,0 +1,38 @@
+@page "/mi-cuenta"
+@attribute [Authorize]
+<PageTitle>Mi cuenta | SolarUY</PageTitle>
+<PageHeader Title="Perfil y permisos" Section="Mi cuenta" Description="Tu sesión se administra a través de Keycloak." />
+<AuthorizeView>
+    <Authorized Context="sesion">
+        <section class="surface profile-panel">
+            <span class="module-icon"><RadzenIcon Icon="account_circle" /></span>
+            <div>
+                <p class="eyebrow">USUARIO AUTENTICADO</p>
+                <h2>@(sesion.User.Identity?.Name ?? "Usuario")</h2>
+                <div class="role-list">
+                    @foreach (var rol in sesion.User.Identities.SelectMany(identidad => identidad.FindAll(identidad.RoleClaimType)).Select(claim => claim.Value).Distinct())
+                    {
+                        <span class="state-badge">@rol</span>
+                    }
+                </div>
+            </div>
+        </section>
+        <section class="surface mt-4">
+            <h2>Información de la sesión</h2>
+            <p class="text-muted">Identidad y atributos proporcionados por el proveedor de autenticación.</p>
+            <details>
+                <summary>Ver claims de la sesión</summary>
+                <div class="table-responsive mt-3">
+                    <table class="table"><thead><tr><th scope="col">Claim</th><th scope="col">Valor</th></tr></thead>
+                        <tbody>
+                            @foreach (var claim in sesion.User.Claims)
+                            {
+                                <tr><td class="claim-value">@claim.Type</td><td class="claim-value">@claim.Value</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        </section>
+    </Authorized>
+</AuthorizeView>

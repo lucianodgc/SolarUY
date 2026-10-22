@@ -23,6 +23,13 @@ public sealed class InversorSimulador : IInversorClient
         _panelesConFalla = CargarPanelesConFalla(configuration);
     }
 
+    public Task<IReadOnlyList<string>> ListarNodosAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        IReadOnlyList<string> nodos = _panelesPorNodo.Keys.Order(StringComparer.Ordinal).ToArray();
+        return Task.FromResult(nodos);
+    }
+
     public Task<IReadOnlyList<PanelInversorEstadoDto>> ObtenerEstadoPanelesAsync(
         string nodoId,
         CancellationToken cancellationToken = default)

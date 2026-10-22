@@ -52,6 +52,7 @@ Fuente técnica: specs.md. Las casillas reflejan implementación y verificacione
 - [x] 5.4 Crear CrearTareaMantenimiento para administrador con paneles y técnicos obtenidos por Application. (P1)
 - [x] 5.5 Conectar creación, edición/reasignación, inicio, finalización y cancelación, con errores, actualización y control de envíos repetidos. (P1)
 - [x] 5.6 Proteger páginas, acciones y menú, y agregar AccesoDenegado para la ruta de cookies sin lógica de negocio en vistas. (P1, P2)
+- [x] 5.7 Integrar mantenimiento en el inicio y la navegación general, unificar las cabeceras, mejorar tablas/formularios y notificar el éxito de creación, conservando filtros y permisos existentes.
 
 ## 6. Verificación
 

@@ -1,0 +1,21 @@
+<header class="page-heading">
+    <div>
+        <p class="eyebrow">SolarUY / @Section</p>
+        <h1>@Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Description))
+        {
+            <p class="page-description">@Description</p>
+        }
+    </div>
+    @if (ChildContent is not null)
+    {
+        <div class="page-actions">@ChildContent</div>
+    }
+</header>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Section { get; set; } = "Gestión solar";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

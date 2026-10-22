@@ -1,7 +1,7 @@
 @page "/parques-solares/{Id:guid}/editar"
 @attribute [Authorize(Roles = "Administrador")]
 @rendermode InteractiveServer
-@inherits OwningComponentBase<IParqueSolarService>
+@inherits ParqueSolarComponentBase
 @inject NotificationService Notifications
 @inject NavigationManager Navigation
 @inject ILogger<EditarParqueSolar> Logger
@@ -9,18 +9,21 @@
 @using SolarUY.Application.Exceptions
 
 <PageTitle>Editar parque solar</PageTitle>
-<h1>Editar parque solar</h1>
+<PageHeader Title="Editar parque solar" Section="Parques solares" Description="Los cambios se aplican únicamente al parque seleccionado.">
+    <a class="btn btn-outline-primary" href="/parques-solares">Volver al listado</a>
+</PageHeader>
 
 @if (_error is not null)
 {
-    <p role="alert" class="text-danger">@_error</p>
+    <p role="alert" class="alert alert-danger">@_error</p>
 }
-else if (_modelo is null)
+@if (_modelo is null && _error is null)
 {
-    <p>Cargando...</p>
+    <p class="loading-state" role="status">Cargando parque…</p>
 }
-else
+@if (_modelo is not null)
 {
+    <section class="surface form-surface">
     <RadzenTemplateForm TItem="ActualizarParqueSolarDto" Data="_modelo" Submit="OnValidSubmit">
         <div class="mb-3">
             <RadzenLabel Text="Nombre" Component="Nombre" />
@@ -39,6 +42,7 @@ else
         <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar cambios" IsBusy="_guardando" Disabled="_guardando" />
         <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancelar" Click="Cancelar" Disabled="_guardando" />
     </RadzenTemplateForm>
+    </section>
 }
 
 @code {
@@ -49,8 +53,10 @@ else
     private bool _guardando;
     private string? _error;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
+        _modelo = null;
+        _error = null;
         try
         {
             var parque = await Service.ObtenerParqueSolarPorIdAsync(Id);

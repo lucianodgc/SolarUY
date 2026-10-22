@@ -67,6 +67,12 @@ La implementación debe permitir que, en el futuro, el simulador pueda ser reemp
 - Las fallas simuladas deben poder configurarse para permitir pruebas controladas.
 - Las operaciones sobre un panel deben afectar únicamente al panel correspondiente.
 
+## Ampliación de interfaz solicitada
+
+- Pantalla `/simulador` con selección de nodo simulado, paneles, potencia del nodo y estado del volcado a red.
+- Administrador puede activar/desactivar paneles y el volcado. Técnico y Consulta solo consultan; esta decisión fue confirmada por el usuario.
+- Los controles actualizan el estado visible después de la operación y previenen envíos repetidos. La pantalla informa que los datos son simulados e independientes de los equipos persistidos.
+
 ## Pruebas
 
 Se deben incluir tests de la lógica del simulador que verifiquen como mínimo:

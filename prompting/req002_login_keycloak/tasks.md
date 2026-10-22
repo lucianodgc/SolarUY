@@ -26,6 +26,7 @@
 
 - [x] **4.1** Interpretar los claims de roles emitidos por Keycloak y reconocer `Administrador`, `Tecnico` y `Consulta` para la autorización de funcionalidades de interfaz.
 - [x] **4.2** Mostrar en la interfaz el nombre del usuario autenticado y sus claims y roles activos.
+- [x] **4.3** Integrar `/mi-cuenta` para identidad, roles y claims, mantener usuario y cierre de sesión visibles en la cabecera y adaptar el menú a los permisos del usuario.
 
 ## 5. Validación y configuración operativa
 

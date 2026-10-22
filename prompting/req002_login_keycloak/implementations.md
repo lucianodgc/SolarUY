@@ -1,5 +1,9 @@
 # Implementación de req002: autenticación con Keycloak
 
+## Actualización de integración frontend
+
+La cabecera conserva identidad y cierre de sesión visibles. `/mi-cuenta` concentra roles y claims, y el inicio/menú muestran accesos por perfil. Se verificó login OIDC y navegación con los tres usuarios de prueba, sin cambiar credenciales ni la configuración del proveedor. Detalle vigente en [frontend_integracion.md](../frontend_integracion.md); el resto documenta la integración original.
+
 ## Cambios y tareas completadas
 
 - Se usó la configuración local existente en `.env` y se inició el servicio Keycloak con Docker Compose. Keycloak 26.8.1 importó correctamente el realm `solaruy`.

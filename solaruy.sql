@@ -7,6 +7,11 @@
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
+-- Volcado histórico: ResponsableId conserva valores de ejemplo o de otro realm.
+-- No asigna tareas automáticamente a los usuarios del Keycloak de destino.
+-- Para revisar/reasignar tareas abiertas desde la aplicación, ver keycloak/TECNICOS.md.
+-- No usar este volcado para reemplazar una base existente ni reescribir historiales.
+
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
@@ -24,10 +29,10 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `nodos`
+-- Estructura de tabla para la tabla `Nodos`
 --
 
-CREATE TABLE `nodos` (
+CREATE TABLE `Nodos` (
   `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `ParqueId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `Nombre` longtext NOT NULL,
@@ -36,10 +41,10 @@ CREATE TABLE `nodos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `nodos`
+-- Volcado de datos para la tabla `Nodos`
 --
 
-INSERT INTO `nodos` (`Id`, `ParqueId`, `Nombre`, `UbicacionEnParque`, `CantidadPanelesPrevista`) VALUES
+INSERT INTO `Nodos` (`Id`, `ParqueId`, `Nombre`, `UbicacionEnParque`, `CantidadPanelesPrevista`) VALUES
 ('73c02e8d-c854-11f1-939e-18c04de89d5b', '73bb00e2-c854-11f1-939e-18c04de89d5b', 'Nodo Norte', 'Sector norte del parque', 3),
 ('73c0d7a5-c854-11f1-939e-18c04de89d5b', '73bb00e2-c854-11f1-939e-18c04de89d5b', 'Nodo Sur', 'Sector sur del parque', 3),
 ('73c177f7-c854-11f1-939e-18c04de89d5b', '73bbb7f9-c854-11f1-939e-18c04de89d5b', 'Nodo Principal', 'Sector central', 3);
@@ -47,10 +52,10 @@ INSERT INTO `nodos` (`Id`, `ParqueId`, `Nombre`, `UbicacionEnParque`, `CantidadP
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `paneles`
+-- Estructura de tabla para la tabla `Paneles`
 --
 
-CREATE TABLE `paneles` (
+CREATE TABLE `Paneles` (
   `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `NodoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `NumeroSerie` varchar(255) NOT NULL,
@@ -62,10 +67,10 @@ CREATE TABLE `paneles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `paneles`
+-- Volcado de datos para la tabla `Paneles`
 --
 
-INSERT INTO `paneles` (`Id`, `NodoId`, `NumeroSerie`, `Marca`, `Modelo`, `PotenciaNominalW`, `FechaInstalacion`, `Estado`) VALUES
+INSERT INTO `Paneles` (`Id`, `NodoId`, `NumeroSerie`, `Marca`, `Modelo`, `PotenciaNominalW`, `FechaInstalacion`, `Estado`) VALUES
 ('73c3f9a6-c854-11f1-939e-18c04de89d5b', '73c02e8d-c854-11f1-939e-18c04de89d5b', 'SOL-MAL-001', 'Jinko Solar', 'Tiger Neo 575W', 575.000000000000000000000000000000, '2026-01-15 00:00:00.000000', 0),
 ('73c4a545-c854-11f1-939e-18c04de89d5b', '73c02e8d-c854-11f1-939e-18c04de89d5b', 'SOL-MAL-002', 'Jinko Solar', 'Tiger Neo 575W', 575.000000000000000000000000000000, '2026-01-15 00:00:00.000000', 0),
 ('73c5448c-c854-11f1-939e-18c04de89d5b', '73c02e8d-c854-11f1-939e-18c04de89d5b', 'SOL-MAL-003', 'LONGi', 'Hi-MO 6 580W', 580.000000000000000000000000000000, '2026-02-10 00:00:00.000000', 0),
@@ -76,10 +81,10 @@ INSERT INTO `paneles` (`Id`, `NodoId`, `NumeroSerie`, `Marca`, `Modelo`, `Potenc
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `parquessolares`
+-- Estructura de tabla para la tabla `ParquesSolares`
 --
 
-CREATE TABLE `parquessolares` (
+CREATE TABLE `ParquesSolares` (
   `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `Nombre` varchar(100) NOT NULL,
   `Ubicacion` varchar(200) NOT NULL,
@@ -88,20 +93,20 @@ CREATE TABLE `parquessolares` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `parquessolares`
+-- Volcado de datos para la tabla `ParquesSolares`
 --
 
-INSERT INTO `parquessolares` (`Id`, `Nombre`, `Ubicacion`, `CapacidadEstimadaMW`, `FechaCreacion`) VALUES
+INSERT INTO `ParquesSolares` (`Id`, `Nombre`, `Ubicacion`, `CapacidadEstimadaMW`, `FechaCreacion`) VALUES
 ('73bb00e2-c854-11f1-939e-18c04de89d5b', 'Parque Solar Maldonado', 'Maldonado, Uruguay', 12.500000000000000000000000000000, '2026-10-15 01:54:06.000000'),
 ('73bbb7f9-c854-11f1-939e-18c04de89d5b', 'Parque Solar Rocha', 'Rocha, Uruguay', 8.750000000000000000000000000000, '2026-10-15 01:54:06.000000');
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `tareasmantenimiento`
+-- Estructura de tabla para la tabla `TareasMantenimiento`
 --
 
-CREATE TABLE `tareasmantenimiento` (
+CREATE TABLE `TareasMantenimiento` (
   `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `PanelId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `Tipo` longtext NOT NULL,
@@ -113,10 +118,10 @@ CREATE TABLE `tareasmantenimiento` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `tareasmantenimiento`
+-- Volcado de datos para la tabla `TareasMantenimiento`
 --
 
-INSERT INTO `tareasmantenimiento` (`Id`, `PanelId`, `Tipo`, `Descripcion`, `FechaProgramada`, `FechaRealizacion`, `Estado`, `ResponsableId`) VALUES
+INSERT INTO `TareasMantenimiento` (`Id`, `PanelId`, `Tipo`, `Descripcion`, `FechaProgramada`, `FechaRealizacion`, `Estado`, `ResponsableId`) VALUES
 ('73cc2073-c854-11f1-939e-18c04de89d5b', '73c3f9a6-c854-11f1-939e-18c04de89d5b', 'Limpieza', 'Limpieza preventiva de superficie y revisión visual.', '2026-10-25 10:00:00.000000', NULL, 3, 'TECNICO-PRUEBA-001'),
 ('73cc2270-c854-11f1-939e-18c04de89d5b', '73c4a545-c854-11f1-939e-18c04de89d5b', 'Inspección', 'Revisión de conexiones y estructura del panel.', '2026-10-10 14:00:00.000000', '2026-10-15 04:56:10.891391', 2, 'TECNICO-PRUEBA-001'),
 ('73cc2304-c854-11f1-939e-18c04de89d5b', '73c5448c-c854-11f1-939e-18c04de89d5b', 'Diagnóstico', 'Diagnóstico por reducción de potencia generada.', '2026-10-15 09:00:00.000000', NULL, 1, 'TECNICO-PRUEBA-002'),
@@ -127,19 +132,19 @@ INSERT INTO `tareasmantenimiento` (`Id`, `PanelId`, `Tipo`, `Descripcion`, `Fech
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `__efmigrationshistory`
+-- Estructura de tabla para la tabla `__EFMigrationsHistory`
 --
 
-CREATE TABLE `__efmigrationshistory` (
+CREATE TABLE `__EFMigrationsHistory` (
   `MigrationId` varchar(150) NOT NULL,
   `ProductVersion` varchar(32) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `__efmigrationshistory`
+-- Volcado de datos para la tabla `__EFMigrationsHistory`
 --
 
-INSERT INTO `__efmigrationshistory` (`MigrationId`, `ProductVersion`) VALUES
+INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES
 ('20261008040649_AddParqueSolar', '8.0.31'),
 ('20261015023351_AddMantenimientoPaneles', '8.0.31');
 
@@ -148,38 +153,38 @@ INSERT INTO `__efmigrationshistory` (`MigrationId`, `ProductVersion`) VALUES
 --
 
 --
--- Indices de la tabla `nodos`
+-- Indices de la tabla `Nodos`
 --
-ALTER TABLE `nodos`
+ALTER TABLE `Nodos`
   ADD PRIMARY KEY (`Id`),
   ADD KEY `IX_Nodos_ParqueId` (`ParqueId`);
 
 --
--- Indices de la tabla `paneles`
+-- Indices de la tabla `Paneles`
 --
-ALTER TABLE `paneles`
+ALTER TABLE `Paneles`
   ADD PRIMARY KEY (`Id`),
   ADD UNIQUE KEY `IX_Paneles_NumeroSerie` (`NumeroSerie`),
   ADD KEY `IX_Paneles_NodoId` (`NodoId`);
 
 --
--- Indices de la tabla `parquessolares`
+-- Indices de la tabla `ParquesSolares`
 --
-ALTER TABLE `parquessolares`
+ALTER TABLE `ParquesSolares`
   ADD PRIMARY KEY (`Id`),
   ADD UNIQUE KEY `IX_ParquesSolares_Nombre` (`Nombre`);
 
 --
--- Indices de la tabla `tareasmantenimiento`
+-- Indices de la tabla `TareasMantenimiento`
 --
-ALTER TABLE `tareasmantenimiento`
+ALTER TABLE `TareasMantenimiento`
   ADD PRIMARY KEY (`Id`),
   ADD KEY `IX_TareasMantenimiento_PanelId` (`PanelId`);
 
 --
--- Indices de la tabla `__efmigrationshistory`
+-- Indices de la tabla `__EFMigrationsHistory`
 --
-ALTER TABLE `__efmigrationshistory`
+ALTER TABLE `__EFMigrationsHistory`
   ADD PRIMARY KEY (`MigrationId`);
 
 --
@@ -187,22 +192,22 @@ ALTER TABLE `__efmigrationshistory`
 --
 
 --
--- Filtros para la tabla `nodos`
+-- Filtros para la tabla `Nodos`
 --
-ALTER TABLE `nodos`
-  ADD CONSTRAINT `FK_Nodos_ParquesSolares_ParqueId` FOREIGN KEY (`ParqueId`) REFERENCES `parquessolares` (`Id`);
+ALTER TABLE `Nodos`
+  ADD CONSTRAINT `FK_Nodos_ParquesSolares_ParqueId` FOREIGN KEY (`ParqueId`) REFERENCES `ParquesSolares` (`Id`);
 
 --
--- Filtros para la tabla `paneles`
+-- Filtros para la tabla `Paneles`
 --
-ALTER TABLE `paneles`
-  ADD CONSTRAINT `FK_Paneles_Nodos_NodoId` FOREIGN KEY (`NodoId`) REFERENCES `nodos` (`Id`);
+ALTER TABLE `Paneles`
+  ADD CONSTRAINT `FK_Paneles_Nodos_NodoId` FOREIGN KEY (`NodoId`) REFERENCES `Nodos` (`Id`);
 
 --
--- Filtros para la tabla `tareasmantenimiento`
+-- Filtros para la tabla `TareasMantenimiento`
 --
-ALTER TABLE `tareasmantenimiento`
-  ADD CONSTRAINT `FK_TareasMantenimiento_Paneles_PanelId` FOREIGN KEY (`PanelId`) REFERENCES `paneles` (`Id`);
+ALTER TABLE `TareasMantenimiento`
+  ADD CONSTRAINT `FK_TareasMantenimiento_Paneles_PanelId` FOREIGN KEY (`PanelId`) REFERENCES `Paneles` (`Id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

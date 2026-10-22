@@ -9,15 +9,14 @@
 @using SolarUY.Domain.Enums
 
 <PageTitle>Mantenimiento de paneles</PageTitle>
-<h1>Mantenimiento de paneles</h1>
-<AuthorizeView Roles="Administrador">
-    <p><a class="btn btn-primary" href="/mantenimiento/crear">Crear tarea</a></p>
-</AuthorizeView>
+<PageHeader Title="Mantenimiento de paneles" Section="Operación" Description="Consultá las tareas, su vencimiento y el avance de los trabajos. Las fechas se muestran en UTC.">
+    <AuthorizeView Roles="Administrador"><a class="btn btn-primary" href="/mantenimiento/crear">Crear tarea</a></AuthorizeView>
+</PageHeader>
 @if (_error is not null)
 {
-    <p role="alert" class="text-danger">@_error</p>
+    <p role="alert" class="alert alert-danger">@_error</p>
 }
-<div class="d-flex flex-wrap gap-3 mb-3">
+<div class="surface d-flex flex-wrap align-items-end gap-3 mb-3">
     <div>
         <RadzenLabel Text="Estado" Component="FiltroEstado" />
         <RadzenDropDown TValue="EstadoTareaMantenimiento?" Name="FiltroEstado" Data="_estados" AllowClear="true"
@@ -44,7 +43,7 @@
 </div>
 @if (_editandoId.HasValue)
 {
-    <section class="border rounded p-3 mb-3">
+    <section class="surface form-surface mb-3">
         <h2>Editar tarea</h2>
         <RadzenTemplateForm TItem="EditarTareaMantenimientoDto" Data="_edicion" Submit="GuardarEdicionAsync">
             <div class="mb-3">
@@ -74,8 +73,8 @@
         </RadzenTemplateForm>
     </section>
 }
-<RadzenDataGrid TItem="TareaMantenimientoDto" Data="_tareas" AllowPaging="true" PageSize="15"
-                EmptyText="No hay tareas para esta consulta." IsLoading="_ocupado">
+<RadzenDataGrid TItem="TareaMantenimientoDto" Data="_tareas" AllowPaging="true" PageSize="15" ColumnWidth="170px"
+                EmptyText="No hay tareas para esta consulta." IsLoading="_ocupado" AllowSorting="true" ShowPagingSummary="true" PagingSummaryFormat="Página {0} de {1} ({2} tareas)">
     <Columns>
         <RadzenDataGridColumn TItem="TareaMantenimientoDto" Property="NumeroSerie" Title="Panel" />
         <RadzenDataGridColumn TItem="TareaMantenimientoDto" Property="Tipo" Title="Tipo" />
@@ -87,25 +86,27 @@
         <RadzenDataGridColumn TItem="TareaMantenimientoDto" Title="Vencida">
             <Template Context="tarea">@(tarea.Vencida ? "Sí" : "No")</Template>
         </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="TareaMantenimientoDto" Title="Acciones">
+        <RadzenDataGridColumn TItem="TareaMantenimientoDto" Title="Acciones" Width="300px">
             <Template Context="tarea">
+                <div class="action-buttons">
                 @if (tarea.PuedeIniciar)
                 {
-                    <RadzenButton Text="Iniciar" Click="@(() => EjecutarAsync(() => Mantenimiento.IniciarAsync(tarea.Id)))" Disabled="_ocupado" />
+                    <RadzenButton Text="Iniciar" Size="ButtonSize.Small" Click="@(() => EjecutarAsync(() => Mantenimiento.IniciarAsync(tarea.Id)))" Disabled="_ocupado" />
                 }
                 @if (tarea.PuedeCompletar)
                 {
-                    <RadzenButton Text="Completar" Click="@(() => EjecutarAsync(() => Mantenimiento.CompletarAsync(tarea.Id)))" Disabled="_ocupado" />
+                    <RadzenButton Text="Completar" Size="ButtonSize.Small" Click="@(() => EjecutarAsync(() => Mantenimiento.CompletarAsync(tarea.Id)))" Disabled="_ocupado" />
                 }
                 @if (tarea.PuedeCancelar)
                 {
-                    <RadzenButton Text="Cancelar tarea" Click="@(() => EjecutarAsync(() => Mantenimiento.CancelarAsync(tarea.Id)))"
+                    <RadzenButton Text="Cancelar tarea" Size="ButtonSize.Small" Click="@(() => EjecutarAsync(() => Mantenimiento.CancelarAsync(tarea.Id)))"
                                   Disabled="_ocupado" ButtonStyle="ButtonStyle.Danger" />
                 }
                 @if (tarea.PuedeEditar)
                 {
-                    <RadzenButton Text="Editar / Reasignar" Click="@(() => AbrirEdicion(tarea))" Disabled="_ocupado" ButtonStyle="ButtonStyle.Secondary" />
+                    <RadzenButton Text="Editar / Reasignar" Size="ButtonSize.Small" Click="@(() => AbrirEdicion(tarea))" Disabled="_ocupado" ButtonStyle="ButtonStyle.Secondary" />
                 }
+                </div>
             </Template>
         </RadzenDataGridColumn>
     </Columns>

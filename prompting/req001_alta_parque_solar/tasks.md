@@ -1,16 +1,22 @@
 # Tareas de Implementación: Alta de Parque Solar
 
+## Integración del frontend
+
+- [x] Exponer el listado y el alta desde el menú administrativo, el inicio y la cabecera de parques; agregar regreso/cancelación y conservar validaciones y notificaciones.
+- [x] Compartir la presentación visual de los formularios con la gestión multiparque.
+- La verificación y los accesos por requerimiento se detallan en `prompting/frontend_integracion.md`.
+
 - [x] **1. Capa Domain**
   - [x] 1.1 Crear la entidad `ParqueSolar` en la capa de Dominio.
   - [x] 1.2 Agregar las propiedades (`Id`, `Nombre`, `Ubicacion`, `CapacidadEstimadaMW`, `FechaCreacion`).
   - [x] 1.3 Agregar constructor con validaciones básicas y asignación de `FechaCreacion`.
 
-- [ ] **2. Capa Infrastructure (Persistencia)**
+- [x] **2. Capa Infrastructure (Persistencia)**
   - [x] 2.1 Crear la clase `ParqueSolarConfiguration` implementando `IEntityTypeConfiguration<ParqueSolar>`.
   - [x] 2.2 Configurar el índice único para la propiedad `Nombre` y las longitudes máximas.
   - [x] 2.3 Agregar la propiedad `DbSet<ParqueSolar>` en el `ApplicationDbContext`.
   - [x] 2.4 Generar la migración de base de datos (ej. usando el CLI de Entity Framework: `dotnet ef migrations add AddParqueSolar`).
-  - [ ] 2.5 Actualizar la base de datos (ej. `dotnet ef database update`).
+  - [x] 2.5 Confirmar la migración aplicada en la base configurada: el historial contiene AddParqueSolar y no hay migraciones pendientes; ver `prompting/frontend_integracion.md`.
 
 - [x] **3. Capa Application**
   - [x] 3.1 Crear el DTO `CrearParqueSolarDto`.

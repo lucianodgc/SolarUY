@@ -22,7 +22,8 @@
 - **Validador:** `CrearParqueSolarDtoValidator` (usando FluentValidation)
   - Reglas: `Nombre` requerido (max 100), `Ubicacion` requerida (max 200).
 - **Servicio:** `ParqueSolarService` (implementa la interfaz `IParqueSolarService`)
-  - Dependencias: `IApplicationDbContext` (para acceso a BD).
+  - Dependencias: `IApplicationDbContext` (para acceso a BD), validadores y `IUsuarioActual` (identidad del usuario).
+  - Precondición: verificar usuario autenticado, identificador no vacío y rol Administrador en el caso de uso antes de validar o persistir, además de la protección de la ruta. No cambia la firma de las operaciones de `IParqueSolarService`.
   - Método: `CrearParqueSolarAsync(CrearParqueSolarDto dto)`
   - Lógica: 
     1. Validar que no exista ya un `ParqueSolar` con ese mismo nombre en la base de datos (lanzar excepción de validación o conflicto si existe).

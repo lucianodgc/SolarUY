@@ -27,6 +27,7 @@ Los datos de configuración actualmente definidos para `ParqueSolar` en el model
 - Ampliar la abstracción de persistencia de Application con operaciones por `Id`, consulta de listado/búsqueda, comprobación de nombre duplicado que excluya el propio `Id`, actualización y baja en cascada. Application seguirá dependiendo solo de esta abstracción y de Domain, sin conocer `DbContext`, SQL ni implementaciones de Infrastructure.
 - Antes de guardar una edición, validar el DTO, obtener el parque, informar claramente si no existe, comprobar la unicidad de `Nombre` excluyendo el mismo parque y delegar la mutación en `ParqueSolar`. La creación existente se reutiliza sin duplicar su lógica.
 - Convertir conflictos de unicidad e inexistencia en errores de negocio distinguibles para que Presentation pueda mostrar mensajes claros.
+- Verificar mediante `IUsuarioActual` la identidad autenticada, identificador no vacío y rol Administrador en las seis operaciones del servicio, antes de validar entradas o acceder a persistencia. Se conserva `IParqueSolarService`; el constructor incorpora la dependencia de identidad ya existente en Application.
 
 ### 3. Infrastructure
 
@@ -41,6 +42,7 @@ Los datos de configuración actualmente definidos para `ParqueSolar` en el model
 - Crear una página de edición protegida para Administrador que cargue el parque por `Id`, presente los campos existentes y envíe el DTO de actualización. Debe comunicar éxito, errores de validación, duplicidad, inexistencia y errores inesperados sin contener reglas de negocio.
 - La acción de baja estará protegida para Administrador, pedirá confirmación en la interfaz y mostrará el resultado o error de la operación.
 - Todas las páginas y acciones de gestión de parques conservarán `[Authorize(Roles = "Administrador")]`. La interfaz invocará únicamente `IParqueSolarService`; no accederá a `ApplicationDbContext` ni a Infrastructure.
+- `ParqueSolarComponentBase` conserva el ámbito de `OwningComponentBase<IParqueSolarService>` por componente y propaga a su proveedor de autenticación la identidad y los cambios del circuito. Evita resolver un proveedor hijo sin inicializar o compartir el contexto de datos durante todo el circuito. Se retira la suscripción al disponer el componente.
 
 ## Verificación
 
