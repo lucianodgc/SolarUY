@@ -70,7 +70,13 @@ public sealed class ParqueSolarServiceTests
     }
 
     private static ParqueSolarService CrearService(TestDbContext context)
-        => new(context, new CrearParqueSolarDtoValidator(), new ActualizarParqueSolarDtoValidator());
+        => new(context, new CrearParqueSolarDtoValidator(), new ActualizarParqueSolarDtoValidator(), new TestUsuarioActual());
+
+    private sealed class TestUsuarioActual : IUsuarioActual
+    {
+        public Task<UsuarioActualDto> ObtenerAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(new UsuarioActualDto(true, "administrador-prueba", new[] { "Administrador" }));
+    }
 
     private static CrearParqueSolarDto Dto() => new() { Nombre = "Parque Norte", Ubicacion = "Salto" };
 

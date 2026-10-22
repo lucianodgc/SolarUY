@@ -1,5 +1,9 @@
 # Implementación de req001: alta de parque solar
 
+## Actualización de integración frontend
+
+El alta se integra en el inicio, el menú administrativo y el listado de parques, con formulario compartido visualmente con edición y opciones de regreso/cancelación. El recorrido de navegador confirmó alta de un parque temporal, edición y baja posterior. El historial de la base está aplicado y no hay migraciones pendientes. Detalle vigente en [frontend_integracion.md](../frontend_integracion.md); las secciones siguientes conservan la descripción de la entrega original.
+
 ## Decisiones autorizadas por el equipo
 
 - MariaDB 11.8 LTS mediante Pomelo.EntityFrameworkCore.MySql 8.0.3 y EF Core 8. MariaDB es una decisión del equipo, no una exigencia de la letra del taller ni de requirements/specs/tasks.

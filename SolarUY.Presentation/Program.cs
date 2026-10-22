@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using Radzen;
 using SolarUY.Application.Abstractions;
 using SolarUY.Application.Mantenimiento;
+using SolarUY.Application.Inversores;
 using SolarUY.Application.ParquesSolares;
 using SolarUY.Infrastructure;
 using SolarUY.Presentation.Authentication;
@@ -20,6 +21,7 @@ builder.Services.AddSolarInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IParqueSolarService, ParqueSolarService>();
 builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
 builder.Services.AddScoped<ITareaMantenimientoService, TareaMantenimientoService>();
+builder.Services.AddScoped<IInversorService, InversorService>();
 builder.Services.AddScoped<IValidator<CrearParqueSolarDto>, CrearParqueSolarDtoValidator>();
 builder.Services.AddScoped<IValidator<ActualizarParqueSolarDto>, ActualizarParqueSolarDtoValidator>();
 builder.Services.AddRadzenComponents();
@@ -102,7 +104,11 @@ app.UseAntiforgery();
 
 app.MapPost("/Account/Logout", async (HttpContext context, IAntiforgery antiforgery) =>
 {
-    await antiforgery.ValidateRequestAsync(context);
+    if (!await antiforgery.IsRequestValidAsync(context))
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        return;
+    }
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     await context.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme, new AuthenticationProperties
     {

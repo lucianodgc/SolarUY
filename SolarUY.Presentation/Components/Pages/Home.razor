@@ -1,7 +1,36 @@
-﻿@page "/"
-
-<PageTitle>Home</PageTitle>
-
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
+@page "/"
+@attribute [Authorize]
+<PageTitle>Inicio | SolarUY</PageTitle>
+<PageHeader Title="Inicio" Section="Inicio" Description="Accesos a las funciones disponibles para tu usuario." />
+<div class="module-grid">
+    <AuthorizeView Roles="Administrador">
+        <section class="module-card">
+            <span class="module-icon"><RadzenIcon Icon="solar_power" /></span>
+            <h2>Parques solares</h2>
+            <p>Consultá, buscá y administrá la configuración independiente de cada parque.</p>
+            <div class="module-links"><a href="/parques-solares">Gestionar parques →</a><a href="/parques-solares/alta">Registrar parque</a></div>
+        </section>
+    </AuthorizeView>
+    <AuthorizeView Roles="Administrador,Tecnico">
+        <section class="module-card">
+            <span class="module-icon module-icon-amber"><RadzenIcon Icon="build" /></span>
+            <h2>Mantenimiento</h2>
+            <p>Consultá las tareas, filtrá las vencidas y registrá el avance de los trabajos asignados.</p>
+            <a href="/mantenimiento">Ver tareas →</a>
+        </section>
+    </AuthorizeView>
+    <AuthorizeView Roles="Administrador,Tecnico,Consulta">
+        <section class="module-card">
+            <span class="module-icon module-icon-amber"><RadzenIcon Icon="bolt" /></span>
+            <h2>Simulador de inversor</h2>
+            <p>Observá la potencia y el estado de los paneles en un entorno de simulación.</p>
+            <a href="/simulador">Abrir simulador →</a>
+        </section>
+    </AuthorizeView>
+    <section class="module-card">
+        <span class="module-icon"><RadzenIcon Icon="account_circle" /></span>
+        <h2>Tu cuenta</h2>
+        <p>Consultá tu identidad y los roles activos que definen tus accesos a la plataforma.</p>
+        <a href="/mi-cuenta">Ver perfil y permisos →</a>
+    </section>
+</div>

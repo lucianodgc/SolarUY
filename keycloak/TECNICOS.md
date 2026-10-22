@@ -35,6 +35,23 @@ Fuentes: [Admin REST API](https://www.keycloak.org/docs-api/latest/rest-api/inde
 
 ## Migración y uso
 
+### Tareas importadas y responsables de otro entorno (H-05)
+
+`solaruy.sql` conserva asignaciones históricas: cinco tareas usan `TECNICO-PRUEBA-001/002` y otra conserva un GUID de otro entorno. No se deben interpretar como tareas asignadas automáticamente a `tecnico.test`. Keycloak genera los identificadores de usuario de cada realm; el servicio compara `ResponsableId` con el `sub` autenticado.
+
+Para preparar los datos del entorno correspondiente, el Administrador debe:
+
+1. Entrar a `/mantenimiento` y revisar las tareas abiertas y sus responsables. Si el selector de técnicos no carga, preparar primero el cliente de directorio indicado arriba.
+2. Confirmar con el equipo qué técnico corresponde a cada tarea abierta.
+3. Usar **Editar / Reasignar**, seleccionar un técnico habilitado de la lista de Keycloak y guardar. La aplicación guarda su identificador real; no introducir nombres de usuario o IDs supuestos mediante SQL.
+4. Iniciar sesión como el técnico seleccionado y comprobar sus tareas asignadas. Las tareas de otros técnicos deben seguir excluidas.
+
+Las tareas Completadas/Canceladas son inmutables y conservan su responsable histórico. No modificarlas para preparar una demostración. Si se necesitan nuevas tareas, el Administrador puede programarlas sobre los paneles existentes mediante el formulario previsto.
+
+Este procedimiento requiere decidir las asignaciones del entorno real: la auditoría no las ejecuta ni modifica usuarios reales. Un listado vacío del técnico no demuestra un fallo de conexión si no hay tareas con su `sub`. Los errores del directorio y una consulta sin resultados son situaciones distintas.
+
+### Conexión y migraciones
+
 En desarrollo, guardar `ConnectionStrings:SolarUY` en los user-secrets de `SolarUY.Presentation`. Presentation e Infrastructure comparten el identificador definido en `Directory.Build.props`, de modo que la fábrica de diseño lee automáticamente la misma configuración. También se puede usar `ConnectionStrings__SolarUY`; las variables de entorno prevalecen sobre los secretos locales.
 
 Ejecutar desde la raíz, sin `--connection`:

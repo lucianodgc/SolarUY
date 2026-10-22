@@ -34,12 +34,13 @@
 - [x] 5.2 Ampliar `ParquesSolares.razor` con búsqueda parcial por nombre o ubicación. El listado, sus estados y la navegación a edición están disponibles.
 - [x] 5.3 Crear la página de edición protegida para Administrador, con carga por `Id`, formulario de datos existentes y mensajes de éxito, validación, duplicidad, inexistencia y error inesperado.
 - [x] 5.4 Incorporar la acción de baja protegida para Administrador, con confirmación y mensajes acordes a la eliminación en cascada.
+- [x] 5.5 Integrar menú/inicio, acceso al alta desde el listado, controles de carga y envíos repetidos, alojamiento del diálogo Radzen y corrección del formulario de edición para conservarlo visible ante errores de validación.
 
 ## 6. Verificación
 
 - [x] 6.1 Ejecutar las pruebas unitarias de Domain, incluidas las pruebas de actualización de `ParqueSolar`.
 - [x] 6.2 Ejecutar `dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj` y corregir cualquier incumplimiento de arquitectura o nomenclatura sin modificar los tests estructurales.
-- [ ] 6.3 Validar manualmente como Administrador el alta, listado, búsqueda, edición, baja y sus mensajes; y como usuario no Administrador la denegación de las operaciones restringidas.
+- [x] 6.3 Validar en navegador como Administrador alta, listado, búsqueda, edición, baja de un parque temporal y cancelación del diálogo; comprobar con Técnico y Consulta la denegación del acceso directo a gestión de parques. Evidencia en `prompting/frontend_integracion.md`.
 
 ## 7. Cierre y documentación
 

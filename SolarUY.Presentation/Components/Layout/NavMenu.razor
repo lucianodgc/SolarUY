@@ -1,35 +1,25 @@
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">SolarUY.Presentation</a>
-    </div>
+<div class="brand-row">
+    <a class="brand" href="/" aria-label="SolarUY, inicio">
+        <span class="brand-symbol" aria-hidden="true"><RadzenIcon Icon="wb_sunny" /></span>
+        <span>Solar<span class="brand-accent">UY</span><small>Gestión de energía solar</small></span>
+    </a>
 </div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <AuthorizeView Roles="Administrador,Tecnico">
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="mantenimiento">Mantenimiento de paneles</NavLink>
-            </div>
+<input type="checkbox" id="solar-navigation" title="Abrir o cerrar navegación" class="navbar-toggler" />
+<div class="nav-scrollable" onclick="document.getElementById('solar-navigation').checked = false">
+    <nav aria-label="Navegación principal">
+        <p class="nav-caption">PLATAFORMA</p>
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All"><RadzenIcon Icon="space_dashboard" /> Inicio</NavLink>
+        <AuthorizeView Roles="Administrador">
+            <NavLink class="nav-link" href="parques-solares"><RadzenIcon Icon="solar_power" /> Parques solares</NavLink>
         </AuthorizeView>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Administrador,Tecnico">
+            <NavLink class="nav-link" href="mantenimiento"><RadzenIcon Icon="build" /> Mantenimiento</NavLink>
+        </AuthorizeView>
+        <AuthorizeView Roles="Administrador,Tecnico,Consulta">
+            <NavLink class="nav-link" href="simulador"><RadzenIcon Icon="bolt" /> Simulador de inversor</NavLink>
+        </AuthorizeView>
+        <p class="nav-caption">MI CUENTA</p>
+        <NavLink class="nav-link" href="mi-cuenta"><RadzenIcon Icon="account_circle" /> Perfil y permisos</NavLink>
     </nav>
+    <div class="nav-footer">Gestión de parques solares</div>
 </div>
-

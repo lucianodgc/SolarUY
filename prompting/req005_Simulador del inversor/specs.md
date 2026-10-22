@@ -6,14 +6,15 @@ La funcionalidad introduce un simulador de inversor sustituible por una integrac
 
 Los requisitos no fijan la forma de identificar nodos y paneles, los tipos de retorno de las operaciones, el formato de los estados, el rango de potencia ni el mecanismo y valores para configurar las fallas. Esas decisiones deben aclararse antes de cerrar los contratos y el comportamiento. No se presuponen entidades `Nodo` o `Panel` ni dependencias tecnológicas nuevas.
 
-## Decisiones aplicadas y aclaración pendiente
+## Decisiones aplicadas
 
-1. No existe un modelo de nodo/panel en el código actual. El puerto usa identificadores `string` y DTOs de consulta propios de Application. La configuración permite declarar el mapa nodo-panel; si no se proporciona, se simula `nodo-1` con `panel-1` a `panel-4`.
+1. El puerto conserva los identificadores `string` y DTO de Application definidos originalmente antes de la persistencia de nodos/paneles de req004. La simulación utiliza su propia topología: configurable mediante mapa nodo-panel o, por defecto, `nodo-1` con `panel-1` a `panel-4`. No se vincula automáticamente a los equipos persistidos.
 2. Las operaciones son asíncronas y aceptan `CancellationToken`. Las consultas devuelven estado por panel y potencia total del nodo; identificadores desconocidos producen `KeyNotFoundException`.
 3. La potencia se expresa en watts, con máximo de 400 W por panel y curva sinusoidal entre las 06:00 y las 18:00 según la hora local del `TimeProvider`. Fuera de ese intervalo la potencia es cero.
 4. Las fallas se configuran determinísticamente mediante una lista de identificadores de panel. Un panel fallado conserva su estado de salud `Fallado` y genera cero watts. El estado operativo de activación es independiente.
 5. El simulador se registra como singleton para compartir estado en el proceso; no conserva estado tras reinicios ni coordina varias instancias.
-6. Sigue pendiente el conflicto de verificación: los requisitos solicitan tests de la lógica del simulador, mientras que `.agents/rules/6_flujo_trabajo_ia.md` prohíbe generar pruebas unitarias para Infrastructure. No se agregaron tests de Infrastructure ni se alteraron pruebas arquitectónicas.
+6. Además de la evidencia temporal, el pedido explícito de seguimiento del usuario se concreta con una suite permanente de integración xUnit en `SolarUY.Integration.Tests`, incluida en la solución. Usa el registro real de Infrastructure, los casos de uso de Application y reloj/identidad controlados, sin nuevas pruebas unitarias de Infrastructure ni dependencias de MariaDB/Keycloak.
+7. La ampliación de frontend agrega consulta para Administrador, Tecnico y Consulta, y controles exclusivos de Administrador, según la respuesta explícita del usuario. Los identificadores simulados siguen siendo independientes de las entidades persistidas por req004.
 
 ## Cambios por capa
 
@@ -25,7 +26,7 @@ No requiere modificaciones para esta tarea. No se agregan entidades de panel/inv
 
 Definir `IInversorClient` en `SolarUY.Application` como puerto de la integración. Expone consultas asíncronas de estado por panel y potencia total por nodo, operaciones para activar/desactivar un panel y el volcado a red, y una consulta del estado del volcado. Usa identificadores de texto, DTOs de Application y `CancellationToken` opcional. Los identificadores desconocidos generan `KeyNotFoundException`.
 
-La interfaz no debe depender de `Infrastructure`, Blazor, EF Core ni del proveedor de simulación. No se agregan servicios de aplicación ni DTOs separados salvo que la definición confirmada de las respuestas los requiera.
+La interfaz no depende de `Infrastructure`, Blazor, EF Core ni del proveedor de simulación. Para la ampliación web se agrega `ListarNodosAsync` al puerto y se incorporan `IInversorService`/`InversorService` con inyección por constructor. El servicio autoriza mediante `IUsuarioActual` cada consulta y orden. `EstadoInversorDto` entrega paneles, potencia total calculada desde la misma lectura de paneles, estado del volcado, instante UTC y `PuedeOperar`. La UI no calcula potencia ni decide permisos de operación.
 
 ### 3. Infrastructure
 
@@ -37,12 +38,12 @@ Registrar el adaptador en el punto existente de composición de dependencias de 
 
 El simulador es singleton dentro del proceso para que consultas y órdenes compartan estado. No persiste entre reinicios ni coordina el estado entre instancias.
 
-Los tests unitarios de Infrastructure quedan pendientes por el conflicto documentado con la regla del proyecto. No se modificarán pruebas arquitectónicas.
+La enumeración de nodos devuelve la topología configurada, ordenada por identificador, conservando el nodo predeterminado cuando no existe configuración. Se verifican los comportamientos con pruebas permanentes de integración, sin incorporar pruebas unitarias de Infrastructure ni modificar guardarraíles.
 
 ### 4. Presentation
 
-No requiere componentes ni lógica de presentación: no se solicita una interfaz de usuario para operar el simulador. El host solo utilizará el registro de dependencias existente para componer la implementación de Infrastructure. La UI no accederá directamente a la clase simulada.
+`SimuladorInversor.razor`, en `/simulador`, utiliza exclusivamente `IInversorService`. Presenta selección de nodo, actualización manual, potencia en watts, paneles con estado operativo/salud/potencia y estado del volcado. Las acciones se muestran según `PuedeOperar`; el servicio valida los permisos nuevamente. Técnico y Consulta solo leen. Se deshabilitan acciones durante una operación y se muestran errores controlados, estados vacíos y la hora UTC de consulta. Se advierte que la simulación es independiente del inventario y que los cambios duran hasta reiniciar la aplicación. El menú y el inicio incluyen el acceso para los tres roles.
 
 ## Verificación prevista
 
-Una vez resueltas las aclaraciones y el conflicto de pruebas, verificar los comportamientos solicitados: consulta por nodo; variación de potencia según hora; activación y desactivación; cero generación mientras el panel esté desactivado; cambio y consulta del estado de volcado; y respuesta ante fallas configuradas. Además, comprobar que la composición resuelve `IInversorClient` y ejecutar `dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj` sin modificar sus pruebas.
+Ejecutar `dotnet test SolarUY.sln` para incluir los 19 casos permanentes del simulador y las pruebas existentes. Los casos verifican consulta por nodo, curva diurna/nocturna, estado/salud, operaciones, aislamiento, composición por ámbitos y permisos. No sustituyen los recorridos OIDC ni una prueba con MariaDB, documentados en la auditoría integral y su seguimiento. Los guardarraíles se ejecutan sin modificar sus pruebas.

@@ -1,41 +1,29 @@
-﻿@inherits LayoutComponentBase
-
+@inherits LayoutComponentBase
+<RadzenDialog />
 <RadzenNotification />
-
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
+    <aside class="sidebar"><NavMenu /></aside>
     <main>
-        <div class="top-row px-4">
+        <header class="top-row">
+            <span class="platform-name">Plataforma de gestión solar</span>
             <AuthorizeView>
                 <Authorized Context="sesion">
-                    <details>
-                        <summary>@(sesion.User.Identity?.Name ?? "Usuario")</summary>
-                        <ul>
-                            @foreach (var claim in sesion.User.Claims)
-                            {
-                                <li><strong>@claim.Type:</strong> @claim.Value</li>
-                            }
-                        </ul>
+                    <div class="session-actions">
+                        <a class="session-user" href="/mi-cuenta"><RadzenIcon Icon="account_circle" /> @(sesion.User.Identity?.Name ?? "Mi cuenta")</a>
                         <form method="post" action="/Account/Logout">
                             <AntiforgeryToken />
-                            <button type="submit">Cerrar sesión</button>
+                            <button type="submit" class="logout-button">Cerrar sesión</button>
                         </form>
-                    </details>
+                    </div>
                 </Authorized>
             </AuthorizeView>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
+        </header>
+        <article class="content">@Body</article>
+        <footer class="site-footer">SolarUY</footer>
     </main>
 </div>
-
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
+<div id="blazor-error-ui" role="alert">
+    Se interrumpió la conexión con la aplicación.
+    <a href="" class="reload">Recargar página</a>
+    <a class="dismiss" aria-label="Cerrar aviso">×</a>
 </div>

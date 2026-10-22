@@ -1,0 +1,115 @@
+@page "/simulador"
+@attribute [Authorize(Roles = "Administrador,Tecnico,Consulta")]
+@inject SolarUY.Application.Inversores.IInversorService Inversor
+@inject ILogger<SimuladorInversor> Logger
+@using SolarUY.Application.Inversores
+@using SolarUY.Application.Abstractions
+
+<PageTitle>Simulador de inversor | SolarUY</PageTitle>
+<PageHeader Title="Simulador de inversor" Section="Operación" Description="Consultá el estado de los paneles y la potencia generada en la simulación." />
+<p class="note">Los nodos y paneles de esta pantalla son simulados. Los cambios duran hasta que se reinicia la aplicación. La potencia varía durante el día y es cero fuera del horario solar.</p>
+<div class="surface filter-toolbar">
+    <RadzenLabel Text="Nodo simulado" Component="NodoSimulado" />
+    <RadzenDropDown TValue="string" Name="NodoSimulado" Data="_nodos" @bind-Value="_nodoId" Disabled="_ocupado" Style="min-width:180px" />
+    <RadzenButton Text="Consultar / Actualizar" Icon="refresh" Click="CargarAsync" Disabled="_ocupado" IsBusy="_ocupado" />
+</div>
+@if (_error is not null)
+{
+    <p class="alert alert-danger" role="alert">@_error</p>
+}
+@if (_estado is not null)
+{
+    <div class="metric-grid">
+        <div class="metric-card"><span class="metric-label">Potencia del nodo</span><strong class="metric-value">@_estado.PotenciaGeneradaW.ToString("N2") <small>W</small></strong></div>
+        <div class="metric-card"><span class="metric-label">Paneles del nodo</span><strong class="metric-value">@_estado.Paneles.Count</strong></div>
+        <div class="metric-card"><span class="metric-label">Volcado a la red</span><strong class="metric-value">@(_estado.VolcadoRedActivo ? "Activo" : "Inactivo")</strong></div>
+    </div>
+    <section class="surface">
+        <div class="page-heading">
+            <div><h2>Paneles de @_estado.NodoId</h2><span class="text-muted small">Consulta: @_estado.FechaConsultaUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC</span></div>
+            @if (_estado.PuedeOperar)
+            {
+                <RadzenButton Text="@(_estado.VolcadoRedActivo ? "Desactivar volcado a red" : "Activar volcado a red")"
+                              ButtonStyle="ButtonStyle.Secondary" Disabled="_ocupado"
+                              Click="@(() => CambiarVolcadoAsync(!_estado.VolcadoRedActivo))" />
+            }
+        </div>
+        @if (!_estado.PuedeOperar)
+        {
+            <p class="note">Tu perfil permite consultar la simulación. Los controles están disponibles para Administrador.</p>
+        }
+        <div class="table-responsive">
+            <table class="table">
+                <thead><tr><th scope="col">Panel</th><th scope="col">Operación</th><th scope="col">Salud</th><th scope="col">Potencia (W)</th>@if (_estado.PuedeOperar) { <th scope="col">Acciones</th> }</tr></thead>
+                <tbody>
+                    @foreach (var panel in _estado.Paneles)
+                    {
+                        <tr>
+                            <td><strong>@panel.PanelId</strong></td>
+                            <td><span class="state-badge @(panel.EstaActivo ? "" : "state-neutral")">@(panel.EstaActivo ? "Activo" : "Inactivo")</span></td>
+                            <td><span class="state-badge @(panel.EstadoSalud == EstadoSaludPanel.Fallado ? "state-danger" : "")">@panel.EstadoSalud</span></td>
+                            <td>@panel.PotenciaGeneradaW.ToString("N2")</td>
+                            @if (_estado.PuedeOperar)
+                            {
+                                <td><RadzenButton Text="@(panel.EstaActivo ? "Desactivar" : "Activar")" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light"
+                                                  Disabled="_ocupado" Click="@(() => CambiarPanelAsync(panel))" /></td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (_estado.Paneles.Count == 0) { <p class="empty-state">Este nodo simulado no tiene paneles.</p> }
+    </section>
+}
+else if (_ocupado)
+{
+    <p class="loading-state" role="status">Cargando simulación…</p>
+}
+else if (_error is null)
+{
+    <p class="empty-state">No hay nodos simulados disponibles.</p>
+}
+
+@code {
+    private IReadOnlyList<string> _nodos = Array.Empty<string>();
+    private string? _nodoId;
+    private EstadoInversorDto? _estado;
+    private bool _ocupado;
+    private string? _error;
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private Task CargarAsync() => EjecutarAsync(async () =>
+    {
+        _nodos = await Inversor.ListarNodosAsync();
+        _nodoId ??= _nodos.FirstOrDefault();
+        _estado = null;
+    });
+
+    private Task CambiarPanelAsync(PanelInversorEstadoDto panel)
+        => EjecutarAsync(() => Inversor.EstablecerPanelActivoAsync(panel.NodoId, panel.PanelId, !panel.EstaActivo));
+
+    private Task CambiarVolcadoAsync(bool activo)
+        => EjecutarAsync(() => Inversor.EstablecerVolcadoRedAsync(activo));
+
+    private async Task EjecutarAsync(Func<Task> accion)
+    {
+        if (_ocupado) return;
+        _ocupado = true;
+        _error = null;
+        try
+        {
+            await accion();
+            if (_nodoId is not null) _estado = await Inversor.ConsultarAsync(_nodoId);
+        }
+        catch (UnauthorizedAccessException exception) { _error = exception.Message; }
+        catch (KeyNotFoundException exception) { _estado = null; _error = exception.Message; }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error al operar el simulador de inversor");
+            _error = "No se pudo consultar o actualizar la simulación. Volvé a intentarlo.";
+        }
+        finally { _ocupado = false; }
+    }
+}

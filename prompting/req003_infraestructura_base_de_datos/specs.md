@@ -6,29 +6,27 @@ La solución ya se ejecuta sobre .NET 8 y tiene una arquitectura Clean Architect
 
 Las versiones autorizadas y ya resueltas por el proyecto son MariaDB 11.8 LTS, Entity Framework Core 8 (8.0.31 en las dependencias actuales) y `Pomelo.EntityFrameworkCore.MySql` 8.0.3. No se incorporarán proveedores, ORMs ni bibliotecas adicionales, ni se cambiarán esas versiones.
 
-La inspección muestra que ya existen `ApplicationDbContext`, su fábrica de diseño, el registro de DI con Pomelo, la configuración externa `ConnectionStrings:SolarUY` / `ConnectionStrings__SolarUY` y la migración `20261008040649_AddParqueSolar`. También existe `compose.yaml`, pero actualmente solo define Keycloak: no hay un servicio MariaDB.
+Existen `ApplicationDbContext`, su fábrica de diseño, el registro de DI con Pomelo y la configuración externa `ConnectionStrings:SolarUY` / `ConnectionStrings__SolarUY`. Compose incluye MariaDB 11.8, phpMyAdmin y Keycloak. Se conservan `20261008040649_AddParqueSolar` y la migración incremental `AddMantenimientoPaneles`, incorporada por req004 con Nodo y Panel.
 
-## Decisiones y aclaraciones requeridas
+## Decisiones vigentes
 
-Antes de generar una migración que incluya las tres entidades, el equipo debe resolver y registrar lo siguiente:
+Las decisiones sobre el modelo se resolvieron en req004; su especificación es la referencia de las entidades compartidas:
 
-1. El código solo contiene `ParqueSolar`; no existen `Nodo` ni `Panel`. Los requerimientos no definen atributos, identificadores, invariantes ni relaciones entre Parque, Nodo y Panel. No se pueden modelar ni configurar tablas o claves foráneas sin inventar el dominio. También se debe confirmar si «Parque» en este requerimiento corresponde a la entidad existente `ParqueSolar`.
-2. `AddParqueSolar` ya es una migración versionada y solo crea `ParquesSolares`. El equipo debe decidir si se conserva como historial y se crea una migración posterior para el modelo confirmado, o si puede reemplazarse por una migración inicial completa. Esta segunda opción solo sería segura si no hay bases de datos ni historial compartido que preservar.
-3. Para que el equipo pueda iniciar la base con `docker compose up -d`, debe acordar cómo se distribuyen los valores locales de MariaDB (nombre de base, usuario, contraseña y, si corresponde, contraseña de root) sin versionar secretos. El repositorio ya ignora `.env`; no se deben escribir credenciales en `compose.yaml`, `appsettings*.json` ni documentación versionada. La solución acordada debe ser compatible con el `.env` que el compose actual ya exige para Keycloak.
+1. «Parque» corresponde a `ParqueSolar`. Nodo y Panel utilizan los atributos, relaciones, invariantes y fechas UTC del MER concretados en req004.
+2. Se conserva el historial inicial y la migración incremental; no se reemplazan migraciones existentes.
+3. Compose lee los valores locales de MariaDB y Keycloak desde `.env` no versionado. La aplicación utiliza user-secrets en desarrollo o variables de entorno; .NET no importa automáticamente `.env`. No se versionan secretos.
 
 ## Cambios por capa
 
 ### 1. Domain
 
-No se modifica `ParqueSolar` para esta tarea: ya es la única entidad de dominio disponible y no se alterará solo para acomodar EF Core.
+No se modifica `ParqueSolar` para esta tarea ni se altera el dominio solo para acomodar EF Core.
 
-Una vez aprobada la definición funcional, se incorporarán las entidades de dominio `Nodo` y `Panel` y sus relaciones de navegación con el parque y entre sí, con comportamiento e invariantes definidos por el equipo. Las entidades no incluirán referencias a Entity Framework Core ni detalles de tablas. Sus pruebas de dominio se crearán junto con cualquier comportamiento o validación nuevo, conforme a las reglas del proyecto.
+Nodo y Panel y sus pruebas de dominio ya están implementados por req004, con navegación a ParqueSolar y sin dependencias de EF Core. La ampliación de interfaz no modifica el dominio.
 
 ### 2. Application
 
-No requiere cambios para preparar Docker, registrar el proveedor ni crear migraciones. `IApplicationDbContext` ya permite los casos de uso existentes de `ParqueSolar` sin depender de EF Core.
-
-No se añadirán interfaces, repositorios, servicios ni casos de uso para Nodo o Panel en este alcance. Si un requerimiento posterior necesita operar esas entidades, definirá las abstracciones de Application correspondientes antes de su implementación en Infrastructure.
+No requiere cambios para preparar Docker, registrar el proveedor ni crear migraciones. No se agregan servicios, repositorios ni casos de uso de inventario a este requerimiento.
 
 ### 3. Infrastructure
 
@@ -40,7 +38,7 @@ Tras la aclaración del modelo y de la estrategia de historial, se crearán los 
 
 ### 4. Presentation
 
-No requiere componentes Blazor, controladores ni lógica de negocio para esta infraestructura. El host ya llama a `AddSolarInfrastructure` durante el arranque y el archivo de configuración versionado contiene una cadena vacía, por lo que no se introducirán accesos de UI a Infrastructure.
+No requiere una pantalla propia: configura la persistencia que utilizan parques y mantenimiento. Se retira el módulo `/inventario` agregado durante la integración de frontend, porque no estaba definido en los requisitos originales ni se solicitó explícitamente como nueva funcionalidad.
 
 Solo se mantendrá la configuración de host necesaria para leer la cadena de conexión externa y la versión de MariaDB; no se guardarán secretos en `appsettings*.json` ni en código fuente.
 

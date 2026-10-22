@@ -1,0 +1,1633 @@
+{
+  "date": "2026-10-22",
+  "gitHead": "40e5cb6",
+  "cleanup": {
+    "temporaryBrowserClosed": true,
+    "temporaryApplicationStopped": true,
+    "temporaryContainersAndAnonymousVolumesRemoved": true,
+    "originalContainersStillRunning": true
+  },
+  "scope": "147 archivos fuente/configuración/documentación/activos al inicio; 7 proyectos",
+  "environment": {
+    "sdk": "8.0.425",
+    "database": "MariaDB 11.8 en 127.0.0.1:3310, bases solaruy_audit*",
+    "identity": "Keycloak 26.8.1 en localhost:8180",
+    "application": "compilación separada AuditoriaIntegral, HTTPS 7271",
+    "browser": "Edge headless CDP 9230",
+    "realDatabaseReadOnlyCounts": {
+      "parks": 2,
+      "nodes": 3,
+      "panels": 6,
+      "maintenanceTasks": 6
+    }
+  },
+  "existingSuite": {
+    "passed": 59,
+    "failed": 0,
+    "skipped": 0,
+    "projects": {
+      "Domain": 42,
+      "Application": 8,
+      "CodeQuality": 9
+    }
+  },
+  "integration": {
+    "functional": [
+      {
+        "id": "DB-01",
+        "description": "Migraciones sobre base vacía e idempotencia",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-01",
+        "description": "Alta real con capacidad opcional e identidad",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-02",
+        "description": "Fecha de creación rehidratada como UTC",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-03",
+        "description": "Nombre duplicado rechazado sin guardar",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-VAL-4",
+        "description": "Datos de parque inválidos no se guardan",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-VAL-5",
+        "description": "Datos de parque inválidos no se guardan",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-VAL-6",
+        "description": "Datos de parque inválidos no se guardan",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-VAL-7",
+        "description": "Datos de parque inválidos no se guardan",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-VAL-8",
+        "description": "Datos de parque inválidos no se guardan",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-04",
+        "description": "Límites de 100/200 caracteres y capacidad decimal",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-05",
+        "description": "Búsqueda por nombre, ubicación y espacios",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-06",
+        "description": "Edición preserva identidad/fecha y aísla otros parques",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-07",
+        "description": "Identificadores inexistentes y SQL de entrada tratado como datos",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "DB-02",
+        "description": "Claves foráneas rechazan un nodo huérfano",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "DB-03",
+        "description": "Unicidad de número de serie garantizada en MariaDB",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "KC-01",
+        "description": "Directorio paginado y roles directos, compuestos y por grupo",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "KC-INV-16",
+        "description": "Directorio rechaza usuario inválido/no técnico/deshabilitado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "KC-INV-17",
+        "description": "Directorio rechaza usuario inválido/no técnico/deshabilitado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "KC-INV-18",
+        "description": "Directorio rechaza usuario inválido/no técnico/deshabilitado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "KC-INV-19",
+        "description": "Directorio rechaza usuario inválido/no técnico/deshabilitado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "KC-02",
+        "description": "Secreto incorrecto devuelve error controlado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "KC-03",
+        "description": "Service account carece de permiso de escritura",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "M-01",
+        "description": "Crear mantenimiento pendiente, persistir y recuperar UTC",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "M-02",
+        "description": "Alta rechaza panel inexistente, responsable inválido y datos vacíos",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "M-03",
+        "description": "Técnico lista solo propias y no amplía alcance con filtros",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "M-04",
+        "description": "Técnico no crea, edita, asigna ni enumera técnicos",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "M-05",
+        "description": "No se completa directamente una pendiente; inicio y finalización propios",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "M-06",
+        "description": "Filtros combinados, estado inválido y panel",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "M-07",
+        "description": "Reasignación y edición; instantánea antigua rechazada",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "M-08",
+        "description": "Cancelación es terminal e inmutable",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "M-DEN-30",
+        "description": "Consulta/anónimo no leen ni modifican mantenimiento",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "M-DEN-31",
+        "description": "Consulta/anónimo no leen ni modifican mantenimiento",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "M-09",
+        "description": "Escritura vieja no modifica tarea completada",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-08",
+        "description": "Baja con dependencias aisladas respeta el otro parque",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "P-09",
+        "description": "La cascada revierte si falla la baja del parque",
+        "status": "VERIFICADO"
+      }
+    ],
+    "simulator": {
+      "count": 19,
+      "passed": 19,
+      "source": "artifacts/auditoria-integral/Simulator/Program.cs"
+    },
+    "dump": [
+      {
+        "id": "DB-DUMP",
+        "description": "Consulta EF tras importar solaruy.sql",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "DB-DUMP-ASIGNACION",
+        "description": "Volcado conserva responsables de ejemplo ajenos al sub del técnico",
+        "status": "VERIFICADO"
+      }
+    ],
+    "browserDatabase": {
+      "count": 3,
+      "passed": 3,
+      "ids": [
+        "WEB-DB-01",
+        "WEB-DB-02",
+        "WEB-DB-03"
+      ]
+    },
+    "legacyCascade": [
+      {
+        "id": "P-LEGACY",
+        "description": "Baja elimina lecturas legadas solo del parque indicado",
+        "status": "VERIFICADO"
+      }
+    ],
+    "positiveBehaviorChecks": 59,
+    "diagnosticChecks": 1,
+    "diagnosticWarning": "DB-DUMP-ASIGNACION confirma un defecto de datos, no conformidad funcional."
+  },
+  "browser": {
+    "admin": {
+      "passed": 22,
+      "errors": [],
+      "description": "OIDC, CSS cache, DB listing, maintenance form, simulator mutation restore, park lifecycle, profile, mobile"
+    },
+    "maintenance": [
+      {
+        "id": "WEB-1",
+        "description": "autenticación OIDC de admin.test",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-2",
+        "description": "Crear tarea de mantenimiento: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-3",
+        "description": "formulario vacío rechaza el envío y muestra validaciones",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-4",
+        "description": "Crear tarea de mantenimiento: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-5",
+        "description": "creación de mantenimiento persiste después de recargar",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-6",
+        "description": "Crear tarea de mantenimiento: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-7",
+        "description": "Crear tarea de mantenimiento: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-8",
+        "description": "edición y reasignación persisten al recargar",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-9",
+        "description": "autenticación OIDC de tecnico.test",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-10",
+        "description": "Mantenimiento de paneles: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-11",
+        "description": "técnico no ve tareas ajenas/reasignadas aunque manipule la URL",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-12",
+        "description": "técnico sin creación, edición, reasignación ni filtro de otros técnicos",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-13",
+        "description": "cancelación desde EnCurso termina sin acciones de reapertura",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-14",
+        "description": "autenticación OIDC de otro.tecnico",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-15",
+        "description": "Mantenimiento de paneles: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-16",
+        "description": "el técnico nuevo recibe las tareas reasignadas",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-17",
+        "description": "finalización por asignado deja tarea inmutable",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-18",
+        "description": "finalización y fecha realizada persisten tras recargar",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-19",
+        "description": "autenticación OIDC de admin.test",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-20",
+        "description": "Mantenimiento de paneles: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-21",
+        "description": "filtro por estado funciona con resultados persistidos",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-22",
+        "description": "Mantenimiento de paneles: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-23",
+        "description": "filtro combinado técnico y vencimiento excluye terminales",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-24",
+        "description": "Mantenimiento de paneles: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-25",
+        "description": "filtro por panel funciona",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-26",
+        "description": "Mantenimiento de paneles: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-27",
+        "description": "administrador puede cancelar una pendiente y no editarla después",
+        "status": "VERIFICADO"
+      }
+    ],
+    "roles": [
+      {
+        "id": "WEB-1",
+        "description": "autenticación OIDC de tecnico.test",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-2",
+        "description": "tecnico.test: sin enlaces administrativos",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-3",
+        "description": "tecnico.test: menú de mantenimiento acorde al rol",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-4",
+        "description": "Simulador de inversor: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-5",
+        "description": "tecnico.test: simulador de solo lectura",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-6",
+        "description": "tecnico.test: URL restringida /parques-solares denegada por servidor",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-7",
+        "description": "tecnico.test: POST manipulado /parques-solares denegado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-8",
+        "description": "tecnico.test: URL restringida /parques-solares/alta denegada por servidor",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-9",
+        "description": "tecnico.test: POST manipulado /parques-solares/alta denegado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-10",
+        "description": "tecnico.test: URL restringida /parques-solares/00000000-0000-0000-0000-000000000001/editar denegada por servidor",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-11",
+        "description": "tecnico.test: POST manipulado /parques-solares/00000000-0000-0000-0000-000000000001/editar denegado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-12",
+        "description": "tecnico.test: URL restringida /mantenimiento/crear denegada por servidor",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-13",
+        "description": "tecnico.test: POST manipulado /mantenimiento/crear denegado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-14",
+        "description": "autenticación OIDC de consulta.test",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-15",
+        "description": "consulta.test: sin enlaces administrativos",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-16",
+        "description": "consulta.test: menú de mantenimiento acorde al rol",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-17",
+        "description": "Simulador de inversor: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-18",
+        "description": "consulta.test: simulador de solo lectura",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-19",
+        "description": "consulta.test: URL restringida /parques-solares denegada por servidor",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-20",
+        "description": "consulta.test: POST manipulado /parques-solares denegado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-21",
+        "description": "consulta.test: URL restringida /parques-solares/alta denegada por servidor",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-22",
+        "description": "consulta.test: POST manipulado /parques-solares/alta denegado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-23",
+        "description": "consulta.test: URL restringida /parques-solares/00000000-0000-0000-0000-000000000001/editar denegada por servidor",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-24",
+        "description": "consulta.test: POST manipulado /parques-solares/00000000-0000-0000-0000-000000000001/editar denegado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-25",
+        "description": "consulta.test: URL restringida /mantenimiento/crear denegada por servidor",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-26",
+        "description": "consulta.test: POST manipulado /mantenimiento/crear denegado",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-27",
+        "description": "consulta.test: URL restringida /mantenimiento denegada por servidor",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-28",
+        "description": "consulta.test: POST manipulado /mantenimiento denegado",
+        "status": "VERIFICADO"
+      }
+    ],
+    "visual": [
+      {
+        "id": "WEB-1",
+        "description": "autenticación OIDC de admin.test",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-2",
+        "description": "Parques solares: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-3",
+        "description": "Inicio: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-4",
+        "description": "1440px: Inicio sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-5",
+        "description": "Parques solares: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-6",
+        "description": "1440px: Parques solares sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-7",
+        "description": "Registrar parque solar: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-8",
+        "description": "1440px: Registrar parque solar sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-9",
+        "description": "Editar parque solar: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-10",
+        "description": "1440px: Editar parque solar sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-11",
+        "description": "Mantenimiento de paneles: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-12",
+        "description": "1440px: Mantenimiento de paneles sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-13",
+        "description": "Crear tarea de mantenimiento: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-14",
+        "description": "1440px: Crear tarea de mantenimiento sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-15",
+        "description": "Simulador de inversor: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-16",
+        "description": "1440px: Simulador de inversor sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-17",
+        "description": "Perfil y permisos: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-18",
+        "description": "1440px: Perfil y permisos sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-19",
+        "description": "Acceso denegado: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-20",
+        "description": "1440px: Acceso denegado sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-21",
+        "description": "No pudimos completar la operación: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-22",
+        "description": "1440px: No pudimos completar la operación sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-23",
+        "description": "Inicio: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-24",
+        "description": "768px: Inicio sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-25",
+        "description": "Parques solares: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-26",
+        "description": "768px: Parques solares sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-27",
+        "description": "Registrar parque solar: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-28",
+        "description": "768px: Registrar parque solar sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-29",
+        "description": "Editar parque solar: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-30",
+        "description": "768px: Editar parque solar sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-31",
+        "description": "Mantenimiento de paneles: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-32",
+        "description": "768px: Mantenimiento de paneles sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-33",
+        "description": "Crear tarea de mantenimiento: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-34",
+        "description": "768px: Crear tarea de mantenimiento sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-35",
+        "description": "Simulador de inversor: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-36",
+        "description": "768px: Simulador de inversor sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-37",
+        "description": "Perfil y permisos: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-38",
+        "description": "768px: Perfil y permisos sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-39",
+        "description": "Acceso denegado: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-40",
+        "description": "768px: Acceso denegado sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-41",
+        "description": "No pudimos completar la operación: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-42",
+        "description": "768px: No pudimos completar la operación sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-43",
+        "description": "Inicio: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-44",
+        "description": "390px: Inicio sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-45",
+        "description": "Parques solares: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-46",
+        "description": "390px: Parques solares sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-47",
+        "description": "Registrar parque solar: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-48",
+        "description": "390px: Registrar parque solar sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-49",
+        "description": "Editar parque solar: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-50",
+        "description": "390px: Editar parque solar sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-51",
+        "description": "Mantenimiento de paneles: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-52",
+        "description": "390px: Mantenimiento de paneles sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-53",
+        "description": "Crear tarea de mantenimiento: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-54",
+        "description": "390px: Crear tarea de mantenimiento sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-55",
+        "description": "Simulador de inversor: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-56",
+        "description": "390px: Simulador de inversor sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-57",
+        "description": "Perfil y permisos: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-58",
+        "description": "390px: Perfil y permisos sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-59",
+        "description": "Acceso denegado: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-60",
+        "description": "390px: Acceso denegado sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-61",
+        "description": "No pudimos completar la operación: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-62",
+        "description": "390px: No pudimos completar la operación sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-63",
+        "description": "Inicio: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-64",
+        "description": "320px: Inicio sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-65",
+        "description": "Parques solares: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-66",
+        "description": "320px: Parques solares sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-67",
+        "description": "Registrar parque solar: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-68",
+        "description": "320px: Registrar parque solar sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-69",
+        "description": "Editar parque solar: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-70",
+        "description": "320px: Editar parque solar sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-71",
+        "description": "Mantenimiento de paneles: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-72",
+        "description": "320px: Mantenimiento de paneles sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-73",
+        "description": "Crear tarea de mantenimiento: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-74",
+        "description": "320px: Crear tarea de mantenimiento sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-75",
+        "description": "Simulador de inversor: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-76",
+        "description": "320px: Simulador de inversor sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-77",
+        "description": "Perfil y permisos: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-78",
+        "description": "320px: Perfil y permisos sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-79",
+        "description": "Acceso denegado: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-80",
+        "description": "320px: Acceso denegado sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-81",
+        "description": "No pudimos completar la operación: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-82",
+        "description": "320px: No pudimos completar la operación sin desbordamiento de página",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-83",
+        "description": "sin excepciones JavaScript ni console.error en los recorridos",
+        "status": "VERIFICADO"
+      }
+    ],
+    "details": [
+      {
+        "id": "WEB-1",
+        "description": "autenticación OIDC de admin.test",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-2",
+        "description": "Parques solares: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-3",
+        "description": "capacidad decimal conserva el valor sin ceros de escala de MariaDB",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-4",
+        "description": "Parques solares: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-5",
+        "description": "Parques solares: tabla móvil se desplaza hasta las columnas de acciones",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-6",
+        "description": "Parques solares: desplazamiento contenido en la tabla",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-7",
+        "description": "Mantenimiento de paneles: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-8",
+        "description": "Mantenimiento de paneles: tabla móvil se desplaza hasta las columnas de acciones",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-9",
+        "description": "Mantenimiento de paneles: desplazamiento contenido en la tabla",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-10",
+        "description": "Simulador de inversor: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-11",
+        "description": "Simulador de inversor: tabla móvil se desplaza hasta las columnas de acciones",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-12",
+        "description": "Simulador de inversor: desplazamiento contenido en la tabla",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-13",
+        "description": "Perfil y permisos: sin errores de carga",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-14",
+        "description": "claims visibles y contenidos en móvil",
+        "status": "VERIFICADO"
+      },
+      {
+        "id": "WEB-15",
+        "description": "recorrido final sin errores JavaScript",
+        "status": "VERIFICADO"
+      }
+    ],
+    "logout": {
+      "count": 3,
+      "passed": 3,
+      "httpWithoutAntiforgeryBefore": 500,
+      "httpWithoutAntiforgeryAfter": 400,
+      "validLogout": "solicita credenciales nuevamente",
+      "finalConsoleErrors": []
+    },
+    "successfulAssertions": 178,
+    "warning": "Las aserciones incluyen carga de páginas; no son 178 pruebas xUnit ni requisitos independientes. El recorrido de mantenimiento detectó inicialmente el error de logout; su repetición final se hizo en fase auth."
+  },
+  "baselineProductFailures": [
+    {
+      "id": "P-02",
+      "error": "FechaCreacion.Kind=Unspecified",
+      "fixed": true
+    },
+    {
+      "id": "DB-DUMP",
+      "error": "Table 'solaruy_audit_dump.Paneles' doesn't exist",
+      "fixed": true
+    },
+    {
+      "id": "AUTH-CSRF",
+      "error": "Logout sin token antiforgery devuelve HTTP 500",
+      "fixed": true
+    }
+  ],
+  "pending": [
+    "Responsables del volcado no corresponden necesariamente a usuarios reales de Keycloak; conservar historial y resolver asignaciones autorizadas",
+    "REQ003: distribución de configuración al equipo no comprobada",
+    "REQ005: no se entregó suite permanente del simulador",
+    "Producción: sin URL HTTPS pública ni ensayo de despliegue",
+    "ParqueSolarService depende de la autorización del servidor en las páginas; no comprueba IUsuarioActual por sí mismo"
+  ],
+  "sourceChanges": [
+    "prompting/frontend_integracion.md",
+    "prompting/req003_infraestructura_base_de_datos/implementations.md",
+    "SolarUY.Infrastructure/Persistence/ParqueSolarConfiguration.cs",
+    "SolarUY.Presentation/Components/Pages/ParquesSolares.razor",
+    "SolarUY.Presentation/Program.cs",
+    "keycloak/README.md",
+    "prompting/req002_login_keycloak/specs.md",
+    "prompting/req003_infraestructura_base_de_datos/tasks.md",
+    "solaruy.sql"
+  ],
+  "notes": [
+    "El campo followup contiene el estado vigente de H-05, H-06, H-07, H-09 y H-10. pending y los recuentos superiores describen el corte histórico de la auditoría original.",
+    "No se alteraron datos reales, migraciones, contratos públicos, dependencias, reglas ni pruebas existentes en esta auditoría.",
+    "Los artefactos temporales y capturas están ignorados por Git; este JSON conserva resultados y límites, no secretos.",
+    "No equivale a cobertura exhaustiva de todos los estados posibles ni validación en todos los navegadores."
+  ],
+  "followup": {
+    "date": "2026-10-22",
+    "cleanup": { "temporaryApplicationStopped": true, "temporaryBrowserClosed": true, "temporaryContainersAndVolumesRemoved": true, "originalContainersStillRunning": true },
+    "scope": [
+      "H-05",
+      "H-06",
+      "H-07",
+      "H-09",
+      "H-10"
+    ],
+    "report": "seguimiento_auditoria.md",
+    "status": {
+      "H-05": "PARCIAL: procedimiento probado; asignaciones reales pendientes del Administrador/equipo",
+      "H-06": "VERIFICADO: autorización en las seis operaciones y ámbito de autenticación del componente",
+      "H-07": "VERIFICADO: 19 pruebas permanentes de integración incorporadas a la solución",
+      "H-09": "PARCIAL: instrucciones disponibles; preparación del equipo y producción NO COMPROBADAS",
+      "H-10": "VERIFICADO: textos de REQ002/Keycloak corregidos sin cambio de alcance"
+    },
+    "tests": {
+      "existing": {
+        "passed": 59,
+        "failed": 0,
+        "skipped": 0
+      },
+      "newPermanentIntegration": {
+        "project": "SolarUY.Integration.Tests",
+        "passed": 19,
+        "failed": 0,
+        "skipped": 0
+      },
+      "solutionTotal": 78,
+      "externalIntegration": [
+        {
+          "id": "DB-01",
+          "description": "Migraciones sobre base vacía e idempotencia",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-01",
+          "description": "Alta real con capacidad opcional e identidad",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-02",
+          "description": "Fecha de creación rehidratada como UTC",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-03",
+          "description": "Nombre duplicado rechazado sin guardar",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-VAL-4",
+          "description": "Datos de parque inválidos no se guardan",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-VAL-5",
+          "description": "Datos de parque inválidos no se guardan",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-VAL-6",
+          "description": "Datos de parque inválidos no se guardan",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-VAL-7",
+          "description": "Datos de parque inválidos no se guardan",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-VAL-8",
+          "description": "Datos de parque inválidos no se guardan",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-04",
+          "description": "Límites de 100/200 caracteres y capacidad decimal",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-05",
+          "description": "Búsqueda por nombre, ubicación y espacios",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-06",
+          "description": "Edición preserva identidad/fecha y aísla otros parques",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-07",
+          "description": "Identificadores inexistentes y SQL de entrada tratado como datos",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "DB-02",
+          "description": "Claves foráneas rechazan un nodo huérfano",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "DB-03",
+          "description": "Unicidad de número de serie garantizada en MariaDB",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "KC-01",
+          "description": "Directorio paginado y roles directos, compuestos y por grupo",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "KC-INV-16",
+          "description": "Directorio rechaza usuario inválido/no técnico/deshabilitado",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "KC-INV-17",
+          "description": "Directorio rechaza usuario inválido/no técnico/deshabilitado",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "KC-INV-18",
+          "description": "Directorio rechaza usuario inválido/no técnico/deshabilitado",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "KC-INV-19",
+          "description": "Directorio rechaza usuario inválido/no técnico/deshabilitado",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "KC-02",
+          "description": "Secreto incorrecto devuelve error controlado",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "KC-03",
+          "description": "Service account carece de permiso de escritura",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "M-01",
+          "description": "Crear mantenimiento pendiente, persistir y recuperar UTC",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "M-02",
+          "description": "Alta rechaza panel inexistente, responsable inválido y datos vacíos",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "M-03",
+          "description": "Técnico lista solo propias y no amplía alcance con filtros",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "M-04",
+          "description": "Técnico no crea, edita, asigna ni enumera técnicos",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "M-05",
+          "description": "No se completa directamente una pendiente; inicio y finalización propios",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "M-06",
+          "description": "Filtros combinados, estado inválido y panel",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "M-07",
+          "description": "Reasignación y edición; instantánea antigua rechazada",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "M-08",
+          "description": "Cancelación es terminal e inmutable",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "M-DEN-30",
+          "description": "Consulta/anónimo no leen ni modifican mantenimiento",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "M-DEN-31",
+          "description": "Consulta/anónimo no leen ni modifican mantenimiento",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "M-09",
+          "description": "Escritura vieja no modifica tarea completada",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-08",
+          "description": "Baja con dependencias aisladas respeta el otro parque",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-09",
+          "description": "La cascada revierte si falla la baja del parque",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-AUTH-0",
+          "description": "Seis operaciones rechazan identidad no administrativa válida: Tecnico",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-AUTH-1",
+          "description": "Seis operaciones rechazan identidad no administrativa válida: Consulta",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-AUTH-2",
+          "description": "Seis operaciones rechazan identidad no administrativa válida: ",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-AUTH-3",
+          "description": "Seis operaciones rechazan identidad no administrativa válida: Administrador",
+          "status": "VERIFICADO"
+        },
+        {
+          "id": "P-AUTH-CAMBIO",
+          "description": "Servicio no conserva autorización tras cambiar identidad",
+          "status": "VERIFICADO"
+        }
+      ],
+      "externalIntegrationCount": 40,
+      "importedDump": {
+        "checks": 2,
+        "note": "Una comprueba compatibilidad; otra reproduce la asignación histórica ajena al técnico."
+      },
+      "h05Database": {
+        "checks": 2,
+        "passed": 2
+      },
+      "browser": {
+        "admin": [
+          {
+            "id": "WEB-1",
+            "description": "autenticación OIDC de admin.test",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-2",
+            "description": "menú administrativo sin inventario añadido ni enlaces de ejemplo",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-3",
+            "description": "CSS versionado aplicado: inicio en cuadrícula con tarjetas y espaciado",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-4",
+            "description": "recarga con caché conserva los estilos de las tarjetas",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-5",
+            "description": "Mantenimiento de paneles: sin errores de carga",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-6",
+            "description": "mantenimiento muestra las tareas persistidas",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-7",
+            "description": "Crear tarea de mantenimiento: sin errores de carga",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-8",
+            "description": "formulario de mantenimiento carga paneles y técnicos",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-9",
+            "description": "Simulador de inversor: sin errores de carga",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-10",
+            "description": "simulador muestra cuatro paneles predeterminados",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-11",
+            "description": "desactivar un panel actualiza su estado y deja su potencia en cero",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-12",
+            "description": "activación/desactivación de panel y volcado a red, estado inicial restaurado",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-13",
+            "description": "Parques solares: sin errores de carga",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-14",
+            "description": "búsqueda, limpieza y cancelación de baja con diálogo visible",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-15",
+            "description": "Registrar parque solar: sin errores de carga",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-16",
+            "description": "error de nombre duplicado conserva el formulario de edición y permite corregir",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-17",
+            "description": "alta, edición y baja de un parque temporal; datos anteriores conservados",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-18",
+            "description": "Perfil y permisos: sin errores de carga",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-19",
+            "description": "perfil muestra identidad, roles y acceso a claims",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-20",
+            "description": "Inicio: sin errores de carga",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-21",
+            "description": "inicio móvil sin desbordamiento horizontal",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-22",
+            "description": "navegación móvil desplegable",
+            "status": "VERIFICADO"
+          }
+        ],
+        "roles": [
+          {
+            "id": "WEB-1",
+            "description": "autenticación OIDC de tecnico.test",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-2",
+            "description": "tecnico.test: sin enlaces administrativos",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-3",
+            "description": "tecnico.test: menú de mantenimiento acorde al rol",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-4",
+            "description": "Simulador de inversor: sin errores de carga",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-5",
+            "description": "tecnico.test: simulador de solo lectura",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-6",
+            "description": "tecnico.test: URL restringida /parques-solares denegada por servidor",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-7",
+            "description": "tecnico.test: POST manipulado /parques-solares denegado",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-8",
+            "description": "tecnico.test: URL restringida /parques-solares/alta denegada por servidor",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-9",
+            "description": "tecnico.test: POST manipulado /parques-solares/alta denegado",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-10",
+            "description": "tecnico.test: URL restringida /parques-solares/00000000-0000-0000-0000-000000000001/editar denegada por servidor",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-11",
+            "description": "tecnico.test: POST manipulado /parques-solares/00000000-0000-0000-0000-000000000001/editar denegado",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-12",
+            "description": "tecnico.test: URL restringida /mantenimiento/crear denegada por servidor",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-13",
+            "description": "tecnico.test: POST manipulado /mantenimiento/crear denegado",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-14",
+            "description": "autenticación OIDC de consulta.test",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-15",
+            "description": "consulta.test: sin enlaces administrativos",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-16",
+            "description": "consulta.test: menú de mantenimiento acorde al rol",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-17",
+            "description": "Simulador de inversor: sin errores de carga",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-18",
+            "description": "consulta.test: simulador de solo lectura",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-19",
+            "description": "consulta.test: URL restringida /parques-solares denegada por servidor",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-20",
+            "description": "consulta.test: POST manipulado /parques-solares denegado",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-21",
+            "description": "consulta.test: URL restringida /parques-solares/alta denegada por servidor",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-22",
+            "description": "consulta.test: POST manipulado /parques-solares/alta denegado",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-23",
+            "description": "consulta.test: URL restringida /parques-solares/00000000-0000-0000-0000-000000000001/editar denegada por servidor",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-24",
+            "description": "consulta.test: POST manipulado /parques-solares/00000000-0000-0000-0000-000000000001/editar denegado",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-25",
+            "description": "consulta.test: URL restringida /mantenimiento/crear denegada por servidor",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-26",
+            "description": "consulta.test: POST manipulado /mantenimiento/crear denegado",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-27",
+            "description": "consulta.test: URL restringida /mantenimiento denegada por servidor",
+            "status": "VERIFICADO"
+          },
+          {
+            "id": "WEB-28",
+            "description": "consulta.test: POST manipulado /mantenimiento denegado",
+            "status": "VERIFICADO"
+          }
+        ],
+        "h05": {
+          "passed": 12,
+          "failed": 0,
+          "consoleErrors": []
+        },
+        "successfulAssertions": 62
+      },
+      "notes": [
+        "Se reutilizó el ejecutable temporal y las capturas anteriores; no se repitió la matriz visual completa.",
+        "Un intento de navegador se repitió esperando la carga asíncrona del directorio.",
+        "La restauración inicial informó NU1900 por la red del sandbox; la repetición con acceso a NuGet terminó correctamente.",
+        "Una repetición paralela de tests quedó en espera y se interrumpió; se cerraron sus nodos MSBuild y la repetición secuencial pasó 78/78."
+      ]
+    },
+    "operationalPending": [
+      "Administrador/equipo: decidir y reasignar solo tareas abiertas de los datos reales con usuarios habilitados de su realm.",
+      "Equipo: acordar distribución externa de configuración y registrar arranques efectivamente realizados.",
+      "Responsable de despliegue: definir URL HTTPS, configurar callbacks reales y verificar login/logout en producción."
+    ],
+    "constraints": {
+      "realDatabaseWritten": false,
+      "realKeycloakChanged": false,
+      "sharedConfigurationChanged": false,
+      "applicationServiceInterfaceChanged": false,
+      "constructorDependencyAdded": "IUsuarioActual",
+      "migrationsChanged": false,
+      "guardrailsChanged": false
+    },
+    "changedFiles": [
+      "SolarUY.Integration.Tests/InversorIntegrationTests.cs",
+      "SolarUY.Integration.Tests/README.md",
+      "SolarUY.Integration.Tests/SolarUY.Integration.Tests.csproj",
+      "SolarUY.Presentation/Components/Shared/ParqueSolarComponentBase.cs",
+      "README.md",
+      "SolarUY.Application.Tests/ParqueSolarServiceTests.cs",
+      "SolarUY.Application/ParquesSolares/ParqueSolarService.cs",
+      "SolarUY.Presentation/Components/Pages/AltaParqueSolar.razor",
+      "SolarUY.Presentation/Components/Pages/EditarParqueSolar.razor",
+      "SolarUY.Presentation/Components/Pages/ParquesSolares.razor",
+      "SolarUY.sln",
+      "keycloak/README.md",
+      "keycloak/TECNICOS.md",
+      "prompting/req001_alta_parque_solar/specs.md",
+      "prompting/req002_login_keycloak/requirements.md",
+      "prompting/req002_login_keycloak/specs.md",
+      "prompting/req005_Simulador del inversor/implementations.md",
+      "prompting/req005_Simulador del inversor/specs.md",
+      "prompting/req005_Simulador del inversor/tasks.md",
+      "prompting/req006_gestion_multiparque/implementations.md",
+      "prompting/req006_gestion_multiparque/specs.md",
+      "solaruy.sql",
+      "prompting/auditoria_integral.md",
+      "prompting/auditoria_integral_resultados.json",
+      "prompting/seguimiento_auditoria.md"
+    ]
+  }
+}

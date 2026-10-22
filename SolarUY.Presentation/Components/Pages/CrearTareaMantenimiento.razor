@@ -4,15 +4,18 @@
 @inject ITareaMantenimientoService Mantenimiento
 @inject NavigationManager Navigation
 @inject ILogger<CrearTareaMantenimiento> Logger
+@inject NotificationService Notifications
 @using SolarUY.Application.Mantenimiento
 @using SolarUY.Application.Exceptions
 
 <PageTitle>Crear mantenimiento</PageTitle>
-<h1>Crear tarea de mantenimiento</h1>
-<p><a href="/mantenimiento">Volver a las tareas</a></p>
+<PageHeader Title="Crear tarea de mantenimiento" Section="Mantenimiento" Description="Programá un trabajo sobre un panel existente y asigná un técnico responsable.">
+    <a class="btn btn-outline-primary" href="/mantenimiento">Volver a las tareas</a>
+</PageHeader>
+<section class="surface form-surface">
 @if (_error is not null)
 {
-    <p role="alert" class="text-danger">@_error</p>
+    <p role="alert" class="alert alert-danger">@_error</p>
 }
 @if (_cargando)
 {
@@ -62,6 +65,7 @@ else
         <RadzenButton Text="Actualizar opciones" Click="CargarAsync" Disabled="_guardando" ButtonStyle="ButtonStyle.Secondary" />
     </RadzenTemplateForm>
 }
+</section>
 
 @code {
     private readonly CrearTareaMantenimientoDto _modelo = new();
@@ -102,6 +106,7 @@ else
         try
         {
             await Mantenimiento.CrearAsync(dto);
+            Notifications.Notify(NotificationSeverity.Success, "Tarea creada", "El mantenimiento se programó correctamente.");
             Navigation.NavigateTo("/mantenimiento");
         }
         catch (MantenimientoException exception) { _error = exception.Message; }

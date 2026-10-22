@@ -1,17 +1,20 @@
 @page "/parques-solares/alta"
 @attribute [Authorize(Roles = "Administrador")]
 @rendermode InteractiveServer
-@inherits OwningComponentBase<IParqueSolarService>
+@inherits ParqueSolarComponentBase
 @inject NotificationService Notifications
 @inject NavigationManager Navigation
 @inject ILogger<AltaParqueSolar> Logger
 @using SolarUY.Application.Exceptions
 
 <PageTitle>Alta de parque solar</PageTitle>
-<h1>Alta de parque solar</h1>
+<PageHeader Title="Registrar parque solar" Section="Parques solares" Description="Completá los datos iniciales. El parque se crea sin nodos ni paneles asociados.">
+    <a class="btn btn-outline-primary" href="/parques-solares">Volver al listado</a>
+</PageHeader>
+<section class="surface form-surface">
 @if (_error is not null)
 {
-    <p role="alert" class="text-danger">@_error</p>
+    <p role="alert" class="alert alert-danger">@_error</p>
 }
 <RadzenTemplateForm TItem="CrearParqueSolarDto" Data="_modelo" Submit="OnValidSubmit">
     <div class="mb-3">
@@ -29,12 +32,16 @@
         <RadzenNumeric TValue="decimal?" Name="Capacidad" @bind-Value="_modelo.CapacidadEstimadaMW" Style="width:100%" Disabled="_guardando" />
     </div>
     <RadzenButton ButtonType="ButtonType.Submit" Text="Registrar parque" IsBusy="_guardando" Disabled="_guardando" />
+    <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="Cancelar" Disabled="_guardando" />
 </RadzenTemplateForm>
+</section>
 
 @code {
     private readonly CrearParqueSolarDto _modelo = new();
     private bool _guardando;
     private string? _error;
+
+    private void Cancelar() => Navigation.NavigateTo("/parques-solares");
 
     private async Task OnValidSubmit(CrearParqueSolarDto dto)
     {

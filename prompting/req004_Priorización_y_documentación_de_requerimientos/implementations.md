@@ -1,5 +1,9 @@
 # Implementación: Mantenimiento de paneles
 
+## Actualización de integración frontend
+
+Mantenimiento se integra en el inicio y menú por rol, con cabeceras compartidas, filtros, tabla con paginación/ordenación y acciones compactas. Creación presenta notificación de éxito. En navegador se comprobó la carga de tareas reales y de opciones de panel/técnico sin modificar las tareas existentes. Las transiciones conservan su implementación y verificación original. Detalle en [frontend_integracion.md](../frontend_integracion.md).
+
 ## Resultado
 
 Implementadas las tareas de req004, con las decisiones confirmadas por el usuario. La funcionalidad está disponible en /mantenimiento y /mantenimiento/crear cuando el entorno tiene MariaDB, paneles existentes y el cliente de directorio configurados.

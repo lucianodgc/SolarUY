@@ -2,6 +2,8 @@ namespace SolarUY.Application.Abstractions;
 
 public interface IInversorClient
 {
+    Task<IReadOnlyList<string>> ListarNodosAsync(CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<PanelInversorEstadoDto>> ObtenerEstadoPanelesAsync(
         string nodoId,
         CancellationToken cancellationToken = default);
