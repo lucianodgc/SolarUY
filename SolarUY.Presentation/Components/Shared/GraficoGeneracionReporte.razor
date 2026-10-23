@@ -1,0 +1,55 @@
+@using SolarUY.Application.HistoricoGeneracion
+@using SolarUY.Application.Reportes
+
+<section class="surface" aria-label="Gráfico de generación">
+    <label>Representación
+        <RadzenDropDown Name="RepresentacionReporte" TValue="string" Data="_representaciones" @bind-Value="_representacion" />
+    </label>
+    @if (Datos.Puntos.Count == 0)
+    {
+        <p class="empty-state">No hay energía observada para graficar en este período.</p>
+    }
+    else
+    {
+        <div role="img" aria-label="@($"Gráfico de {_representacion.ToLowerInvariant()} de energía observada en kWh. El detalle de intervalos se muestra debajo.")">
+            <RadzenChart @key="(Resultado, _representacion)" Style="height:360px; width:100%">
+                @if (_representacion == "Barras")
+                {
+                    <RadzenColumnSeries TItem="PuntoGraficoReporteDto" Data="Datos.Puntos" CategoryProperty="InstanteUtc"
+                        ValueProperty="EnergiaKWh" Title="Energía observada (kWh)" Fill="#247253" />
+                }
+                else
+                {
+                    @foreach (var segmento in Datos.Segmentos)
+                    {
+                        <RadzenLineSeries TItem="PuntoGraficoReporteDto" Data="segmento" CategoryProperty="InstanteUtc"
+                            ValueProperty="EnergiaKWh" Title="Energía observada (kWh)" Stroke="#247253" Interpolation="Interpolation.Line">
+                            <RadzenMarkers Visible="true" MarkerType="MarkerType.Circle" />
+                        </RadzenLineSeries>
+                    }
+                }
+                <RadzenCategoryAxis Min="@Resultado.Consulta.InicioUtc" Max="@Resultado.Consulta.FinUtc"
+                    Formatter="FormatearFecha" TickDistance="110">
+                    <RadzenAxisTitle Text="Intervalo (Uruguay)" />
+                </RadzenCategoryAxis>
+                <RadzenValueAxis Min="@((object)0m)" Max="@Datos.MaximoEjeKWh" Step="@Datos.PasoEjeKWh" FormatString="{0:N3}">
+                    <RadzenAxisTitle Text="Energía (kWh)" />
+                </RadzenValueAxis>
+                <RadzenLegend Visible="false" />
+            </RadzenChart>
+        </div>
+    }
+    <p class="note">Los huecos indican intervalos sin datos y no se conectan con líneas. El cero medido es un valor válido. Consultá la cobertura y los valores exactos en el detalle.</p>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public ResultadoHistoricoDto Resultado { get; set; } = null!;
+    [Parameter, EditorRequired] public GraficoReporteDto Datos { get; set; } = null!;
+    private readonly string[] _representaciones = ["Barras", "Líneas"];
+    private string _representacion = "Barras";
+    private static readonly TimeZoneInfo Zona = TimeZoneInfo.FindSystemTimeZoneById("America/Montevideo");
+
+    private string FormatearFecha(object valor) => valor is DateTime fecha
+        ? TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(fecha, DateTimeKind.Utc), Zona).ToString("dd/MM HH:mm")
+        : valor.ToString() ?? string.Empty;
+}

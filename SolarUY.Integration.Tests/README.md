@@ -1,5 +1,17 @@
 # Pruebas de integración
 
+## Reportes (REQ008)
+
+Los 28 casos de reportes reutilizan la conexión aislada del histórico y la colección sin paralelismo que prepara sus datos. Comprueban parque/nodo, períodos y coincidencia con el histórico, cobertura y huecos, mantenimiento completado por fecha de realización, permisos de los tres roles sin ampliar la gestión, CSV y conservación del resultado exportado.
+
+La prueba de concurrencia integra el componente Blazor real, `HtmlRenderer`, los servicios y MariaDB. Retiene una respuesta ignorando su cancelación y la libera después de una consulta posterior: comprueba que la pantalla conserve el último resultado. No requiere navegador ni paquetes adicionales.
+
+```powershell
+dotnet test SolarUY.Integration.Tests/SolarUY.Integration.Tests.csproj --filter 'FullyQualifiedName~Reportes'
+```
+
+Requiere `SOLARUY_HISTORICO_TEST_CONNECTION` con una base exclusiva cuyo nombre comience con `solaruy_req007_test`. Sin la variable, estos casos se omiten. El recorrido visual de barras/líneas, filtros y descargas CSV se registra en el informe de implementación de req008.
+
 ## Histórico de generación (REQ007)
 
 La ampliación de recolección añade 16 casos de integración: fuente del inventario registrado, día/noche, consumo por el histórico, idempotencia/reinicio, estado/fallas por serie o Guid, instalaciones futuras, nuevos paneles, exclusión entre conexiones, validación atómica del lote, cancelación, recuperación de errores, dos hosts con el worker real, deshabilitación y fallo de arranque de Kestrel por puerto ocupado sin recolectar ni fallar durante el cierre. Usan la misma conexión aislada que el histórico. Ambas clases pertenecen a una colección xUnit sin paralelismo para no interferir al preparar los datos.

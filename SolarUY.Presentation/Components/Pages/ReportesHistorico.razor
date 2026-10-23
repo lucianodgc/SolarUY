@@ -1,0 +1,184 @@
+@page "/reportes"
+@attribute [Authorize(Roles = "Administrador,Tecnico,Consulta")]
+@using SolarUY.Application.HistoricoGeneracion
+@using SolarUY.Application.Reportes
+@implements IAsyncDisposable
+@inject IReporteHistoricoService Reportes
+@inject IJSRuntime Js
+@inject ILogger<ReportesHistorico> Logger
+
+<PageTitle>Reportes | SolarUY</PageTitle>
+<PageHeader Title="Reportes" Section="Energía" Description="Explorá la generación y los mantenimientos realizados. Descargá los datos del reporte en CSV." />
+<section class="surface" aria-label="Filtros del reporte">
+    <p class="note">Fechas de Uruguay. El fin del rango es exclusivo. La energía sin mediciones queda sin datos.</p>
+    <div class="filter-bar">
+        <label>Parque
+            <RadzenDropDown Name="ParqueReporte" TValue="Guid" Data="_parques" TextProperty="Etiqueta" ValueProperty="Id"
+                @bind-Value="_parqueId" Change="CambiarParqueAsync" Disabled="_inicializando" Style="min-width:260px" />
+        </label>
+        <label>Nodo (opcional)
+            <RadzenDropDown Name="NodoReporte" TValue="Guid?" Data="_nodos" TextProperty="Etiqueta" ValueProperty="Id"
+                @bind-Value="_nodoId" Change="FiltrosCambiadosAsync" AllowClear="true" Placeholder="Todos los nodos"
+                Disabled="_inicializando" Style="min-width:260px" />
+        </label>
+        <label>Período
+            <RadzenDropDown Name="PeriodoReporte" TValue="PeriodoHistorico" Data="@(Enum.GetValues<PeriodoHistorico>())"
+                @bind-Value="_periodo" Change="FiltrosCambiadosAsync" Disabled="_inicializando" />
+        </label>
+    </div>
+    <div class="filter-bar">
+        <label>Fecha del período / inicio
+            <RadzenDatePicker Name="InicioReporte" TValue="DateTime?" @bind-Value="_inicio" Change="@((DateTime? valor) => ActualizarAsync())"
+                ShowTime="@(_periodo == PeriodoHistorico.Rango)" DateFormat="yyyy-MM-dd HH:mm" Disabled="_inicializando" />
+        </label>
+        @if (_periodo == PeriodoHistorico.Rango)
+        {
+            <label>Fin exclusivo
+                <RadzenDatePicker Name="FinReporte" TValue="DateTime?" @bind-Value="_fin" Change="@((DateTime? valor) => ActualizarAsync())"
+                    ShowTime="true" DateFormat="yyyy-MM-dd HH:mm" Disabled="_inicializando" />
+            </label>
+        }
+    </div>
+    <div class="action-buttons">
+        <RadzenButton Text="Actualizar reporte" Icon="refresh" Click="ActualizarAsync" Disabled="@(_inicializando || _parqueId == Guid.Empty)" />
+        <RadzenButton Text="Exportar CSV" Icon="download" Click="ExportarAsync" Disabled="@(_resultado is null || _ocupado || _descargando)" IsBusy="_descargando" />
+    </div>
+</section>
+@if (_ocupado || _inicializando) { <p role="status" class="loading-state">Consultando reporte…</p> }
+@if (_error is not null) { <p role="alert" class="alert alert-danger">@_error</p> }
+@if (!_inicializando && _parques.Count == 0 && _error is null)
+{
+    <p class="empty-state">No hay parques disponibles para consultar.</p>
+}
+@if (_resultado is { } reporte)
+{
+    <GraficoGeneracionReporte Resultado="reporte.Generacion" Datos="reporte.Grafico" />
+    <ResultadoHistorico Resultado="reporte.Generacion" Titulo="@(reporte.Nodo ?? reporte.Parque)" />
+    <section class="surface" aria-label="Mantenimientos realizados">
+        <h2>Mantenimientos realizados</h2>
+        <p>Tareas completadas durante el período del reporte. Fechas en Uruguay (America/Montevideo).</p>
+        <RadzenDataGrid TItem="MantenimientoRealizadoReporteDto" Data="reporte.Mantenimientos" AllowPaging="true" PageSize="15"
+            AllowSorting="true" EmptyText="No hay mantenimientos realizados en este período.">
+            <Columns>
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="NumeroSerie" Title="Panel" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="Tipo" Title="Tipo" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="Descripcion" Title="Descripción" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="ResponsableId" Title="Responsable" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="Estado" Title="Estado" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="FechaProgramadaLocal" Title="Programada (Uruguay)" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="FechaRealizacionLocal" Title="Realizada (Uruguay)" />
+            </Columns>
+        </RadzenDataGrid>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<OpcionHistoricoDto> _opciones = [];
+    private IReadOnlyList<OpcionHistoricoDto> _parques = [];
+    private IReadOnlyList<OpcionHistoricoDto> _nodos = [];
+    private Guid _parqueId;
+    private Guid? _nodoId;
+    private PeriodoHistorico _periodo;
+    private DateTime? _inicio = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "America/Montevideo").Date;
+    private DateTime? _fin = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "America/Montevideo").Date.AddDays(1);
+    private bool _inicializando = true, _ocupado, _descargando, _desechado;
+    private string? _error;
+    private ResultadoReporteDto? _resultado;
+    private readonly CancellationTokenSource _vida = new();
+    private CancellationTokenSource? _consulta;
+    private long _version;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _opciones = await Reportes.ListarOpcionesAsync(_vida.Token);
+            if (_desechado) return;
+            _parques = _opciones.Where(o => o.Tipo == TipoObjetivoHistorico.Parque).ToArray();
+            _parqueId = _parques.FirstOrDefault()?.Id ?? Guid.Empty;
+            ActualizarNodos();
+        }
+        catch (OperationCanceledException) when (_vida.IsCancellationRequested) { }
+        catch (Exception exception) { MostrarError(exception); }
+        finally { _inicializando = false; }
+        if (_parqueId != Guid.Empty && !_desechado) await ActualizarAsync();
+    }
+
+    private void ActualizarNodos()
+        => _nodos = _opciones.Where(o => o.Tipo == TipoObjetivoHistorico.Nodo && o.ParqueId == _parqueId).ToArray();
+
+    private async Task CambiarParqueAsync(object? valor)
+    {
+        _nodoId = null;
+        ActualizarNodos();
+        await ActualizarAsync();
+    }
+
+    private Task FiltrosCambiadosAsync(object? valor) => ActualizarAsync();
+
+    private async Task ActualizarAsync()
+    {
+        if (_desechado) return;
+        var version = ++_version;
+        _consulta?.Cancel();
+        using var cancelacion = CancellationTokenSource.CreateLinkedTokenSource(_vida.Token);
+        _consulta = cancelacion;
+        _resultado = null;
+        _error = null;
+        _ocupado = true;
+        try
+        {
+            if (_inicio is null || (_periodo == PeriodoHistorico.Rango && _fin is null))
+                throw new ArgumentException("Completá las fechas del período.");
+            var filtro = new FiltroReporteDto(_parqueId, _nodoId, _periodo,
+                DateTime.SpecifyKind(_inicio.Value, DateTimeKind.Unspecified),
+                _fin.HasValue ? DateTime.SpecifyKind(_fin.Value, DateTimeKind.Unspecified) : null);
+            var resultado = await Reportes.ConsultarAsync(filtro, cancelacion.Token);
+            if (!_desechado && version == _version && !cancelacion.IsCancellationRequested) _resultado = resultado;
+        }
+        catch (OperationCanceledException) when (cancelacion.IsCancellationRequested) { }
+        catch (Exception exception) { if (!_desechado && version == _version) MostrarError(exception); }
+        finally
+        {
+            if (version == _version) { _ocupado = false; _consulta = null; }
+        }
+    }
+
+    private async Task ExportarAsync()
+    {
+        if (_resultado is not { } reporte || _ocupado || _descargando) return;
+        var version = _version;
+        _descargando = true;
+        _error = null;
+        try
+        {
+            var archivo = await Reportes.ExportarCsvAsync(reporte, _vida.Token);
+            await using var modulo = await Js.InvokeAsync<IJSObjectReference>("import", _vida.Token, "./js/reportes.js");
+            if (_desechado || version != _version) return;
+            await modulo.InvokeVoidAsync("descargarCsv", _vida.Token, archivo.NombreArchivo, archivo.TipoContenido, archivo.Contenido);
+        }
+        catch (OperationCanceledException) when (_vida.IsCancellationRequested) { }
+        catch (JSDisconnectedException) when (_desechado) { }
+        catch (Exception exception) { if (!_desechado && version == _version) MostrarError(exception); }
+        finally { _descargando = false; }
+    }
+
+    private void MostrarError(Exception exception)
+    {
+        if (exception is ArgumentException or UnauthorizedAccessException or KeyNotFoundException) _error = exception.Message;
+        else
+        {
+            Logger.LogError(exception, "No se pudo completar el reporte histórico");
+            _error = "No se pudo completar el reporte. Volvé a intentarlo.";
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _desechado = true;
+        ++_version;
+        _vida.Cancel();
+        _vida.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

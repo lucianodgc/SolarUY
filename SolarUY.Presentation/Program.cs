@@ -13,6 +13,7 @@ using SolarUY.Application.Mantenimiento;
 using SolarUY.Application.Inversores;
 using SolarUY.Application.HistoricoGeneracion;
 using SolarUY.Application.RecoleccionLecturas;
+using SolarUY.Application.Reportes;
 using SolarUY.Application.ParquesSolares;
 using SolarUY.Infrastructure;
 using SolarUY.Presentation.Authentication;
@@ -26,6 +27,7 @@ builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
 builder.Services.AddScoped<ITareaMantenimientoService, TareaMantenimientoService>();
 builder.Services.AddScoped<IInversorService, InversorService>();
 builder.Services.AddScoped<IHistoricoGeneracionService, HistoricoGeneracionService>();
+builder.Services.AddScoped<IReporteHistoricoService, ReporteHistoricoService>();
 builder.Services.AddScoped<IRecoleccionLecturasService, RecoleccionLecturasService>();
 builder.Services.AddOptions<RecoleccionLecturasOptions>()
     .Bind(builder.Configuration.GetSection("RecoleccionLecturas"))

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SolarUY.Application.Exceptions;
 using SolarUY.Application.Mantenimiento;
+using SolarUY.Application.Reportes;
 using SolarUY.Domain.Entities;
 using SolarUY.Domain.Enums;
 
@@ -12,6 +13,21 @@ public sealed class TareaMantenimientoRepository : ITareaMantenimientoRepository
 
     public TareaMantenimientoRepository(IDbContextFactory<ApplicationDbContext> contextFactory)
         => _contextFactory = contextFactory;
+
+    public async Task<IReadOnlyList<MantenimientoRealizadoReporteDto>> ListarRealizadosParaReporteAsync(
+        ConsultaMantenimientosReporteDto consulta, CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var query = context.TareasMantenimiento.AsNoTracking().Where(tarea =>
+            tarea.Panel.Nodo.ParqueId == consulta.ParqueId
+            && tarea.Estado == EstadoTareaMantenimiento.Completada && tarea.FechaRealizacion.HasValue
+            && tarea.FechaRealizacion >= consulta.InicioUtc && tarea.FechaRealizacion < consulta.FinUtc);
+        if (consulta.NodoId is { } nodoId) query = query.Where(tarea => tarea.Panel.NodoId == nodoId);
+        return await query.OrderBy(tarea => tarea.FechaRealizacion).ThenBy(tarea => tarea.Id)
+            .Select(tarea => new MantenimientoRealizadoReporteDto(tarea.Id, tarea.PanelId, tarea.Panel.NumeroSerie,
+                tarea.Tipo, tarea.Descripcion, tarea.ResponsableId, tarea.Estado, tarea.FechaProgramada, tarea.FechaRealizacion!.Value))
+            .ToArrayAsync(cancellationToken);
+    }
 
     public async Task AgregarAsync(TareaMantenimiento tarea, CancellationToken cancellationToken = default)
     {
