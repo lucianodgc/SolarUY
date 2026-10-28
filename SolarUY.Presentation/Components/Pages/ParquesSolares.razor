@@ -1,5 +1,5 @@
 @page "/parques-solares"
-@attribute [Authorize(Roles = "Administrador")]
+@attribute [Authorize(Roles = "Administrador,Tecnico,Consulta")]
 @rendermode InteractiveServer
 @inherits ParqueSolarComponentBase
 @inject ILogger<ParquesSolares> Logger
@@ -8,8 +8,8 @@
 @using SolarUY.Application.Exceptions
 
 <PageTitle>Parques solares</PageTitle>
-<PageHeader Title="Parques solares" Section="Gestión multiparque" Description="Administrá la ubicación y capacidad de cada parque de forma independiente.">
-    <a class="btn btn-primary" href="/parques-solares/alta">Registrar parque</a>
+<PageHeader Title="Parques solares" Section="Gestión multiparque" Description="Consultá la ubicación y capacidad de cada parque solar.">
+    <AuthorizeView Roles="Administrador"><a class="btn btn-primary" href="/parques-solares/alta">Registrar parque</a></AuthorizeView>
 </PageHeader>
 <div class="surface filter-toolbar">
     <label for="BusquedaParques" class="visually-hidden">Buscar por nombre o ubicación</label>
@@ -29,15 +29,15 @@ else if (_parques.Count == 0)
 {
     <div class="surface empty-state">
         <h2>No hay parques para esta búsqueda</h2>
-        <p>Podés cambiar el criterio o registrar un nuevo parque solar.</p>
-        <a class="btn btn-primary" href="/parques-solares/alta">Registrar parque</a>
+        <p>Podés cambiar el criterio de búsqueda.</p>
+        <AuthorizeView Roles="Administrador"><a class="btn btn-primary" href="/parques-solares/alta">Registrar parque</a></AuthorizeView>
     </div>
 }
 else
 {
     <div class="surface table-responsive">
     <table class="table">
-        <thead><tr><th>Nombre</th><th>Ubicación</th><th>Capacidad estimada (MW)</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Ubicación</th><th>Capacidad estimada (MW)</th><AuthorizeView Roles="Administrador"><th>Acciones</th></AuthorizeView></tr></thead>
         <tbody>
             @foreach (var parque in _parques)
             {
@@ -45,11 +45,13 @@ else
                     <td>@parque.Nombre</td>
                     <td>@parque.Ubicacion</td>
                     <td>@(parque.CapacidadEstimadaMW?.ToString("0.############################") ?? "Sin especificar")</td>
-                    <td><div class="action-buttons">
-                        <a class="btn btn-outline-primary btn-sm" href="@($"/parques-solares/{parque.Id}/editar")">Editar</a>
-                        <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
-                                      Text="Eliminar" Disabled="_ocupado" Click="async () => await ConfirmarBajaAsync(parque.Id)" />
-                    </div></td>
+                    <AuthorizeView Roles="Administrador">
+                        <td><div class="action-buttons">
+                            <a class="btn btn-outline-primary btn-sm" href="@($"/parques-solares/{parque.Id}/editar")">Editar</a>
+                            <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
+                                          Text="Eliminar" Disabled="_ocupado" Click="async () => await ConfirmarBajaAsync(parque.Id)" />
+                        </div></td>
+                    </AuthorizeView>
                 </tr>
             }
         </tbody>

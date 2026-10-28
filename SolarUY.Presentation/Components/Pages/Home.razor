@@ -3,12 +3,12 @@
 <PageTitle>Inicio | SolarUY</PageTitle>
 <PageHeader Title="Inicio" Section="Inicio" Description="Accesos a las funciones disponibles para tu usuario." />
 <div class="module-grid">
-    <AuthorizeView Roles="Administrador">
+    <AuthorizeView Roles="Administrador,Tecnico,Consulta">
         <section class="module-card">
             <span class="module-icon"><RadzenIcon Icon="solar_power" /></span>
             <h2>Parques solares</h2>
-            <p>Consultá, buscá y administrá la configuración independiente de cada parque.</p>
-            <div class="module-links"><a href="/parques-solares">Gestionar parques →</a><a href="/parques-solares/alta">Registrar parque</a></div>
+            <p>Consultá la ubicación y capacidad de cada parque solar.</p>
+            <div class="module-links"><a href="/parques-solares">Consultar parques →</a><AuthorizeView Roles="Administrador" Context="administrador"><a href="/parques-solares/alta">Registrar parque</a></AuthorizeView></div>
         </section>
     </AuthorizeView>
     <AuthorizeView Roles="Administrador,Tecnico">
