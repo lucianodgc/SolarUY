@@ -9,7 +9,7 @@
     <nav aria-label="Navegación principal">
         <p class="nav-caption">PLATAFORMA</p>
         <NavLink class="nav-link" href="" Match="NavLinkMatch.All"><RadzenIcon Icon="space_dashboard" /> Inicio</NavLink>
-        <AuthorizeView Roles="Administrador">
+        <AuthorizeView Roles="Administrador,Tecnico,Consulta">
             <NavLink class="nav-link" href="parques-solares"><RadzenIcon Icon="solar_power" /> Parques solares</NavLink>
         </AuthorizeView>
         <AuthorizeView Roles="Administrador,Tecnico">

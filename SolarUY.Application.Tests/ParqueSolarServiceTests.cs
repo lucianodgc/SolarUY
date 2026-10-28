@@ -69,13 +69,67 @@ public sealed class ParqueSolarServiceTests
         Assert.False(context.Guardado);
     }
 
-    private static ParqueSolarService CrearService(TestDbContext context)
-        => new(context, new CrearParqueSolarDtoValidator(), new ActualizarParqueSolarDtoValidator(), new TestUsuarioActual());
+    [Theory]
+    [InlineData("Administrador")]
+    [InlineData("Tecnico")]
+    [InlineData("Consulta")]
+    public async Task ConsultarParquesSolar_PermiteLecturaATodosLosRoles(string rol)
+    {
+        var context = new TestDbContext();
+        var service = CrearService(context, rol);
 
-    private sealed class TestUsuarioActual : IUsuarioActual
+        await service.ListarParquesSolaresAsync();
+        await service.BuscarParquesSolaresAsync("Norte");
+        await service.ObtenerParqueSolarPorIdAsync(Guid.NewGuid());
+
+        Assert.Equal(3, context.ConsultasLectura);
+    }
+
+    [Theory]
+    [InlineData(true, "usuario", "SinPermiso")]
+    [InlineData(false, "usuario", "Administrador")]
+    [InlineData(true, "", "Administrador")]
+    public async Task ConsultarParquesSolar_RechazaIdentidadSinRolPermitido(bool autenticado, string id, string rol)
+    {
+        var context = new TestDbContext();
+        var service = CrearService(context, autenticado, id, rol);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.ListarParquesSolaresAsync());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.BuscarParquesSolaresAsync(null));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.ObtenerParqueSolarPorIdAsync(Guid.NewGuid()));
+
+        Assert.Equal(0, context.ConsultasLectura);
+    }
+
+    [Theory]
+    [InlineData("Tecnico")]
+    [InlineData("Consulta")]
+    public async Task EscribirParquesSolar_SeDeniegaAntesDePersistirSiNoEsAdministrador(string rol)
+    {
+        var context = new TestDbContext();
+        var service = CrearService(context, rol);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.CrearParqueSolarAsync(Dto()));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.ActualizarParqueSolarAsync(
+            Guid.NewGuid(), new ActualizarParqueSolarDto { Nombre = "Parque Norte", Ubicacion = "Salto" }));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.EliminarParqueSolarAsync(Guid.NewGuid()));
+
+        Assert.Null(context.ParqueAgregado);
+        Assert.False(context.Guardado);
+        Assert.Equal(0, context.ConsultasLectura);
+    }
+
+    private static ParqueSolarService CrearService(TestDbContext context, string rol = "Administrador")
+        => CrearService(context, true, "usuario-prueba", rol);
+
+    private static ParqueSolarService CrearService(TestDbContext context, bool autenticado, string id, string rol)
+        => new(context, new CrearParqueSolarDtoValidator(), new ActualizarParqueSolarDtoValidator(),
+            new TestUsuarioActual(autenticado, id, rol));
+
+    private sealed class TestUsuarioActual(bool autenticado, string id, string rol) : IUsuarioActual
     {
         public Task<UsuarioActualDto> ObtenerAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult(new UsuarioActualDto(true, "administrador-prueba", new[] { "Administrador" }));
+            => Task.FromResult(new UsuarioActualDto(autenticado, id, new[] { rol }));
     }
 
     private static CrearParqueSolarDto Dto() => new() { Nombre = "Parque Norte", Ubicacion = "Salto" };
@@ -87,6 +141,7 @@ public sealed class ParqueSolarServiceTests
         public string? NombreConsultado { get; private set; }
         public ParqueSolar? ParqueAgregado { get; private set; }
         public bool Guardado { get; private set; }
+        public int ConsultasLectura { get; private set; }
 
         public Task<bool> ExisteNombreParqueSolarAsync(
             string nombre,
@@ -98,7 +153,10 @@ public sealed class ParqueSolarServiceTests
         }
 
         public Task<ParqueSolar?> ObtenerParqueSolarPorIdAsync(Guid id, CancellationToken cancellationToken = default)
-            => Task.FromResult<ParqueSolar?>(null);
+        {
+            ConsultasLectura++;
+            return Task.FromResult<ParqueSolar?>(null);
+        }
 
         public void AgregarParqueSolar(ParqueSolar parque) => ParqueAgregado = parque;
 
@@ -118,11 +176,17 @@ public sealed class ParqueSolarServiceTests
         }
 
         public Task<IReadOnlyList<ParqueSolar>> ListarParquesSolaresAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult<IReadOnlyList<ParqueSolar>>(Array.Empty<ParqueSolar>());
+        {
+            ConsultasLectura++;
+            return Task.FromResult<IReadOnlyList<ParqueSolar>>(Array.Empty<ParqueSolar>());
+        }
 
         public Task<IReadOnlyList<ParqueSolar>> BuscarParquesSolaresAsync(
             string? criterio,
             CancellationToken cancellationToken = default)
-            => Task.FromResult<IReadOnlyList<ParqueSolar>>(Array.Empty<ParqueSolar>());
+        {
+            ConsultasLectura++;
+            return Task.FromResult<IReadOnlyList<ParqueSolar>>(Array.Empty<ParqueSolar>());
+        }
     }
 }

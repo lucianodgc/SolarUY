@@ -39,7 +39,7 @@ public sealed class ParqueSolarService : IParqueSolarService
 
     public async Task<IReadOnlyList<ParqueSolar>> ListarParquesSolaresAsync(CancellationToken cancellationToken = default)
     {
-        await ExigirAdministradorAsync(cancellationToken);
+        await ExigirConsultaAsync(cancellationToken);
         return await _context.ListarParquesSolaresAsync(cancellationToken);
     }
 
@@ -47,13 +47,13 @@ public sealed class ParqueSolarService : IParqueSolarService
         string? criterio,
         CancellationToken cancellationToken = default)
     {
-        await ExigirAdministradorAsync(cancellationToken);
+        await ExigirConsultaAsync(cancellationToken);
         return await _context.BuscarParquesSolaresAsync(criterio, cancellationToken);
     }
 
     public async Task<ParqueSolar?> ObtenerParqueSolarPorIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await ExigirAdministradorAsync(cancellationToken);
+        await ExigirConsultaAsync(cancellationToken);
         return await _context.ObtenerParqueSolarPorIdAsync(id, cancellationToken);
     }
 
@@ -91,5 +91,13 @@ public sealed class ParqueSolarService : IParqueSolarService
         if (!usuario.EstaAutenticado || string.IsNullOrWhiteSpace(usuario.Id)
             || !usuario.Roles.Contains("Administrador"))
             throw new UnauthorizedAccessException("No tienes permisos para gestionar parques solares.");
+    }
+
+    private async Task ExigirConsultaAsync(CancellationToken cancellationToken)
+    {
+        var usuario = await _usuarioActual.ObtenerAsync(cancellationToken);
+        if (!usuario.EstaAutenticado || string.IsNullOrWhiteSpace(usuario.Id)
+            || !usuario.Roles.Any(rol => rol is "Administrador" or "Tecnico" or "Consulta"))
+            throw new UnauthorizedAccessException("No tienes permisos para consultar parques solares.");
     }
 }
