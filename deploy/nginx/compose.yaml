@@ -1,0 +1,12 @@
+services:
+  nginx:
+    image: nginx:stable@sha256:51047bea59fed88fbd1f52565d2f5fabcb82d311cf6c9e507a10ce74bb3bc3f0
+    ports:
+      - "127.0.0.1:${SOLARUY_PROXY_PUERTO:-18088}:8080"
+    environment:
+      SOLARUY_INSTANCIA_A: ${SOLARUY_INSTANCIA_A:?Define host:puerto de la instancia A}
+      SOLARUY_INSTANCIA_B: ${SOLARUY_INSTANCIA_B:?Define host:puerto de la instancia B}
+      SOLARUY_ID_A: ${SOLARUY_ID_A:-solaruy-a}
+      SOLARUY_ID_B: ${SOLARUY_ID_B:-solaruy-b}
+    volumes:
+      - ./monitoreo.conf.template:/etc/nginx/templates/default.conf.template:ro

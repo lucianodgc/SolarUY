@@ -34,6 +34,9 @@ namespace SolarUY.Infrastructure.Migrations
                     b.Property<DateTime>("FechaHora")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid>("NodoId")
+                        .HasColumnType("char(36)");
+
                     b.Property<Guid>("PanelId")
                         .HasColumnType("char(36)");
 
@@ -42,6 +45,11 @@ namespace SolarUY.Infrastructure.Migrations
                         .HasColumnType("decimal(18,6)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("NodoId", "FechaHora");
+
+                    b.HasIndex("PanelId", "FechaHora")
+                        .IsUnique();
 
                     b.HasIndex("PanelId", "FechaHora", "PotenciaGeneradaW");
 
@@ -184,11 +192,19 @@ namespace SolarUY.Infrastructure.Migrations
 
             modelBuilder.Entity("SolarUY.Domain.Entities.LecturaPanel", b =>
                 {
+                    b.HasOne("SolarUY.Domain.Entities.Nodo", "Nodo")
+                        .WithMany()
+                        .HasForeignKey("NodoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("SolarUY.Domain.Entities.Panel", "Panel")
                         .WithMany()
                         .HasForeignKey("PanelId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Nodo");
 
                     b.Navigation("Panel");
                 });

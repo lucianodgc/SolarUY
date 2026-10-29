@@ -1,12 +1,19 @@
 using Microsoft.Extensions.Options;
 using SolarUY.Application.RecoleccionLecturas;
+using SolarUY.Application.Monitoreo;
 
 namespace SolarUY.Presentation.BackgroundServices;
 
 public sealed class RecoleccionLecturasOptions
 {
     public bool Habilitada { get; set; } = true;
-    public TimeSpan Intervalo { get; set; } = TimeSpan.FromMinutes(1);
+    public int? IntervaloSegundos { get; set; }
+    // PeriodicTimer admite como máximo uint.MaxValue - 1 milisegundos.
+    public bool TieneIntervaloValido => IntervaloSegundos is > 0 and <= 4_294_967;
+
+    public TimeSpan Intervalo => TieneIntervaloValido
+        ? TimeSpan.FromSeconds(IntervaloSegundos!.Value)
+        : throw new InvalidOperationException("RecoleccionLecturas:IntervaloSegundos debe estar entre 1 y 4294967 segundos (límite de PeriodicTimer).");
 }
 
 public sealed class RecoleccionLecturasWorker : BackgroundService
@@ -16,15 +23,18 @@ public sealed class RecoleccionLecturasWorker : BackgroundService
     private readonly TimeProvider _reloj;
     private readonly ILogger<RecoleccionLecturasWorker> _logger;
     private readonly IHostApplicationLifetime _lifetime;
+    private readonly INotificadorLecturasConfirmadas? _notificador;
 
     public RecoleccionLecturasWorker(IServiceScopeFactory scopeFactory, IOptions<RecoleccionLecturasOptions> options,
-        TimeProvider reloj, ILogger<RecoleccionLecturasWorker> logger, IHostApplicationLifetime lifetime)
+        TimeProvider reloj, ILogger<RecoleccionLecturasWorker> logger, IHostApplicationLifetime lifetime,
+        INotificadorLecturasConfirmadas? notificador = null)
     {
         _scopeFactory = scopeFactory;
         _options = options.Value;
         _reloj = reloj;
         _logger = logger;
         _lifetime = lifetime;
+        _notificador = notificador;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -57,12 +67,26 @@ public sealed class RecoleccionLecturasWorker : BackgroundService
             var servicio = scope.ServiceProvider.GetRequiredService<IRecoleccionLecturasService>();
             var resultado = await servicio.RecolectarAsync(cancellationToken);
             if (resultado.LecturasGuardadas > 0)
+            {
                 _logger.LogInformation("Recolección completada: {Cantidad} lecturas guardadas.", resultado.LecturasGuardadas);
+                await NotificarConfirmadasAsync(resultado, cancellationToken);
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception exception)
         {
             _logger.LogError(exception, "No se completó la recolección. Se reintentará en el próximo ciclo.");
+        }
+    }
+
+    private async Task NotificarConfirmadasAsync(ResultadoRecoleccionDto resultado, CancellationToken cancellationToken)
+    {
+        if (_notificador is null || resultado.LecturasConfirmadas is not { Count: > 0 } lecturas) return;
+        try { await _notificador.NotificarAsync(lecturas, cancellationToken); }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Las lecturas se guardaron, pero no se pudo publicar el aviso de monitoreo.");
         }
     }
 }

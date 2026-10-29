@@ -63,7 +63,7 @@ public sealed class HistoricoGeneracionIntegrationTests(HistoricoDatabase databa
     }
 
     [MariaDbHistoricoFact]
-    public async Task Rango_RecortaMuestrasPreviasPromediaDuplicadosYExcluyeFin()
+    public async Task Rango_RecortaMuestrasPreviasYExcluyeFin()
     {
         await database.ReiniciarAsync();
         await using var sesion = database.AbrirSesion();
@@ -247,8 +247,8 @@ public sealed class HistoricoGeneracionIntegrationTests(HistoricoDatabase databa
             await context.LecturasPanel.ExecuteDeleteAsync();
             context.Database.SetCommandTimeout(120);
             await context.Database.ExecuteSqlRawAsync("""
-                INSERT INTO LecturasPanel (Id, PanelId, FechaHora, PotenciaGeneradaW, EstadoSalud)
-                SELECT UUID(), p.Id, DATE_ADD('2026-01-01 03:00:00', INTERVAL s.seq * 5 MINUTE), 1200, 0
+                INSERT INTO LecturasPanel (Id, PanelId, NodoId, FechaHora, PotenciaGeneradaW, EstadoSalud)
+                SELECT UUID(), p.Id, p.NodoId, DATE_ADD('2026-01-01 03:00:00', INTERVAL s.seq * 5 MINUTE), 1200, 0
                 FROM Paneles p CROSS JOIN seq_0_to_9999 s
                 """);
             Assert.Equal(1000000, await context.LecturasPanel.CountAsync());
