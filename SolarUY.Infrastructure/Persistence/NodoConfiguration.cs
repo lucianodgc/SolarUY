@@ -12,6 +12,6 @@ public sealed class NodoConfiguration : IEntityTypeConfiguration<Nodo>
         builder.HasKey(nodo => nodo.Id);
         builder.Property(nodo => nodo.Nombre).IsRequired();
         builder.Property(nodo => nodo.UbicacionEnParque).IsRequired();
-        builder.HasOne(nodo => nodo.Parque).WithMany().HasForeignKey(nodo => nodo.ParqueId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(nodo => nodo.Parque).WithMany(parque => parque.Nodos).HasForeignKey(nodo => nodo.ParqueId).OnDelete(DeleteBehavior.Restrict);
     }
 }

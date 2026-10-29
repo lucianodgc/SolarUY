@@ -1,0 +1,38 @@
+@page "/parques-solares/{ParqueId:guid}/nodos/alta"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+@inject INodoService Service
+@inject NavigationManager Navigation
+
+<PageTitle>Registrar nodo</PageTitle>
+<PageHeader Title="Registrar nodo" Section="Gestión del parque" Description="El nodo se crea junto con su inversor."></PageHeader>
+@if (_error is not null) { <p role="alert" class="alert alert-danger">@_error</p> }
+<RadzenTemplateForm TItem="CrearNodoDto" Data="_modelo" Submit="GuardarAsync">
+    <div class="surface"><RadzenFieldset Text="Nodo">
+        <RadzenTextBox Name="Nombre" @bind-Value="_modelo.Nombre" Placeholder="Nombre" Style="width:100%" />
+        <RadzenTextBox Name="Ubicacion" @bind-Value="_modelo.UbicacionEnParque" Placeholder="Ubicación en el parque" Style="width:100%" />
+        <RadzenNumeric Name="CantidadPaneles" @bind-Value="_modelo.CantidadPanelesPrevista" Placeholder="Cantidad de paneles prevista" Style="width:100%" />
+    </RadzenFieldset><RadzenFieldset Text="Inversor">
+        <RadzenTextBox Name="Marca" @bind-Value="_modelo.MarcaInversor" Placeholder="Marca" Style="width:100%" />
+        <RadzenTextBox Name="Modelo" @bind-Value="_modelo.ModeloInversor" Placeholder="Modelo" Style="width:100%" />
+        <RadzenNumeric Name="Potencia" @bind-Value="_modelo.PotenciaNominalKW" Placeholder="Potencia nominal (kW)" Style="width:100%" />
+        <RadzenDropDown Name="Estado" @bind-Value="_modelo.EstadoInversor" Data="_estados" Style="width:100%" />
+        <RadzenCheckBox Name="Volcado" @bind-Value="_modelo.VolcadoRedActivo" /> <label for="Volcado">Volcado a red activo</label>
+    </RadzenFieldset><RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" IsBusy="_ocupado" Disabled="_ocupado" /> <a class="btn btn-light" href="@($"/parques-solares/{ParqueId}/nodos")">Cancelar</a></div>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter] public Guid ParqueId { get; set; }
+    private readonly CrearNodoDto _modelo = new() { EstadoInversor = EstadoInversor.Apagado };
+    private readonly EstadoInversor[] _estados = [EstadoInversor.Encendido, EstadoInversor.Apagado];
+    private string? _error;
+    private bool _ocupado;
+    private async Task GuardarAsync(CrearNodoDto modelo)
+    {
+        if (_ocupado) return;
+        _ocupado = true; _error = null;
+        try { await Service.CrearAsync(ParqueId, modelo); Navigation.NavigateTo($"/parques-solares/{ParqueId}/nodos"); }
+        catch (Exception) { _error = "No se pudo registrar el nodo. Revisá los datos ingresados."; }
+        finally { _ocupado = false; }
+    }
+}

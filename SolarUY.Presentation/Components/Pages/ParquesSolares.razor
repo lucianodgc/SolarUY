@@ -37,7 +37,7 @@ else
 {
     <div class="surface table-responsive">
     <table class="table">
-        <thead><tr><th>Nombre</th><th>Ubicación</th><th>Capacidad estimada (MW)</th><AuthorizeView Roles="Administrador"><th>Acciones</th></AuthorizeView></tr></thead>
+        <thead><tr><th>Nombre</th><th>Ubicación</th><th>Capacidad estimada (MW)</th><AuthorizeView Roles="Administrador"><th>Acciones</th></AuthorizeView><AuthorizeView Roles="Tecnico,Consulta"><th>Nodos</th></AuthorizeView></tr></thead>
         <tbody>
             @foreach (var parque in _parques)
             {
@@ -48,10 +48,12 @@ else
                     <AuthorizeView Roles="Administrador">
                         <td><div class="action-buttons">
                             <a class="btn btn-outline-primary btn-sm" href="@($"/parques-solares/{parque.Id}/editar")">Editar</a>
+                            <a class="btn btn-outline-secondary btn-sm" href="@($"/parques-solares/{parque.Id}/nodos")">Nodos</a>
                             <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
                                           Text="Eliminar" Disabled="_ocupado" Click="async () => await ConfirmarBajaAsync(parque.Id)" />
                         </div></td>
                     </AuthorizeView>
+                    <AuthorizeView Roles="Tecnico,Consulta"><td><a class="btn btn-outline-secondary btn-sm" href="@($"/parques-solares/{parque.Id}/nodos")">Nodos</a></td></AuthorizeView>
                 </tr>
             }
         </tbody>

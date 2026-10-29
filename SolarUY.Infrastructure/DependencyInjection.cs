@@ -7,6 +7,7 @@ using SolarUY.Application.Mantenimiento;
 using SolarUY.Application.Inversores;
 using SolarUY.Application.HistoricoGeneracion;
 using SolarUY.Application.RecoleccionLecturas;
+using SolarUY.Application.Nodos;
 using SolarUY.Infrastructure.Identity;
 using SolarUY.Infrastructure.Inversores;
 using SolarUY.Infrastructure.Inversores.Tcp;
@@ -33,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<IHistoricoGeneracionRepository, HistoricoGeneracionRepository>();
         services.AddScoped<IRecoleccionLecturasRepository, RecoleccionLecturasRepository>();
         services.AddScoped<ITareaMantenimientoRepository, TareaMantenimientoRepository>();
+        services.AddScoped<INodoRepository, NodoRepository>();
         services.AddSingleton(_ => new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
         {
             Timeout = TimeSpan.FromSeconds(30)

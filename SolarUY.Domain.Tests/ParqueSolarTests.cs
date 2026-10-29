@@ -4,6 +4,23 @@ namespace SolarUY.Domain.Tests;
 
 public sealed class ParqueSolarTests
 {
+    [Fact]
+    public void QuitarNodo_RechazaEliminarElUltimo()
+    {
+        var parque = new ParqueSolar("Parque", "Salto");
+        var nodo = new Nodo(parque, "Nodo", "Norte");
+        Assert.Throws<InvalidOperationException>(() => parque.QuitarNodo(nodo));
+    }
+
+    [Fact]
+    public void QuitarNodo_PermiteEliminarCuandoQuedaOtro()
+    {
+        var parque = new ParqueSolar("Parque", "Salto");
+        var nodo = new Nodo(parque, "Nodo", "Norte");
+        var otroNodo = new Nodo(parque, "Nodo dos", "Sur");
+        parque.QuitarNodo(nodo);
+        Assert.Equal(new[] { otroNodo }, parque.Nodos);
+    }
     [Theory]
     [InlineData(null)]
     [InlineData("")]
