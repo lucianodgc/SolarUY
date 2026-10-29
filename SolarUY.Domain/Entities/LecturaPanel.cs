@@ -30,8 +30,10 @@ public sealed class LecturaPanel
     public Guid Id { get; private set; }
     public Guid PanelId { get; private set; }
     public Panel Panel { get; private set; } = null!;
-    public Guid NodoId { get; private set; }
-    public Nodo Nodo { get; private set; } = null!;
+    // NULL identifica exclusivamente lecturas anteriores sin procedencia demostrable.
+    // El constructor público siempre captura el nodo de una medición nueva.
+    public Guid? NodoId { get; private set; }
+    public Nodo? Nodo { get; private set; }
     public DateTime FechaHora { get; private set; }
     public decimal PotenciaGeneradaW { get; private set; }
     public EstadoSaludLectura EstadoSalud { get; private set; }

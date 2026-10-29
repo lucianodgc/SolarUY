@@ -193,7 +193,7 @@ public sealed class MonitoreoHubIntegrationTests(HistoricoDatabase database) : I
         {
             EnvironmentName = "Development",
             ApplicationName = pagina ? typeof(SolarUY.Presentation.Components.App).Assembly.GetName().Name : null,
-            ContentRootPath = pagina ? Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../SolarUY.Presentation")) : null
+            ContentRootPath = pagina ? HistoricoDatabase.RutaProyecto("SolarUY.Presentation") : null
         });
         builder.Logging.ClearProviders();
         builder.WebHost.ConfigureKestrel(o => o.Listen(IPAddress.Loopback, pagina ? 5067 : 0));

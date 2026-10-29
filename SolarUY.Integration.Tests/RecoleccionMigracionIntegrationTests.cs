@@ -10,10 +10,43 @@ namespace SolarUY.Integration.Tests;
 [Collection("MariaDB histórico")]
 public sealed class RecoleccionMigracionIntegrationTests
 {
+    [MariaDbHistoricoFact]
+    public async Task Migracion_CompatibleConInstalacionQueYaGuardabaElNodoVerificado()
+    {
+        var conexion = new MySqlConnectionStringBuilder(Environment.GetEnvironmentVariable(HistoricoDatabase.VariableConexion)
+            ?? throw new InvalidOperationException("Falta la conexión aislada de integración."));
+        Assert.StartsWith("solaruy_req007_test", conexion.Database);
+        conexion.Database = "solaruy_req007_test_compat_" + Guid.NewGuid().ToString("N");
+        await using var context = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseMySql(conexion.ConnectionString, new MariaDbServerVersion(new Version(11, 8, 0))).Options);
+        try
+        {
+            var migrador = context.GetService<IMigrator>();
+            await migrador.MigrateAsync("20261029023745_AddRecoleccionPeriodica");
+            // Reproducir la nulabilidad de la versión antigua, solo en esta base temporal.
+            await context.Database.ExecuteSqlRawAsync("ALTER TABLE LecturasPanel MODIFY NodoId CHAR(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL");
+            var panel = HistoricoDatabase.CrearPanel(new Nodo(new ParqueSolar("Verificado", "Salto"), "Original", "Norte"), "Verificado");
+            var lectura = new LecturaPanel(panel, new DateTime(2026, 10, 22, 15, 0, 0, DateTimeKind.Utc), 123.456789m,
+                SolarUY.Domain.Enums.EstadoSaludLectura.Fallado);
+            context.LecturasPanel.Add(lectura);
+            await context.SaveChangesAsync();
+            await migrador.MigrateAsync();
+            context.ChangeTracker.Clear();
+            var despues = await context.LecturasPanel.SingleAsync();
+            Assert.Equal(lectura.Id, despues.Id);
+            Assert.Equal(panel.NodoId, despues.NodoId);
+            Assert.Equal(lectura.FechaHora, despues.FechaHora);
+            Assert.Equal(lectura.PotenciaGeneradaW, despues.PotenciaGeneradaW);
+            Assert.Equal(lectura.EstadoSalud, despues.EstadoSalud);
+            Assert.False(context.Database.HasPendingModelChanges());
+        }
+        finally { await context.Database.EnsureDeletedAsync(); }
+    }
+
     [MariaDbHistoricoTheory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Migracion_ProtegeDatosPreviosYExigeTopologiaVerificada(bool duplicados)
+    public async Task Migracion_ConservaDatosPreviosSinInventarNodoYRechazaDuplicados(bool duplicados)
     {
         var conexionBase = new MySqlConnectionStringBuilder(
             Environment.GetEnvironmentVariable(HistoricoDatabase.VariableConexion)
@@ -42,26 +75,44 @@ public sealed class RecoleccionMigracionIntegrationTests
                     VALUES ({Guid.NewGuid()}, {panel.Id}, {fecha}, 200, 1)
                     """);
 
-            var error = await Assert.ThrowsAsync<MySqlException>(() => migrador.MigrateAsync());
-            Assert.Contains(duplicados ? "duplicadas" : "nodo original", error.Message);
             await context.Database.OpenConnectionAsync();
-            using var columna = context.Database.GetDbConnection().CreateCommand();
-            columna.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'LecturasPanel' AND column_name = 'NodoId'";
-            Assert.Equal(0, Convert.ToInt32(await columna.ExecuteScalarAsync()));
+            if (duplicados)
+            {
+                var error = await Assert.ThrowsAsync<MySqlException>(() => migrador.MigrateAsync());
+                Assert.Contains("duplicadas", error.Message);
+                using var columna = context.Database.GetDbConnection().CreateCommand();
+                columna.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'LecturasPanel' AND column_name = 'NodoId'";
+                Assert.Equal(0, Convert.ToInt32(await columna.ExecuteScalarAsync()));
+            }
             using var cantidad = context.Database.GetDbConnection().CreateCommand();
             cantidad.CommandText = "SELECT COUNT(*) FROM LecturasPanel";
             Assert.Equal(duplicados ? 2 : 1, Convert.ToInt32(await cantidad.ExecuteScalarAsync()));
             if (duplicados) return;
 
-            // Esta prueba creó la topología y puede demostrar que nunca cambió.
+            // Una variable aislada no constituye evidencia y no debe atribuir datos.
             await context.Database.ExecuteSqlRawAsync("SET @SolarUY_TopologiaHistoricaVerificada = 1");
             await migrador.MigrateAsync();
             var lectura = await context.LecturasPanel.SingleAsync();
             Assert.Equal(id, lectura.Id);
-            Assert.Equal(panel.NodoId, lectura.NodoId);
+            Assert.Null(lectura.NodoId);
+            Assert.Null(lectura.Nodo);
+            Assert.Equal(panel.Id, lectura.PanelId);
+            Assert.Equal(SolarUY.Domain.Enums.EstadoSaludLectura.Sano, lectura.EstadoSalud);
             Assert.Equal(100m, lectura.PotenciaGeneradaW);
             Assert.Equal(fecha, lectura.FechaHora);
             Assert.Equal(DateTimeKind.Utc, lectura.FechaHora.Kind);
+            // Mover el panel no permite reconstruir retrospectivamente la procedencia.
+            var otroNodo = new Nodo(new ParqueSolar("Otro parque", "Rocha"), "Otro nodo", "Sur");
+            context.Nodos.Add(otroNodo);
+            await context.SaveChangesAsync();
+            await context.Paneles.Where(p => p.Id == panel.Id).ExecuteUpdateAsync(s => s.SetProperty(p => p.NodoId, otroNodo.Id));
+            context.ChangeTracker.Clear();
+            Assert.Null((await context.LecturasPanel.SingleAsync()).NodoId);
+            var panelActual = await context.Paneles.Include(p => p.Nodo).SingleAsync();
+            context.LecturasPanel.Add(new LecturaPanel(panelActual, fecha.AddSeconds(1), 50, SolarUY.Domain.Enums.EstadoSaludLectura.Sano));
+            await context.SaveChangesAsync();
+            Assert.Equal(otroNodo.Id, (await context.LecturasPanel.SingleAsync(l => l.Id != id)).NodoId);
+            Assert.False(context.Database.HasPendingModelChanges());
 
             using var indices = context.Database.GetDbConnection().CreateCommand();
             indices.CommandText = "SELECT COUNT(DISTINCT index_name) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'LecturasPanel' AND index_name IN ('IX_LecturasPanel_PanelId_FechaHora', 'IX_LecturasPanel_NodoId_FechaHora')";
@@ -78,6 +129,10 @@ public sealed class RecoleccionMigracionIntegrationTests
                 Assert.True(await plan.ReadAsync());
                 Assert.Equal($"IX_LecturasPanel_{clave}_FechaHora", plan.GetString(plan.GetOrdinal("key")));
             }
+            var retroceso = await Assert.ThrowsAsync<MySqlException>(() => migrador.MigrateAsync("20261029120000_AddDistribucionMonitoreo"));
+            Assert.Contains("sin nodo historico verificado", retroceso.Message);
+            Assert.Equal(2, await context.LecturasPanel.CountAsync());
+            Assert.Null((await context.LecturasPanel.SingleAsync(l => l.Id == id)).NodoId);
         }
         finally
         {

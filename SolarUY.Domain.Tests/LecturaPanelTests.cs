@@ -23,6 +23,7 @@ public sealed class LecturaPanelTests
         Assert.Same(panel, lectura.Panel);
         Assert.Equal(panel.Id, lectura.PanelId);
         Assert.Equal(panel.NodoId, lectura.NodoId);
+        Assert.NotNull(lectura.NodoId);
         Assert.Same(panel.Nodo, lectura.Nodo);
         Assert.Equal(instante, lectura.FechaHora);
         Assert.Equal(DateTimeKind.Utc, lectura.FechaHora.Kind);

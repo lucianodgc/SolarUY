@@ -13,6 +13,21 @@ public sealed class GeneracionActualTests
         => new(panel, fecha, potencia, EstadoSaludLectura.Sano);
 
     [Fact]
+    public void NodoHistoricoDesconocido_NoSeAtribuyeAlNodoActual()
+    {
+        var panel = Panel("Legado");
+        var lectura = Lectura(panel, Instante, 100);
+        // Simular exclusivamente la materialización de una fila legada por el ORM.
+        typeof(LecturaPanel).GetProperty(nameof(LecturaPanel.NodoId))!.SetValue(lectura, null);
+        typeof(LecturaPanel).GetProperty(nameof(LecturaPanel.Nodo))!.SetValue(lectura, null);
+        var resultado = new GeneracionActualService().Calcular([_nodo], [panel], [lectura], Instante, new(60, 2));
+        Assert.Null(resultado.Parque.PotenciaW);
+        Assert.Null(resultado.Nodos[_nodo.Id].PotenciaW);
+        Assert.Equal(DisponibilidadMonitoreo.NodoHistoricoDesconocido, Assert.Single(resultado.Paneles).Disponibilidad);
+        Assert.Equal(100m, lectura.PotenciaGeneradaW);
+    }
+
+    [Fact]
     public void SumaUnaVezCadaPanelYSoloLaUltimaMuestraSinRetroceder()
     {
         var a = Panel("A"); var b = Panel("B");

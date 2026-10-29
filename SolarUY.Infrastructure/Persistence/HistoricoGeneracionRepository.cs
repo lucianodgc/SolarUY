@@ -60,7 +60,19 @@ public sealed class HistoricoGeneracionRepository : IHistoricoGeneracionReposito
             total = reader.IsDBNull(5) ? null : reader.GetDecimal(5);
             cobertura = (CoberturaHistorico)reader.GetInt32(6);
         }
-        return new ResultadoHistoricoDto(consulta, total, cobertura, serie);
+        await reader.DisposeAsync();
+        await using var pendientes = context.Database.GetDbConnection().CreateCommand();
+        // En nodo/parque el aviso es global al período: no conocemos su pertenencia.
+        pendientes.CommandText = "SELECT COUNT(*) FROM LecturasPanel WHERE NodoId IS NULL "
+            + "AND FechaHora >= DATE_SUB(@inicio, INTERVAL 5 MINUTE) AND FechaHora < @fin"
+            + (consulta.Tipo == TipoObjetivoHistorico.Panel ? " AND PanelId = @objetivo" : "");
+        AgregarParametro(pendientes, "@inicio", consulta.InicioUtc);
+        AgregarParametro(pendientes, "@fin", consulta.FinUtc);
+        AgregarParametro(pendientes, "@objetivo", consulta.ObjetivoId.ToString());
+        return new ResultadoHistoricoDto(consulta, total, cobertura, serie)
+        {
+            LecturasSinNodoHistorico = Convert.ToInt64(await pendientes.ExecuteScalarAsync(cancellationToken))
+        };
     }
 
     private static DbCommand CrearComando(ApplicationDbContext context, ConsultaHistoricoDto consulta)
@@ -103,19 +115,40 @@ public sealed class HistoricoGeneracionRepository : IHistoricoGeneracionReposito
             TipoObjetivoHistorico.Panel => "p.Id = @objetivo",
             _ => throw new ArgumentException("Tipo de objetivo inválido.", nameof(tipo))
         };
+        var procedencia = tipo switch
+        {
+            TipoObjetivoHistorico.Parque => "l.NodoId IN (SELECT Id FROM Nodos WHERE ParqueId = @objetivo)",
+            TipoObjetivoHistorico.Nodo => "l.NodoId = @objetivo",
+            _ => "l.PanelId = @objetivo"
+        };
+        var fueraDelObjetivoActual = tipo == TipoObjetivoHistorico.Nodo ? "p.NodoId <> @objetivo"
+            : "NOT EXISTS (SELECT 1 FROM Nodos n WHERE n.Id = p.NodoId AND n.ParqueId = @objetivo)";
+        var panelesHistoricos = tipo == TipoObjetivoHistorico.Panel ? "" : $$"""
+                UNION SELECT p.Id FROM Paneles p WHERE {{fueraDelObjetivoActual}} AND (
+                    SELECT 1 FROM LecturasPanel l
+                        FORCE INDEX (IX_LecturasPanel_PanelId_FechaHora_NodoId_PotenciaGeneradaW)
+                    WHERE l.PanelId = p.Id AND {{procedencia}}
+                        AND l.FechaHora >= DATE_SUB(@inicio, INTERVAL 5 MINUTE) AND l.FechaHora < @fin
+                    LIMIT 1) = 1
+                """;
+        // La migración impone unicidad (PanelId, FechaHora): no se necesita
+        // reagrupar/mediar todas las muestras antes de calcular sus tramos.
+        var pertenece = tipo == TipoObjetivoHistorico.Panel ? "1" : $"CASE WHEN {procedencia} THEN 1 ELSE 0 END";
+        var indiceMuestras = tipo == TipoObjetivoHistorico.Panel
+            ? "IX_LecturasPanel_PanelId_FechaHora_PotenciaGeneradaW"
+            : "IX_LecturasPanel_PanelId_FechaHora_NodoId_PotenciaGeneradaW";
         return $$"""
             SET STATEMENT tmp_table_size=268435456, max_heap_table_size=268435456 FOR
             WITH paneles_objetivo AS (
                 SELECT DISTINCT p.Id FROM Paneles p INNER JOIN Nodos n ON n.Id = p.NodoId WHERE {{predicado}}
+                {{panelesHistoricos}}
             ), muestras AS (
-                SELECT l.PanelId, l.FechaHora, AVG(l.PotenciaGeneradaW) AS Potencia
-                FROM LecturasPanel l
-                WHERE l.PanelId IN (SELECT Id FROM paneles_objetivo)
-                    AND l.FechaHora >= DATE_SUB(@inicio, INTERVAL 5 MINUTE) AND l.FechaHora < @fin
-                GROUP BY l.PanelId, l.FechaHora
-                ORDER BY NULL
+                SELECT l.PanelId, {{pertenece}} AS EsObjetivo, l.FechaHora, l.PotenciaGeneradaW AS Potencia
+                FROM paneles_objetivo objetivo STRAIGHT_JOIN LecturasPanel l FORCE INDEX ({{indiceMuestras}})
+                    ON l.PanelId = objetivo.Id
+                WHERE l.FechaHora >= DATE_SUB(@inicio, INTERVAL 5 MINUTE) AND l.FechaHora < @fin
             ), tramos AS (
-                SELECT DATE(FechaHora) AS DiaUtc, FechaHora, Potencia,
+                SELECT EsObjetivo, DATE(FechaHora) AS DiaUtc, FechaHora, Potencia,
                     LEAST(COALESCE(LEAD(FechaHora) OVER (PARTITION BY PanelId ORDER BY FechaHora),
                         DATE_ADD(FechaHora, INTERVAL 5 MINUTE)), DATE_ADD(FechaHora, INTERVAL 5 MINUTE)) AS Fin
                 FROM muestras
@@ -135,6 +168,7 @@ public sealed class HistoricoGeneracionRepository : IHistoricoGeneracionReposito
                         * (SELECT COUNT(*) FROM paneles_objetivo) AS Esperado
                 FROM intervalos i LEFT JOIN tramos t ON t.DiaUtc = i.DiaUtc
                     AND t.FechaHora < i.FinUtc AND t.Fin > i.InicioUtc
+                    AND t.EsObjetivo = 1
                 GROUP BY i.Ordinal, i.InicioUtc, i.FinUtc
             ), energias AS (
                 SELECT Ordinal, CAST(EnergiaMicroWh AS DECIMAL(65,24)) / 3600000000000 AS Energia,

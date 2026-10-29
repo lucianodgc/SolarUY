@@ -31,6 +31,10 @@ internal static class ReporteCsv
                 tarea.PanelId.ToString("D"), tarea.NumeroSerie, tarea.Tipo, tarea.Descripcion, tarea.ResponsableId,
                 tarea.Estado.ToString(), tarea.FechaProgramadaLocal, tarea.FechaRealizacionLocal]);
         }
+        if (generacion.LecturasSinNodoHistorico > 0)
+            EscribirFila(texto, ["Advertencia", .. comunes, .. new string?[8],
+                $"Existen {generacion.LecturasSinNodoHistorico} lecturas sin nodo histórico verificado en la base durante el período; no se atribuyen a nodos ni parques. Consultar por panel.",
+                .. new string?[4]]);
         cancellationToken.ThrowIfCancellationRequested();
         var nombre = $"reporte-{generacion.Consulta.ObjetivoId:N}-{generacion.Consulta.InicioUtc:yyyyMMddHHmm}-{generacion.Consulta.FinUtc:yyyyMMddHHmm}.csv";
         return new(nombre, "text/csv;charset=utf-8", new UTF8Encoding(false).GetBytes(texto.ToString()));

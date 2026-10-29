@@ -1,5 +1,7 @@
 # Especificaciones: Reportes con gráficos del histórico y exportación
 
+> Reparación solicitada el 29/10/2026: reutilizar el histórico que respeta NodoId histórico y excluye lecturas legadas sin procedencia de los agregados por nodo/parque. Mostrar el aviso de lecturas sin nodo verificable y conservarlo en la exportación CSV. Las lecturas permanecen consultables por panel y nunca se reatribuyen usando la topología actual.
+
 Fuente funcional: `requirements.md` de esta carpeta. El alcance comprende una pantalla de reportes de generación y mantenimiento, gráficos Radzen de barras y líneas, filtros y descarga CSV. Este documento define el diseño; no acredita implementación ni pruebas ejecutadas.
 
 ## Contexto, alcance y aclaraciones

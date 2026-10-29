@@ -16,6 +16,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Excluir también salidas anteriores cuando se cambia BaseOutputPath. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
     <UserSecretsId>$(SolarUyUserSecretsId)</UserSecretsId>
   </PropertyGroup>
 

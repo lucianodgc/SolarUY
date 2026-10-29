@@ -60,7 +60,10 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         var inicio = new DateTime(2026, 10, 22, horaUtc - 3, 0, 0);
         var resultado = await sesion.Servicio.ConsultarAsync(new(TipoObjetivoHistorico.Parque, database.Parque.Id,
             PeriodoHistorico.Rango, inicio, inicio.AddMinutes(1)));
-        Assert.Equal(lecturas.Sum(lectura => lectura.PotenciaGeneradaW) / 60000m, resultado.EnergiaKWh);
+        // El inventario también contiene un panel de OtroParque: no debe sumarse.
+        var propias = lecturas.Where(lectura => lectura.PanelId != database.PanelAjeno.Id).ToArray();
+        Assert.Equal(3, propias.Length);
+        Assert.Equal(propias.Sum(lectura => lectura.PotenciaGeneradaW) / 60000m, resultado.EnergiaKWh);
         Assert.Equal(CoberturaHistorico.Completa, resultado.Cobertura);
     }
 

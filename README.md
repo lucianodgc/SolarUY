@@ -126,7 +126,7 @@ Escucha por defecto en `127.0.0.1:5055`. Deja esa terminal abierta; `Ctrl+C` det
 Define la conexión a MariaDB fuera del repositorio con las credenciales de tu entorno. .NET no lee automáticamente el `.env` de Compose; usá user-secrets o variables de entorno. Por ejemplo, en PowerShell:
 
 ```powershell
-$env:ConnectionStrings__SolarUY = "Server=localhost;Port=3306;Database=solaruy;User=solaruy;Password=<tu-clave>"
+$env:ConnectionStrings__SolarUY = "Server=127.0.0.1;Port=3307;Database=solaruy;User=solaruy;Password=<tu-clave>"
 ```
 
 Desde la raíz, guarda el secreto confidencial del cliente OIDC en User Secrets:
@@ -148,6 +148,8 @@ dotnet ef database update --project SolarUY.Infrastructure/SolarUY.Infrastructur
 ```
 
 El historial conserva `AddParqueSolar`, `AddMantenimientoPaneles` y `AddLecturaPanel`; esta última crea la tabla de lecturas utilizada por el histórico y el recolector. Se comprobó su aplicación sobre una base vacía; la aplicación no ejecuta migraciones automáticamente al arrancar. Si no hay migraciones pendientes, no hace falta recrear la base.
+
+Las migraciones posteriores incorporan inversores, nodo histórico, unicidad de muestras, distribución de monitoreo y cobertura de consultas. Antes de actualizar una base existente, detener recolectores, respaldarla y probar la restauración. Las lecturas anteriores sin nodo demostrable se conservan con `NodoId = NULL`, consultables por panel y con aviso en reportes; no se completan con la ubicación actual del panel ni con una variable de autorización. Ver [reparación y verificaciones del 29/10/2026](prompting/Reportes%20de%20codex/reparacion_migraciones_20261029.md).
 
 `solaruy.sql` es un volcado histórico, no el mecanismo de aprovisionamiento de la aplicación. Sus nombres de tablas coinciden con las migraciones, incluyendo mayúsculas. Conserva responsables de ejemplo o de otro entorno: importarlo no asigna automáticamente las tareas a los usuarios del Keycloak de destino. No debe reemplazar una base existente para intentar corregir un problema de carga.
 
@@ -175,7 +177,7 @@ Si la aplicación estaba ejecutándose mientras se modificaba el código, detene
 - El inventario de nodos, parques y paneles se consulta desde MariaDB en la aplicación web y se envía al simulador por TCP; no se configura una topología de prueba.
 - `InversorSimulador__PanelesConFalla`: identificadores de panel que el simulador debe marcar como fallados.
 - `RecoleccionLecturas__Habilitada`: activa la recolección automática; por defecto, `true`.
-- `RecoleccionLecturas__Intervalo`: intervalo de recolección; por defecto, `00:01:00`, configurable entre un segundo y cinco minutos. Se guarda como máximo una lectura por panel/minuto. Reiniciar la aplicación después de modificar estas opciones.
+- `RecoleccionLecturas__IntervaloSegundos`: entero obligatorio entre 1 y 4.294.967; el archivo de configuración declara 60 segundos. La identidad es panel/instante UTC normalizado, y se admiten muestras distintas dentro del minuto. Sustituye la antigua clave `Intervalo`. Reiniciar la aplicación después de modificar estas opciones.
 
 ## Pruebas
 

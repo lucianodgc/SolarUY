@@ -24,7 +24,7 @@ public sealed class MonitoreoNginxIntegrationTests(HistoricoDatabase database) :
     {
         await database.ReiniciarAsync();
         await using var context = database.CrearContexto(); await context.LecturasPanel.ExecuteDeleteAsync();
-        var runtime = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../SolarUY.Browser.Tests/.runtime"));
+        var runtime = Path.Combine(HistoricoDatabase.RutaProyecto("SolarUY.Browser.Tests"), ".runtime");
         Directory.CreateDirectory(runtime);
         foreach (var archivo in new[] { "control.json", "resultado-control.json", "finalizado.json" }) File.Delete(Path.Combine(runtime, archivo));
         var claves = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "solaruy-req14-" + Guid.NewGuid().ToString("N"))).FullName;
@@ -138,7 +138,7 @@ public sealed class MonitoreoNginxIntegrationTests(HistoricoDatabase database) :
     {
         var inicio = new ProcessStartInfo("dotnet") { UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true,
-            WorkingDirectory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../SolarUY.Presentation")) };
+            WorkingDirectory = HistoricoDatabase.RutaProyecto("SolarUY.Presentation") };
         inicio.ArgumentList.Add(typeof(MonitoreoHub).Assembly.Location);
         inicio.Environment["ConnectionStrings__SolarUY"] = Environment.GetEnvironmentVariable(HistoricoDatabase.VariableConexion)!;
         inicio.Environment["ASPNETCORE_URLS"] = $"http://127.0.0.1:{puerto}";
