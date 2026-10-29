@@ -7,6 +7,7 @@ using SolarUY.Application.Mantenimiento;
 using SolarUY.Application.Inversores;
 using SolarUY.Application.HistoricoGeneracion;
 using SolarUY.Application.RecoleccionLecturas;
+using SolarUY.Application.Monitoreo;
 using SolarUY.Application.Nodos;
 using SolarUY.Infrastructure.Identity;
 using SolarUY.Infrastructure.Inversores;
@@ -28,26 +29,34 @@ public static class DependencyInjection
             var version = Version.Parse(configuration["MariaDB:ServerVersion"] ?? "11.8.0");
             options.UseMySql(connectionString, new MariaDbServerVersion(version));
         });
+
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IPanelRepository, PanelRepository>();
         services.AddScoped<IInversorInventarioRepository, InversorInventarioRepository>();
         services.AddScoped<IHistoricoGeneracionRepository, HistoricoGeneracionRepository>();
         services.AddScoped<IRecoleccionLecturasRepository, RecoleccionLecturasRepository>();
+        services.AddScoped<IMonitoreoRepository, MonitoreoRepository>();
+        services.AddScoped<IDistribucionMonitoreoRepository, DistribucionMonitoreoRepository>();
         services.AddScoped<ITareaMantenimientoRepository, TareaMantenimientoRepository>();
         services.AddScoped<INodoRepository, NodoRepository>();
+
         services.AddSingleton(_ => new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
         {
             Timeout = TimeSpan.FromSeconds(30)
         });
+
         services.AddScoped<ITecnicoDirectory, KeycloakTecnicoDirectory>();
 
         services.AddSingleton(TimeProvider.System);
+
         services.AddOptions<InversorTcpOptions>()
             .Configure(options => InversorTcpOptions.Cargar(configuration, options))
             .Validate(options => IPAddress.TryParse(options.Host, out _), "InversorTcp:Host debe ser una dirección IP válida.")
             .Validate(options => options.Port is > 0 and <= 65535, "InversorTcp:Port debe estar entre 1 y 65535.")
             .Validate(options => options.TimeoutSeconds is > 0 and <= 30, "InversorTcp:TimeoutSeconds debe estar entre 1 y 30.");
+
         services.AddSingleton<IInversorClient, InversorTcpClient>();
+
         return services;
     }
 }

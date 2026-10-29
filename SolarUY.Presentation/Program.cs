@@ -20,6 +20,11 @@ using SolarUY.Infrastructure;
 using SolarUY.Presentation.Authentication;
 using SolarUY.Presentation.Components;
 using SolarUY.Presentation.BackgroundServices;
+using SolarUY.Presentation.Monitoreo;
+using SolarUY.Application.Monitoreo;
+using SolarUY.Domain.Monitoreo;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSolarInfrastructure(builder.Configuration);
@@ -31,12 +36,47 @@ builder.Services.AddScoped<IInversorService, InversorService>();
 builder.Services.AddScoped<IHistoricoGeneracionService, HistoricoGeneracionService>();
 builder.Services.AddScoped<IReporteHistoricoService, ReporteHistoricoService>();
 builder.Services.AddScoped<IRecoleccionLecturasService, RecoleccionLecturasService>();
+builder.Services.AddOptions<MonitoreoOptions>().Bind(builder.Configuration.GetSection("Monitoreo"))
+    .Validate<ConfiguracionRecoleccion>((o, recoleccion) => o.IntervalosVigencia > 0 && o.MaximoPuntosGrafico > 0
+        && o.IntervalosVigencia <= long.MaxValue / recoleccion.Intervalo.Ticks
+        && o.ReevaluacionSegundos is > 0 and <= 4_294_967, "Configuración Monitoreo fuera del rango representable.")
+    .ValidateOnStart();
+builder.Services.AddSingleton<GeneracionActualService>();
+builder.Services.AddSingleton(provider => new PoliticaMonitoreo(
+    (int)provider.GetRequiredService<ConfiguracionRecoleccion>().Intervalo.TotalSeconds,
+    provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<MonitoreoOptions>>().Value.IntervalosVigencia));
+builder.Services.AddScoped<IMonitoreoService, MonitoreoService>();
+builder.Services.AddScoped<AccesoMonitoreoService>();
+builder.Services.AddScoped(provider => new SerieMonitoreoService(
+    provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<MonitoreoOptions>>().Value.MaximoPuntosGrafico,
+    provider.GetRequiredService<ConfiguracionRecoleccion>().Intervalo));
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<INotificadorLecturasConfirmadas, NotificadorLecturasConfirmadas>();
+builder.Services.AddOptions<DistribucionMonitoreoOptions>().Bind(builder.Configuration.GetSection("DistribucionMonitoreo"))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.InstanciaId) && o.InstanciaId.Length <= 100
+        && o.IntervaloSegundos is > 0 and <= 4_294_967 && o.TamanoLote > 0, "Configuración de distribución de monitoreo inválida.")
+    .ValidateOnStart();
+builder.Services.AddHostedService<DistribucionMonitoreoWorker>();
+var rutaClaves = builder.Configuration["DataProtection:RutaClaves"];
+if (!string.IsNullOrWhiteSpace(rutaClaves))
+    builder.Services.AddDataProtection().SetApplicationName("SolarUY")
+        .PersistKeysToFileSystem(new DirectoryInfo(rutaClaves));
+var direccionProxy = builder.Configuration["ReverseProxy:Direccion"];
+if (!string.IsNullOrWhiteSpace(direccionProxy))
+    builder.Services.Configure<ForwardedHeadersOptions>(o =>
+    {
+        o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        o.KnownProxies.Add(System.Net.IPAddress.Parse(direccionProxy));
+    });
 builder.Services.AddOptions<RecoleccionLecturasOptions>()
     .Bind(builder.Configuration.GetSection("RecoleccionLecturas"))
-    .Validate(options => options.Intervalo >= TimeSpan.FromSeconds(1) && options.Intervalo <= TimeSpan.FromMinutes(5),
-        "RecoleccionLecturas:Intervalo debe estar entre un segundo y cinco minutos.")
+    .Validate(options => options.TieneIntervaloValido,
+        "RecoleccionLecturas:IntervaloSegundos es obligatorio y debe estar entre 1 y 4294967 segundos (límite de PeriodicTimer).")
     .ValidateOnStart();
 builder.Services.AddHostedService<RecoleccionLecturasWorker>();
+builder.Services.AddSingleton(provider => new ConfiguracionRecoleccion(
+    provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<RecoleccionLecturasOptions>>()
+        .Value.IntervaloSegundos ?? throw new InvalidOperationException("Falta IntervaloSegundos.")));
 builder.Services.AddScoped<IValidator<CrearParqueSolarDto>, CrearParqueSolarDtoValidator>();
 builder.Services.AddScoped<IValidator<ActualizarParqueSolarDto>, ActualizarParqueSolarDtoValidator>();
 builder.Services.AddScoped<IValidator<CrearNodoDto>, CrearNodoDtoValidator>();
@@ -48,7 +88,21 @@ builder.Services
         options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
     })
-    .AddCookie()
+    .AddCookie(options =>
+    {
+        options.Events.OnRedirectToLogin = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/hubs/monitoreo")) context.Response.StatusCode = 401;
+            else context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/hubs/monitoreo")) context.Response.StatusCode = 403;
+            else context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
+    })
     .AddOpenIdConnect(options =>
     {
         var openIdConnect = builder.Configuration.GetSection("Authentication:OpenIdConnect");
@@ -103,6 +157,13 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var app = builder.Build();
+if (!string.IsNullOrWhiteSpace(direccionProxy)) app.UseForwardedHeaders();
+app.Use(async (context, siguiente) =>
+{
+    context.Response.Headers["X-SolarUY-Instancia"] = app.Services
+        .GetRequiredService<Microsoft.Extensions.Options.IOptions<DistribucionMonitoreoOptions>>().Value.InstanciaId;
+    await siguiente();
+});
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -118,6 +179,7 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
+app.MapHub<MonitoreoHub>("/hubs/monitoreo", options => options.CloseOnAuthenticationExpiration = true);
 
 app.MapPost("/Account/Logout", async (HttpContext context, IAntiforgery antiforgery) =>
 {

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using SolarUY.Application.Abstractions;
 using SolarUY.Application.HistoricoGeneracion;
 using SolarUY.Application.Inversores;
@@ -80,6 +81,69 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         Assert.Equal(4, (await colector.RecolectarAsync()).LecturasGuardadas);
         await using var context = database.CrearContexto();
         Assert.Equal(8, await context.LecturasPanel.CountAsync());
+    }
+
+    [MariaDbHistoricoFact]
+    public async Task Ciclos_AdmitenMedicionesDistintasDentroDelMismoMinuto()
+    {
+        await PrepararAsync();
+        var reloj = new RelojRecoleccion(Instante.AddSeconds(12).AddTicks(9876543));
+        await using var provider = CrearProvider(reloj, intervaloSegundos: 1);
+        await using var scope = provider.CreateAsyncScope();
+        var servicio = scope.ServiceProvider.GetRequiredService<IRecoleccionLecturasService>();
+        Assert.Equal(4, (await servicio.RecolectarAsync()).LecturasGuardadas);
+        Assert.Equal(0, (await servicio.RecolectarAsync()).LecturasGuardadas);
+        reloj.Avanzar(TimeSpan.FromSeconds(1));
+        Assert.Equal(4, (await servicio.RecolectarAsync()).LecturasGuardadas);
+        await using var context = database.CrearContexto();
+        var lecturas = await context.LecturasPanel.Where(l => l.PanelId == database.Panel.Id)
+            .OrderBy(l => l.FechaHora).ToArrayAsync();
+        Assert.Equal(2, lecturas.Length);
+        Assert.Equal(TimeSpan.FromSeconds(1), lecturas[1].FechaHora - lecturas[0].FechaHora);
+        Assert.All(lecturas, lectura => Assert.Equal(database.Panel.NodoId, lectura.NodoId));
+    }
+
+    [MariaDbHistoricoFact]
+    public async Task Persistencia_RechazaLaMismaMedicionConcurrenteSinSobrescribirla()
+    {
+        await PrepararAsync();
+        await using var primero = database.CrearContexto();
+        await using var segundo = database.CrearContexto();
+        var panel1 = await primero.Paneles.SingleAsync(p => p.Id == database.Panel.Id);
+        var panel2 = await segundo.Paneles.SingleAsync(p => p.Id == database.Panel.Id);
+        primero.LecturasPanel.Add(new LecturaPanel(panel1, Instante, 100, EstadoSaludLectura.Sano));
+        segundo.LecturasPanel.Add(new LecturaPanel(panel2, Instante, 200, EstadoSaludLectura.Fallado));
+        static async Task<bool> GuardarAsync(SolarUY.Infrastructure.Persistence.ApplicationDbContext context)
+        {
+            try { await context.SaveChangesAsync(); return true; }
+            catch (DbUpdateException exception) when (exception.InnerException is MySqlConnector.MySqlException { Number: 1062 })
+            { return false; }
+        }
+        var resultados = await Task.WhenAll(GuardarAsync(primero), GuardarAsync(segundo));
+        Assert.Single(resultados.Where(resultado => resultado));
+        await using var consulta = database.CrearContexto();
+        Assert.Single(await consulta.LecturasPanel.ToListAsync());
+    }
+
+    [MariaDbHistoricoFact]
+    public async Task Historico_ConservaNodoYSaludAnteCambiosPosterioresDelPanel()
+    {
+        await PrepararAsync();
+        await using var provider = CrearProvider(new RelojRecoleccion(Instante));
+        await using var scope = provider.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<IRecoleccionLecturasService>().RecolectarAsync();
+        await using var context = database.CrearContexto();
+        var parque = await context.ParquesSolares.SingleAsync(p => p.Id == database.Parque.Id);
+        var nuevoNodo = new Nodo(parque, "Nodo posterior", "Sur");
+        context.Nodos.Add(nuevoNodo);
+        await context.SaveChangesAsync();
+        await context.Paneles.Where(p => p.Id == database.Panel.Id).ExecuteUpdateAsync(cambios => cambios
+            .SetProperty(p => p.NodoId, nuevoNodo.Id).SetProperty(p => p.Estado, EstadoPanel.Falla));
+        var lectura = await context.LecturasPanel.Include(l => l.Panel).SingleAsync(l => l.PanelId == database.Panel.Id);
+        Assert.Equal(database.Panel.NodoId, lectura.NodoId);
+        Assert.Equal(nuevoNodo.Id, lectura.Panel.NodoId);
+        Assert.Equal(EstadoSaludLectura.Sano, lectura.EstadoSalud);
+        Assert.Equal(EstadoPanel.Falla, lectura.Panel.Estado);
     }
 
     [MariaDbHistoricoFact]
@@ -248,9 +312,11 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         puertoOcupado.Start();
         var puerto = ((IPEndPoint)puertoOcupado.LocalEndpoint).Port;
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = [] });
+        // Evitar que permisos del EventLog de Windows oculten el error de puerto que se comprueba.
+        builder.Logging.ClearProviders();
         builder.WebHost.ConfigureKestrel(options => options.Listen(IPAddress.Loopback, puerto));
         Registrar(builder.Services, new RelojRecoleccion(Instante));
-        builder.Services.Configure<RecoleccionLecturasOptions>(options => options.Intervalo = TimeSpan.FromSeconds(1));
+        builder.Services.Configure<RecoleccionLecturasOptions>(options => options.IntervaloSegundos = 1);
         builder.Services.AddHostedService<RecoleccionLecturasWorker>();
         builder.Services.AddHostedService<InicioDemoradoService>();
         var host = builder.Build();
@@ -299,10 +365,12 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         Assert.All(falladas, lectura => Assert.Equal(0m, lectura.PotenciaGeneradaW));
     }
 
-    private static ServiceProvider CrearProvider(RelojRecoleccion reloj, IInversorClient? inversor = null)
+    private static ServiceProvider CrearProvider(RelojRecoleccion reloj, IInversorClient? inversor = null,
+        int intervaloSegundos = 60)
     {
         var services = new ServiceCollection();
         Registrar(services, reloj, inversor);
+        services.AddSingleton(new ConfiguracionRecoleccion(intervaloSegundos));
         return services.BuildServiceProvider(validateScopes: true);
     }
 
@@ -310,7 +378,7 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
     {
         Registrar(services, reloj, inversor);
         services.AddLogging();
-        services.Configure<RecoleccionLecturasOptions>(options => { options.Intervalo = TimeSpan.FromSeconds(1); options.Habilitada = habilitada; });
+        services.Configure<RecoleccionLecturasOptions>(options => { options.IntervaloSegundos = 1; options.Habilitada = habilitada; });
         services.AddHostedService<RecoleccionLecturasWorker>();
     }).Build();
 
@@ -326,7 +394,8 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         services.RemoveAll<IInversorClient>();
         if (inversor is null) services.AddSingleton<IInversorClient, InversorSimulador>();
         else services.AddSingleton<IInversorClient>(inversor);
-        services.AddScoped<IRecoleccionLecturasService, RecoleccionLecturasService>();
+       services.AddScoped<IRecoleccionLecturasService, RecoleccionLecturasService>();
+       services.AddSingleton(new ConfiguracionRecoleccion(60));
     }
 
     // Deja transcurrir un ciclo de planificación antes de que Kestrel intente abrir el puerto.

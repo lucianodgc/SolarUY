@@ -15,7 +15,10 @@
 
 <body>
     <Routes @rendermode="InteractiveServer" />
-    <script src="_framework/blazor.web.js"></script>
+    <script src="lib/signalr/8.0.17/signalr.min.js"></script>
+    <div id="estado-reconexion" class="note" style="position:fixed;top:12px;right:12px;z-index:10000;max-width:28rem" role="status" hidden></div>
+    <script src="_framework/blazor.web.js" autostart="false"></script>
+    <script src="js/reconexion.js"></script>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
 </body>
 

@@ -80,8 +80,8 @@ public sealed class HistoricoDatabase : IAsyncLifetime
         context.LecturasPanel.AddRange(
             Lectura(Panel, new(2025, 1, 1, 12, 0, 0), 1200),
             Lectura(Panel, new(2026, 1, 31, 23, 58, 0), 1200),
-            Lectura(Panel, new(2026, 2, 1, 0, 2, 0), 600),
-            Lectura(Panel, new(2026, 2, 1, 0, 2, 0), 1800),
+            // req010 prohíbe dos filas por panel/instante; conservar la potencia media del escenario.
+            Lectura(Panel, new(2026, 2, 1, 0, 2, 0), 1200),
             Lectura(Panel, new(2026, 2, 1, 0, 4, 0), 0),
             Lectura(Panel, new(2026, 2, 1, 0, 10, 0), 1200),
             Lectura(Panel, new(2026, 2, 1, 0, 15, 0), 1200),

@@ -9,7 +9,9 @@ public sealed class LecturaPanel
     public LecturaPanel(Panel panel, DateTime fechaHora, decimal potenciaGeneradaW, EstadoSaludLectura estadoSalud)
     {
         ArgumentNullException.ThrowIfNull(panel);
-        if (fechaHora == default || fechaHora.Kind != DateTimeKind.Utc)
+        if (panel.NodoId == Guid.Empty)
+            throw new ArgumentException("El panel debe pertenecer a un nodo existente.", nameof(panel));
+        if (fechaHora.Ticks < 10 || fechaHora.Kind != DateTimeKind.Utc)
             throw new ArgumentException("La fecha de lectura debe ser un instante UTC válido.", nameof(fechaHora));
         if (potenciaGeneradaW < 0 || potenciaGeneradaW > 999999999999.999999m
             || decimal.Round(potenciaGeneradaW, 6) != potenciaGeneradaW)
@@ -18,7 +20,9 @@ public sealed class LecturaPanel
         Id = Guid.NewGuid();
         Panel = panel;
         PanelId = panel.Id;
-        FechaHora = fechaHora;
+        Nodo = panel.Nodo;
+        NodoId = panel.NodoId;
+        FechaHora = new DateTime(fechaHora.Ticks - fechaHora.Ticks % 10, DateTimeKind.Utc);
         PotenciaGeneradaW = potenciaGeneradaW;
         EstadoSalud = estadoSalud;
     }
@@ -26,6 +30,8 @@ public sealed class LecturaPanel
     public Guid Id { get; private set; }
     public Guid PanelId { get; private set; }
     public Panel Panel { get; private set; } = null!;
+    public Guid NodoId { get; private set; }
+    public Nodo Nodo { get; private set; } = null!;
     public DateTime FechaHora { get; private set; }
     public decimal PotenciaGeneradaW { get; private set; }
     public EstadoSaludLectura EstadoSalud { get; private set; }

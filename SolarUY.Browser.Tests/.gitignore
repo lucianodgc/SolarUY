@@ -1,0 +1,5 @@
+node_modules/
+.browsers/
+.runtime/
+test-results/
+playwright-report/

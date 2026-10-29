@@ -8,19 +8,23 @@ public sealed class RecoleccionLecturasService : IRecoleccionLecturasService
     private readonly IRecoleccionLecturasRepository _repository;
     private readonly IInversorClient _inversor;
     private readonly TimeProvider _reloj;
+    private readonly ConfiguracionRecoleccion _configuracion;
 
-    public RecoleccionLecturasService(IRecoleccionLecturasRepository repository, IInversorClient inversor, TimeProvider reloj)
+    public RecoleccionLecturasService(IRecoleccionLecturasRepository repository, IInversorClient inversor, TimeProvider reloj,
+        ConfiguracionRecoleccion configuracion)
     {
         _repository = repository;
         _inversor = inversor;
         _reloj = reloj;
+        _configuracion = configuracion;
     }
 
     public async Task<ResultadoRecoleccionDto> RecolectarAsync(CancellationToken cancellationToken = default)
     {
         await using var sesion = await _repository.IntentarAbrirSesionAsync(cancellationToken);
         if (sesion is null) return new ResultadoRecoleccionDto(false, 0);
-        var instante = _reloj.GetUtcNow().UtcDateTime;
+        var ahora = _reloj.GetUtcNow().UtcDateTime;
+        var instante = new DateTime(ahora.Ticks - ahora.Ticks % _configuracion.Intervalo.Ticks, DateTimeKind.Utc);
         var paneles = await sesion.ListarPendientesAsync(instante, cancellationToken);
         if (paneles.Count == 0) return new ResultadoRecoleccionDto(true, 0);
         var solicitudes = paneles.Select(panel => new PanelMedicionDto(panel.Id, panel.NodoId,
@@ -28,7 +32,8 @@ public sealed class RecoleccionLecturasService : IRecoleccionLecturasService
         var mediciones = await _inversor.ObtenerMedicionesRegistradasAsync(solicitudes, instante, cancellationToken);
         var lecturas = CrearLecturas(paneles, mediciones, instante);
         await sesion.GuardarAsync(lecturas, cancellationToken);
-        return new ResultadoRecoleccionDto(true, lecturas.Count);
+        return new ResultadoRecoleccionDto(true, lecturas.Count, lecturas.Select(l =>
+            new SolarUY.Application.Monitoreo.LecturaConfirmadaDto(l.Panel.Nodo.ParqueId, l.PanelId, l.FechaHora)).ToArray());
     }
 
     private static IReadOnlyList<LecturaPanel> CrearLecturas(IReadOnlyList<Panel> paneles,
