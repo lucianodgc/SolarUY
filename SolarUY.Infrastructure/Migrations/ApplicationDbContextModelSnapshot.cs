@@ -24,15 +24,35 @@ namespace SolarUY.Infrastructure.Migrations
 
             modelBuilder.Entity("SolarUY.Domain.Entities.Inversor", b =>
                 {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("char(36)");
-                    b.Property<int>("Estado").HasColumnType("int");
-                    b.Property<string>("Marca").IsRequired().HasColumnType("longtext");
-                    b.Property<string>("Modelo").IsRequired().HasColumnType("longtext");
-                    b.Property<Guid>("NodoId").HasColumnType("char(36)");
-                    b.Property<decimal>("PotenciaNominalKW").HasColumnType("decimal(65,30)");
-                    b.Property<bool>("VolcadoRedActivo").HasColumnType("tinyint(1)");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Marca")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Modelo")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("NodoId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("PotenciaNominalKW")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<bool>("VolcadoRedActivo")
+                        .HasColumnType("tinyint(1)");
+
                     b.HasKey("Id");
-                    b.HasIndex("NodoId").IsUnique();
+
+                    b.HasIndex("NodoId")
+                        .IsUnique();
+
                     b.ToTable("Inversores", (string)null);
                 });
 
@@ -48,7 +68,7 @@ namespace SolarUY.Infrastructure.Migrations
                     b.Property<DateTime>("FechaHora")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid>("NodoId")
+                    b.Property<Guid?>("NodoId")
                         .HasColumnType("char(36)");
 
                     b.Property<Guid>("PanelId")
@@ -67,18 +87,9 @@ namespace SolarUY.Infrastructure.Migrations
 
                     b.HasIndex("PanelId", "FechaHora", "PotenciaGeneradaW");
 
+                    b.HasIndex("PanelId", "FechaHora", "NodoId", "PotenciaGeneradaW");
+
                     b.ToTable("LecturasPanel", (string)null);
-                });
-
-            modelBuilder.Entity("SolarUY.Domain.Entities.Inversor", b =>
-                {
-                    b.HasOne("SolarUY.Domain.Entities.Nodo", "Nodo")
-                        .WithOne("Inversor")
-                        .HasForeignKey("SolarUY.Domain.Entities.Inversor", "NodoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Nodo");
                 });
 
             modelBuilder.Entity("SolarUY.Domain.Entities.Nodo", b =>
@@ -215,16 +226,26 @@ namespace SolarUY.Infrastructure.Migrations
                     b.ToTable("TareasMantenimiento", (string)null);
                 });
 
+            modelBuilder.Entity("SolarUY.Domain.Entities.Inversor", b =>
+                {
+                    b.HasOne("SolarUY.Domain.Entities.Nodo", "Nodo")
+                        .WithOne("Inversor")
+                        .HasForeignKey("SolarUY.Domain.Entities.Inversor", "NodoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Nodo");
+                });
+
             modelBuilder.Entity("SolarUY.Domain.Entities.LecturaPanel", b =>
                 {
                     b.HasOne("SolarUY.Domain.Entities.Nodo", "Nodo")
                         .WithMany()
                         .HasForeignKey("NodoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SolarUY.Domain.Entities.Panel", "Panel")
-                        .WithMany("Nodos")
+                        .WithMany()
                         .HasForeignKey("PanelId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -237,7 +258,7 @@ namespace SolarUY.Infrastructure.Migrations
             modelBuilder.Entity("SolarUY.Domain.Entities.Nodo", b =>
                 {
                     b.HasOne("SolarUY.Domain.Entities.ParqueSolar", "Parque")
-                        .WithMany()
+                        .WithMany("Nodos")
                         .HasForeignKey("ParqueId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -265,6 +286,17 @@ namespace SolarUY.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Panel");
+                });
+
+            modelBuilder.Entity("SolarUY.Domain.Entities.Nodo", b =>
+                {
+                    b.Navigation("Inversor")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SolarUY.Domain.Entities.ParqueSolar", b =>
+                {
+                    b.Navigation("Nodos");
                 });
 #pragma warning restore 612, 618
         }

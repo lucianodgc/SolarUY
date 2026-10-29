@@ -17,10 +17,6 @@ namespace SolarUY.Infrastructure.Migrations
                     IF EXISTS (SELECT 1 FROM LecturasPanel GROUP BY PanelId, FechaHora HAVING COUNT(*) > 1) THEN
                         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'req010: existen lecturas duplicadas por panel/instante; resolver sin borrar datos antes de migrar';
                     END IF;
-                    IF EXISTS (SELECT 1 FROM LecturasPanel)
-                        AND COALESCE(@SolarUY_TopologiaHistoricaVerificada, 0) <> 1 THEN
-                        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'req010: verificar documentalmente que Panel.NodoId coincide con el nodo original de todas las lecturas antes de migrar';
-                    END IF;
                 END
                 """);
 
@@ -31,15 +27,9 @@ namespace SolarUY.Infrastructure.Migrations
                 nullable: true,
                 collation: "ascii_general_ci");
 
-            migrationBuilder.Sql("""
-                UPDATE LecturasPanel l INNER JOIN Paneles p ON p.Id = l.PanelId
-                SET l.NodoId = p.NodoId
-                """);
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "NodoId", table: "LecturasPanel", type: "char(36)", nullable: false,
-                collation: "ascii_general_ci", oldClrType: typeof(Guid), oldType: "char(36)",
-                oldNullable: true, oldCollation: "ascii_general_ci");
+            // No reconstruir procedencia desde Paneles.NodoId: no es una auditoría.
+            // Las filas anteriores conservan NodoId NULL y todos sus valores originales.
+            // La variable histórica de sesión ya no autoriza atribuciones masivas.
 
             migrationBuilder.CreateIndex(
                 name: "IX_LecturasPanel_NodoId_FechaHora",

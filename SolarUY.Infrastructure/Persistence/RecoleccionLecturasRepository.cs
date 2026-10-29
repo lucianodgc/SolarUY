@@ -76,6 +76,8 @@ public sealed class RecoleccionLecturasRepository : IRecoleccionLecturasReposito
             var numero = Convert.ToInt64(await secuencia.ExecuteScalarAsync(cancellationToken));
             foreach (var lectura in lecturas)
             {
+                if (lectura.Nodo is null || lectura.NodoId is null)
+                    throw new InvalidOperationException("Una medición nueva requiere su nodo histórico.");
                 context.Attach(lectura.Nodo);
                 context.Attach(lectura.Panel);
             }

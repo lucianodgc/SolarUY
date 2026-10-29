@@ -17,9 +17,11 @@ public sealed class LecturaPanelConfiguration : IEntityTypeConfiguration<Lectura
         builder.HasIndex(lectura => new { lectura.PanelId, lectura.FechaHora }).IsUnique();
         // Conservar el índice de cobertura utilizado por las consultas históricas existentes.
         builder.HasIndex(lectura => new { lectura.PanelId, lectura.FechaHora, lectura.PotenciaGeneradaW });
+        // Cobertura de consultas que verifican procedencia sin lecturas de la fila base.
+        builder.HasIndex(lectura => new { lectura.PanelId, lectura.FechaHora, lectura.NodoId, lectura.PotenciaGeneradaW });
         builder.HasIndex(lectura => new { lectura.NodoId, lectura.FechaHora });
         builder.HasOne(lectura => lectura.Nodo).WithMany().HasForeignKey(lectura => lectura.NodoId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .IsRequired(false).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(lectura => lectura.Panel).WithMany().HasForeignKey(lectura => lectura.PanelId)
             .OnDelete(DeleteBehavior.Restrict);
     }

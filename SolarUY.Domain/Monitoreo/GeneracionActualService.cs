@@ -2,7 +2,7 @@ using SolarUY.Domain.Entities;
 
 namespace SolarUY.Domain.Monitoreo;
 
-public enum DisponibilidadMonitoreo { SinDatos, FueraDeVigencia, IntervaloIncompatible, NodoAnterior, Vigente }
+public enum DisponibilidadMonitoreo { SinDatos, FueraDeVigencia, IntervaloIncompatible, NodoAnterior, Vigente, NodoHistoricoDesconocido }
 
 public sealed record GeneracionPanel(Guid PanelId, DateTime? FechaHoraUtc, decimal? PotenciaW,
     DisponibilidadMonitoreo Disponibilidad);
@@ -59,7 +59,8 @@ public sealed class GeneracionActualService
         DateTime? intervalo, PoliticaMonitoreo politica)
     {
         if (lectura is null) return new(panel.Id, null, null, DisponibilidadMonitoreo.SinDatos);
-        var disponibilidad = lectura.NodoId != panel.NodoId ? DisponibilidadMonitoreo.NodoAnterior
+        var disponibilidad = lectura.NodoId is null ? DisponibilidadMonitoreo.NodoHistoricoDesconocido
+            : lectura.NodoId != panel.NodoId ? DisponibilidadMonitoreo.NodoAnterior
             : referencia - lectura.FechaHora >= politica.Vigencia ? DisponibilidadMonitoreo.FueraDeVigencia
             : politica.ObtenerIntervalo(lectura.FechaHora) != intervalo ? DisponibilidadMonitoreo.IntervaloIncompatible
             : DisponibilidadMonitoreo.Vigente;

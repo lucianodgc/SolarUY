@@ -1,5 +1,7 @@
 # Implementación: Histórico de generación (REQ007)
 
+Actualización del 29/10/2026: se conservan las lecturas legadas sin nodo verificable y se consultan por panel. Los agregados usan procedencia histórica, incluyen paneles trasladados y muestran un aviso de las lecturas no atribuibles. Se corta la integración en la siguiente muestra antes de filtrar su nodo. Ver [reparación de migraciones y verificaciones actuales](../Reportes%20de%20codex/reparacion_migraciones_20261029.md); las mediciones de rendimiento previas no acreditan la versión actual.
+
 Fecha: 22/10/2026. El histórico está disponible en `/historico-generacion`. La ampliación R1 incorpora recolección automática del inventario y está activa en la aplicación local cada minuto. La entrega inicial completó las 40 tareas originales; el estado actual y la verificación de volumen reabierta se registran en `tasks.md`.
 
 ## Comportamiento implementado

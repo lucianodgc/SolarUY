@@ -5,6 +5,11 @@
     <p>@Resultado.InicioLocal → @Resultado.FinLocal (fin exclusivo) · @Resultado.ZonaHoraria</p>
     <p><strong>Energía observada: @(Resultado.EnergiaKWh?.ToString("N3") ?? "Sin datos") @Resultado.Unidad</strong></p>
     <p role="status">Cobertura: @Resultado.Cobertura</p>
+    @if (Resultado.LecturasSinNodoHistorico > 0)
+    {
+        <p role="status" class="note">Hay @Resultado.LecturasSinNodoHistorico lecturas sin nodo histórico verificado en el período consultado.
+            Se conservan y pueden consultarse por panel. No se atribuyen a nodos ni parques; en esas consultas el aviso abarca toda la base.</p>
+    }
     @if (Resultado.Cobertura == CoberturaHistorico.Parcial)
     {
         <p class="note">La medición es parcial. El total y los extremos incluyen únicamente la energía observada; los huecos no se estiman.</p>

@@ -21,6 +21,28 @@ public sealed class ReportesIntegrationTests(HistoricoDatabase database) : IClas
     private static readonly DateTime Dia = new(2026, 2, 1);
     private static readonly DateTime InicioUtc = new(2026, 2, 1, 3, 0, 0, DateTimeKind.Utc);
 
+    [MariaDbHistoricoFact]
+    public async Task ReporteYCsv_AdviertenLegadoSinAtribuirSuEnergiaAlParque()
+    {
+        await database.ReiniciarAsync();
+        await using var provider = CrearProvider();
+        await using var scope = provider.CreateAsyncScope();
+        var servicio = scope.ServiceProvider.GetRequiredService<IReporteHistoricoService>();
+        var filtro = Filtro(PeriodoHistorico.Diario, false);
+        var antes = await servicio.ConsultarAsync(filtro);
+        await using (var context = database.CrearContexto())
+            await context.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO LecturasPanel (Id, PanelId, NodoId, FechaHora, PotenciaGeneradaW, EstadoSalud)
+                VALUES ({Guid.NewGuid()}, {database.Panel.Id}, NULL, {InicioUtc.AddHours(1)}, 9000, 0)
+                """);
+        var despues = await servicio.ConsultarAsync(filtro);
+        Assert.Equal(antes.Generacion.EnergiaKWh, despues.Generacion.EnergiaKWh);
+        Assert.Equal(1, despues.Generacion.LecturasSinNodoHistorico);
+        var csv = Encoding.UTF8.GetString((await servicio.ExportarCsvAsync(despues)).Contenido);
+        Assert.Contains("\"Advertencia\"", csv);
+        Assert.Contains("sin nodo histórico verificado", csv);
+    }
+
     [MariaDbHistoricoTheory]
     [InlineData(PeriodoHistorico.Diario, false)]
     [InlineData(PeriodoHistorico.Diario, true)]

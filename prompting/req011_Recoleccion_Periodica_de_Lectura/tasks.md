@@ -29,7 +29,7 @@ Fuente de alcance técnico: `specs.md` de esta carpeta. Tareas completadas segú
 ## 4. Infrastructure
 
 - [x] 4. Completar persistencia e integración reutilizando los componentes existentes. (INF1–INF3)
-  - [x] 4.1. Ajustar el mapeo y contexto según D1/D2, con relaciones obligatorias, borrado restrictivo y precisión/materialización UTC de D3. (INF1)
+  - [x] 4.1. Ajustar el mapeo y contexto según D1/D2, con panel obligatorio, nodo exigido en mediciones nuevas y nullable en legado sin evidencia, borrado restrictivo y precisión/materialización UTC de D3. (INF1; reparación del 29/10/2026)
   - [x] 4.2. Configurar unicidad por panel/instante e índices para panel y nodo con rango temporal conforme a la alternativa aprobada en D2. (INF1)
   - [x] 4.3. Crear una migración incremental compatible con instalaciones nuevas y bases con datos, incluyendo la comprobación de duplicados y los bloqueos de migración definidos en D2/D4. (INF1)
   - [x] 4.4. Adaptar la selección de pendientes para eliminar la omisión por minuto y distinguir conflictos de unicidad de otros errores sin sobrescribir lecturas. (APP2, INF1)

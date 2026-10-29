@@ -1,5 +1,7 @@
 # Implementación: Reportes con gráficos del histórico y exportación
 
+Actualización del 29/10/2026: histórico, gráficos y CSV respetan el nodo histórico guardado; las lecturas legadas de nodo desconocido permanecen por panel y generan un aviso, sin asignarlas al nodo/parque actual. Ver [informe de reparación y pruebas](../Reportes%20de%20codex/reparacion_migraciones_20261029.md). La evidencia del 22/10 siguiente corresponde a la implementación anterior.
+
 Fecha: 22/10/2026. La pantalla está disponible en `/reportes` para Administrador, Tecnico y Consulta. Reutiliza el histórico de req007, agrega el resumen de mantenimiento realizado y permite descargar ambos conjuntos de datos en un único CSV.
 
 ## Comportamiento implementado

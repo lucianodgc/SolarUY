@@ -21,6 +21,7 @@ public sealed record PuntoHistoricoDto(IntervaloHistoricoDto Intervalo, decimal?
 public sealed record ResultadoHistoricoDto(ConsultaHistoricoDto Consulta, decimal? EnergiaKWh,
     CoberturaHistorico Cobertura, IReadOnlyList<PuntoHistoricoDto> Serie)
 {
+    public long LecturasSinNodoHistorico { get; init; }
     public string Unidad => "kWh";
     public string ZonaHoraria => "America/Montevideo";
     public string InicioLocal => TimeZoneInfo.ConvertTimeFromUtc(Consulta.InicioUtc, Zona).ToString("yyyy-MM-dd HH:mm");

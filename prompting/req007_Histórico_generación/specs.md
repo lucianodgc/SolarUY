@@ -1,5 +1,11 @@
 # Especificaciones técnicas: Histórico de generación por día, mes y año
 
+> Reparación solicitada el 29/10/2026: las lecturas legadas cuyo nodo no pueda demostrarse se conservan con NodoId NULL y son consultables por panel. Los agregados de nodo/parque utilizan la asociación histórica guardada, incluyendo paneles trasladados, y excluyen nodos desconocidos. El resultado informa el número de lecturas sin nodo en el período; para nodo/parque ese aviso abarca toda la base, pues su pertenencia no se conoce. No se reconstruye procedencia desde la ubicación actual del panel.
+
+La siguiente muestra del panel delimita cada tramo antes de filtrar su nodo: una muestra sin procedencia o de otro nodo interrumpe la integración anterior. La regresión medida con un millón de lecturas justifica agregar un índice de cobertura `(PanelId, FechaHora, NodoId, PotenciaGeneradaW)` mediante migración, conservando el índice de cobertura original y los límites de rendimiento de las pruebas.
+
+La unicidad `(PanelId, FechaHora)` impuesta por req011 sustituye la antigua consolidación con AVG: la consulta no vuelve a agrupar lecturas que el esquema ya garantiza únicas. Los duplicados preexistentes bloquean la migración; no se consolidan ni eliminan para acelerar consultas.
+
 ## Contexto, alcance y estado
 
 Fuente funcional: `requirements.md` de req007. Este diseño contempla consultas históricas por parque, nodo o panel, períodos diarios, mensuales y anuales, comparación de rangos, máximos y mínimos, servicios reutilizables y visualización. Los cálculos se ejecutan mediante agregaciones en la base de datos y las consultas no modifican las lecturas.

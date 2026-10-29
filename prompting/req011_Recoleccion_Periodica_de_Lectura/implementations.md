@@ -1,5 +1,7 @@
 # Implementación: Recolección periódica de lecturas
 
+Actualización del 29/10/2026: se reparó la migración pendiente para conservar las lecturas sin nodo verificable con NodoId NULL; el constructor y el recolector siguen exigiendo nodo en nuevas muestras. Se agregaron migraciones de compatibilidad y cobertura. El diagnóstico, respaldo restaurado, comparación de las 1.578 lecturas, migraciones realmente aplicadas y límites de verificación se registran en [el informe de reparación](../Reportes%20de%20codex/reparacion_migraciones_20261029.md). El registro original siguiente conserva su alcance histórico.
+
 Fecha de trabajo: 28/10/2026 (America/Montevideo). La carpeta de este requerimiento fue renombrada de req010 a req011 durante la implementación; se respetó el cambio. Los identificadores `req010` de los diagnósticos y escenarios de prueba conservan su referencia original.
 
 ## Cambios realizados
@@ -41,17 +43,11 @@ El intervalo es obligatorio, entero y positivo. Se rechazan valores ausentes, va
 
 ## Migración y datos anteriores
 
-La migración es incremental; no modifica las migraciones anteriores ni borra lecturas. Deben detenerse los recolectores al aplicarla. Primero comprueba duplicados y evidencia de topología; solo después agrega/completa `NodoId`, impone obligatoriedad y crea índices y FK restrictiva.
+Procedimiento actualizado el 29/10/2026: detener recolectores, respaldar y verificar una restauración antes de migrar. `AddRecoleccionPeriodica` comprueba duplicados antes del DDL y agrega el nodo nullable sin completar datos históricos. Las migraciones de compatibilidad y cobertura mantienen claves foráneas y unicidad. No se borra ni consolida ninguna lectura.
 
 En una base nueva o sin lecturas previas, se puede ejecutar `dotnet ef database update --project SolarUY.Infrastructure/SolarUY.Infrastructure.csproj` con la conexión configurada externamente.
 
-Si hay lecturas previas, el proceso se detiene salvo que se haya demostrado que el nodo actual de cada panel coincide con el nodo original de todas sus mediciones. No se debe asumir esa equivalencia. Si hay evidencia suficiente, generar el script desde `20261022130747_AddLecturaPanel` hasta `20261029023745_AddRecoleccionPeriodica` y ejecutarlo mediante el cliente MariaDB en una misma sesión, precedido de:
-
-```sql
-SET @SolarUY_TopologiaHistoricaVerificada = 1;
-```
-
-La variable registra una certificación del operador; no demuestra el histórico por sí misma. Si no se conoce el nodo original, no activarla ni migrar esas filas. Si existen duplicados, se informa el problema antes del DDL y no se eliminan ni consolidan automáticamente. Para diagnosticarlos:
+Las filas previas conservan `NodoId = NULL`; permanecen consultables por panel y no se atribuyen a nodos/parques. La antigua variable `@SolarUY_TopologiaHistoricaVerificada` ya no autoriza rellenos masivos. Una certificación futura requiere evidencia por panel e intervalo y una operación específica, auditable y respaldada; no se ejecutó durante esta reparación. Si existen duplicados, se informa el problema antes del DDL y no se eliminan ni consolidan automáticamente. Para diagnosticarlos:
 
 ```sql
 SELECT PanelId, FechaHora, COUNT(*) AS Cantidad

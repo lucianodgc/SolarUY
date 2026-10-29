@@ -32,6 +32,15 @@ public sealed class MariaDbHistoricoTheoryAttribute : TheoryAttribute
 public sealed class HistoricoDatabase : IAsyncLifetime
 {
     public const string VariableConexion = "SOLARUY_HISTORICO_TEST_CONNECTION";
+    public static string RutaProyecto(string nombre)
+    {
+        var directorio = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directorio is not null && !File.Exists(Path.Combine(directorio.FullName, "SolarUY.sln")))
+            directorio = directorio.Parent;
+        return directorio is null
+            ? throw new DirectoryNotFoundException("No se encontró SolarUY.sln para los recursos de integración.")
+            : Path.Combine(directorio.FullName, nombre);
+    }
     private string Conexion => Environment.GetEnvironmentVariable(VariableConexion)
         ?? throw new InvalidOperationException($"Falta {VariableConexion}.");
     public ParqueSolar Parque { get; private set; } = null!;

@@ -6,6 +6,8 @@ Como usuario del sistema SolarUY, quiero que las lecturas de generación y estad
 
 Esta funcionalidad corresponde a la **Entrega 2** y debe integrarse con la topología existente de parques, nodos, paneles e inversores, respetando el modelo de dominio y la arquitectura del proyecto.
 
+Actualización solicitada el 29/10/2026: conservar íntegramente las 1.578 lecturas anteriores y todo el inventario. Cuando no pueda demostrarse su nodo original, admitir procedencia histórica desconocida (NodoId NULL), sin atribuirlas a la topología actual. El nodo sigue siendo obligatorio para las mediciones nuevas. Las lecturas legadas permanecen disponibles por panel; histórico y reportes deben advertir la falta de procedencia en sus agregados, sin inventar datos.
+
 ## Criterios de Aceptación
 
 ### 1. Entidad Lectura y persistencia

@@ -2,6 +2,8 @@ using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using MySqlConnector;
 using SolarUY.Application.Abstractions;
 using SolarUY.Application.Mantenimiento;
 using SolarUY.Application.Inversores;
@@ -20,13 +22,16 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddSolarInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContextFactory<ApplicationDbContext>(options =>
+        services.AddDbContextFactory<ApplicationDbContext>((provider, options) =>
         {
             var connectionString = configuration.GetConnectionString("SolarUY");
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new InvalidOperationException("Configure ConnectionStrings:SolarUY o ConnectionStrings__SolarUY para acceder a MariaDB.");
 
             var version = Version.Parse(configuration["MariaDB:ServerVersion"] ?? "11.8.0");
+            var destino = new MySqlConnectionStringBuilder(connectionString);
+            provider.GetService<ILogger<ApplicationDbContext>>()?.LogInformation(
+                "Destino MariaDB: {Servidor}:{Puerto}/{BaseDatos}.", destino.Server, destino.Port, destino.Database);
             options.UseMySql(connectionString, new MariaDbServerVersion(version));
         });
 

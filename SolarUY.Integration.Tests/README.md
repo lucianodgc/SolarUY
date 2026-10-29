@@ -1,5 +1,18 @@
 # Pruebas de integración
 
+## Preservación de lecturas y migraciones (29/10/2026)
+
+`RecoleccionMigracionIntegrationTests` verifica duplicados antes del DDL, conservación exacta de datos sin atribución, compatibilidad con instalaciones que ya guardaban nodo y bloqueo de la reversión si existen nodos desconocidos. `ProcedenciaHistoricaIntegrationTests` verifica consulta por panel, exclusión de atribuciones desconocidas, traslado de paneles y corte de tramos. Reportes comprueba también el aviso en CSV.
+
+Usan exclusivamente `SOLARUY_HISTORICO_TEST_CONNECTION`, con prefijo `solaruy_req007_test` y permisos para crear/eliminar bases temporales. Nunca usar la base habitual. El fixture de páginas localiza `SolarUY.sln`, por lo que admite `BaseOutputPath` alternativo. El proyecto web excluye `bin/obj` para no copiar recursivamente salidas anteriores.
+
+```powershell
+dotnet build SolarUY.sln -p:BaseOutputPath=bin/DatabaseRepairChecked/
+dotnet test SolarUY.sln --no-build --no-restore -p:BaseOutputPath=bin/DatabaseRepairChecked/ --logger trx --results-directory artifacts/database-repair/complete-tests
+```
+
+El tiempo de preparación de un millón de filas puede requerir un `DefaultCommandTimeout` mayor en la conexión de pruebas; eso no cambia el límite medido de cinco segundos ni el de memoria de la prueba. No ejecutar cargas de volumen con el disco casi lleno. El informe de reparación registra resultados y omisiones reales.
+
 ## Reportes (REQ008)
 
 Los 28 casos de reportes reutilizan la conexión aislada del histórico y la colección sin paralelismo que prepara sus datos. Comprueban parque/nodo, períodos y coincidencia con el histórico, cobertura y huecos, mantenimiento completado por fecha de realización, permisos de los tres roles sin ampliar la gestión, CSV y conservación del resultado exportado.
