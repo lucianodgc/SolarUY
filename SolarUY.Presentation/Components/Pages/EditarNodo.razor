@@ -1,0 +1,34 @@
+@page "/nodos/{NodoId:guid}/editar"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+@inject INodoService Service
+@inject NavigationManager Navigation
+
+<PageTitle>Editar nodo</PageTitle>
+<PageHeader Title="Editar nodo" Section="Gestión del parque" Description="Actualizá los datos del nodo."></PageHeader>
+@if (_error is not null) { <p role="alert" class="alert alert-danger">@_error</p> }
+else if (_modelo is null) { <p class="loading-state">Cargando nodo…</p> }
+else { <RadzenTemplateForm TItem="ActualizarNodoDto" Data="_modelo" Submit="GuardarAsync"><div class="surface"><RadzenTextBox @bind-Value="_modelo.Nombre" Placeholder="Nombre" Style="width:100%" /><RadzenTextBox @bind-Value="_modelo.UbicacionEnParque" Placeholder="Ubicación en el parque" Style="width:100%" /><RadzenNumeric @bind-Value="_modelo.CantidadPanelesPrevista" Placeholder="Cantidad de paneles prevista" Style="width:100%" /><RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" IsBusy="_ocupado" Disabled="_ocupado" /></div></RadzenTemplateForm> }
+
+@code {
+    [Parameter] public Guid NodoId { get; set; }
+    private ActualizarNodoDto? _modelo;
+    private Guid _parqueId;
+    private string? _error;
+    private bool _ocupado;
+    protected override async Task OnParametersSetAsync()
+    {
+        var nodo = await Service.ObtenerPorIdAsync(NodoId);
+        if (nodo is null) { _error = "El nodo no existe."; return; }
+        _parqueId = nodo.ParqueId;
+        _modelo = new() { Nombre = nodo.Nombre, UbicacionEnParque = nodo.UbicacionEnParque, CantidadPanelesPrevista = nodo.CantidadPanelesPrevista };
+    }
+    private async Task GuardarAsync(ActualizarNodoDto modelo)
+    {
+        if (_ocupado) return;
+        _ocupado = true; _error = null;
+        try { await Service.ActualizarAsync(NodoId, modelo); Navigation.NavigateTo($"/parques-solares/{_parqueId}/nodos"); }
+        catch (Exception) { _error = "No se pudo actualizar el nodo. Revisá los datos ingresados."; }
+        finally { _ocupado = false; }
+    }
+}

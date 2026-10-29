@@ -27,6 +27,16 @@ public sealed class PanelNodoTests
     }
 
     [Fact]
+    public void Nodo_ActualizaSusTresDatos()
+    {
+        var nodo = CrearNodo();
+        nodo.ActualizarDatos("Nodo dos", "Sur", null);
+        Assert.Equal("Nodo dos", nodo.Nombre);
+        Assert.Equal("Sur", nodo.UbicacionEnParque);
+        Assert.Null(nodo.CantidadPanelesPrevista);
+    }
+
+    [Fact]
     public void Panel_ConservaRelacionDatosYEstado()
     {
         var nodo = CrearNodo();

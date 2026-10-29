@@ -22,6 +22,20 @@ namespace SolarUY.Infrastructure.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("SolarUY.Domain.Entities.Inversor", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("char(36)");
+                    b.Property<int>("Estado").HasColumnType("int");
+                    b.Property<string>("Marca").IsRequired().HasColumnType("longtext");
+                    b.Property<string>("Modelo").IsRequired().HasColumnType("longtext");
+                    b.Property<Guid>("NodoId").HasColumnType("char(36)");
+                    b.Property<decimal>("PotenciaNominalKW").HasColumnType("decimal(65,30)");
+                    b.Property<bool>("VolcadoRedActivo").HasColumnType("tinyint(1)");
+                    b.HasKey("Id");
+                    b.HasIndex("NodoId").IsUnique();
+                    b.ToTable("Inversores", (string)null);
+                });
+
             modelBuilder.Entity("SolarUY.Domain.Entities.LecturaPanel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -46,6 +60,17 @@ namespace SolarUY.Infrastructure.Migrations
                     b.HasIndex("PanelId", "FechaHora", "PotenciaGeneradaW");
 
                     b.ToTable("LecturasPanel", (string)null);
+                });
+
+            modelBuilder.Entity("SolarUY.Domain.Entities.Inversor", b =>
+                {
+                    b.HasOne("SolarUY.Domain.Entities.Nodo", "Nodo")
+                        .WithOne("Inversor")
+                        .HasForeignKey("SolarUY.Domain.Entities.Inversor", "NodoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Nodo");
                 });
 
             modelBuilder.Entity("SolarUY.Domain.Entities.Nodo", b =>
@@ -185,7 +210,7 @@ namespace SolarUY.Infrastructure.Migrations
             modelBuilder.Entity("SolarUY.Domain.Entities.LecturaPanel", b =>
                 {
                     b.HasOne("SolarUY.Domain.Entities.Panel", "Panel")
-                        .WithMany()
+                        .WithMany("Nodos")
                         .HasForeignKey("PanelId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
