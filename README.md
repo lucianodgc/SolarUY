@@ -13,11 +13,11 @@ El código incluye:
 - Persistencia de parques, nodos, paneles, lecturas y tareas de mantenimiento con Entity Framework Core 8, Pomelo y MariaDB.
 - Mantenimiento con programación, edición/reasignación, inicio, finalización y cancelación; filtros por estado, panel, técnico y vencimiento. Las fechas son UTC y las tareas completadas/canceladas son inmutables.
 - Inicio y navegación por rol, perfil con identidad/roles/claims y cierre de sesión visible.
-- Contrato `IInversorClient` y un simulador en memoria para consultar y cambiar estados de paneles y del volcado a red. La topología predeterminada es `nodo-1` con cuatro paneles; la potencia simulada varía entre las 06:00 y las 18:00, hasta 400 W por panel.
+- Cliente TCP `IInversorClient` y proceso de simulación independiente para consultar lecturas aleatorias y operar el inversor, paneles y volcado a red. La pantalla usa los nodos y paneles guardados en MariaDB; la potencia respeta la potencia nominal de cada panel y no depende de la hora.
 - Histórico de generación por parque, nodo o panel, con consultas diarias, mensuales, anuales y por rango, comparación de períodos y máximos/mínimos en kWh.
 - Recolección automática de mediciones simuladas de los paneles registrados, persistidas cada minuto mientras la aplicación está en ejecución, con exclusión entre instancias para evitar duplicados.
 
-El simulador dispone de pantalla: los tres roles consultan y solo Administrador puede activar/desactivar paneles y el volcado. La simulación de esa pantalla es independiente del inventario y su estado se reinicia con el proceso; el recolector mide por separado los paneles persistidos. Quedan fuera del alcance actual el alta de nodos/paneles, reportes y chat con IA. Nginx y el despliegue con varias instancias forman parte de la arquitectura objetivo, pero no están configurados en este repositorio.
+El simulador dispone de pantalla: los tres roles consultan y solo Administrador puede prender/apagar el inversor, activar/desactivar paneles y el volcado. La pantalla actualiza las lecturas cada cinco segundos. En desarrollo, SolarUY consulta un proceso TCP aparte en `127.0.0.1:5055` y sincroniza con él el inventario de nodos y paneles guardado en MariaDB. Las lecturas y el estado operativo son simulados y se reinician al detener el proceso; los controles no escriben cambios en MariaDB. El recolector histórico también mide los paneles persistidos. Quedan fuera del alcance actual el alta de nodos/paneles, reportes y chat con IA. Nginx y el despliegue con varias instancias forman parte de la arquitectura objetivo, pero no están configurados en este repositorio.
 
 ### Pantallas disponibles
 
@@ -39,7 +39,7 @@ El simulador dispone de pantalla: los tres roles consultan y solo Administrador 
 | --- | --- | --- | --- |
 | Gestión de parques | Listar, buscar, crear, editar y eliminar con confirmación | Sin acceso | Sin acceso |
 | Mantenimiento | Consultar todas las tareas, programar, editar/reasignar tareas abiertas y cambiar estados permitidos | Consultar e iniciar/completar/cancelar únicamente tareas propias | Sin acceso |
-| Simulador | Consultar y activar/desactivar paneles y volcado a red | Solo consultar | Solo consultar |
+| Simulador | Consultar y prender/apagar inversor, operar paneles y volcado a red | Solo consultar | Solo consultar |
 | Histórico de generación | Consultar todos los parques, nodos y paneles | Consultar todos los parques, nodos y paneles | Consultar todos los parques, nodos y paneles |
 | Perfil y sesión | Identidad, roles, claims y logout | Identidad, roles, claims y logout | Identidad, roles, claims y logout |
 
@@ -62,9 +62,10 @@ La solución aplica una separación por capas:
 | `SolarUY.Presentation` | Interfaz Blazor Server, autenticación y composición de la aplicación. |
 | `SolarUY.Application` | Servicios de aplicación, validaciones, contratos e interfaces de integración. |
 | `SolarUY.Domain` | Entidades y reglas de negocio. |
-| `SolarUY.Infrastructure` | Persistencia EF Core/MariaDB e implementación del simulador. |
+| `SolarUY.Infrastructure` | Persistencia EF Core/MariaDB, cliente TCP y motor de simulación del inversor. |
+| `SolarUY.InversorSimulador` | Proceso local independiente que recibe solicitudes TCP y simula sensor/inversor. |
 
-Las pruebas están en `SolarUY.Domain.Tests`, `SolarUY.Application.Tests`, `CodeQuality.Tests` y `SolarUY.Integration.Tests`. La suite de integración del simulador usa reloj e identidad controlados y no necesita servicios externos. Los documentos de requerimientos, especificaciones y tareas están bajo `prompting/`.
+Las pruebas están en `SolarUY.Domain.Tests`, `SolarUY.Application.Tests`, `CodeQuality.Tests` y `SolarUY.Integration.Tests`. Las pruebas del simulador usan inventario preparado e identidad controlada; no requieren MariaDB. Los documentos de requerimientos, especificaciones y tareas están bajo `prompting/`.
 
 ## Tecnologías
 
@@ -110,7 +111,17 @@ Compose importa el realm `solaruy` desde `keycloak/realm/solaruy-realm.json`. El
 
 La importación inicial no actualiza automáticamente un realm que ya existe. Para preparar el cliente de directorio en un entorno existente, seguir [keycloak/TECNICOS.md](keycloak/TECNICOS.md); no es necesario borrar el realm o los volúmenes.
 
-### 2. Configurar la aplicación
+### 2. Iniciar el simulador del inversor
+
+El simulador debe estar ejecutándose antes de iniciar SolarUY. En una terminal desde la raíz del repositorio:
+
+```powershell
+dotnet run --project SolarUY.InversorSimulador/SolarUY.InversorSimulador.csproj
+```
+
+Escucha por defecto en `127.0.0.1:5055`. Deja esa terminal abierta; `Ctrl+C` detiene el simulador. Si cambias el host o el puerto, configura los mismos valores para el simulador y la aplicación mediante `InversorTcp__Host` e `InversorTcp__Port`.
+
+### 3. Configurar la aplicación
 
 Define la conexión a MariaDB fuera del repositorio con las credenciales de tu entorno. .NET no lee automáticamente el `.env` de Compose; usá user-secrets o variables de entorno. Por ejemplo, en PowerShell:
 
@@ -128,7 +139,7 @@ La autoridad local y el identificador del cliente se encuentran en `SolarUY.Pres
 
 Para cargar y validar técnicos de mantenimiento se necesita además el cliente `solaruy-tecnico-directory`, su cuenta de servicio con permisos de lectura y su secreto externo. Prepararlo según [keycloak/TECNICOS.md](keycloak/TECNICOS.md). Es un cliente distinto de `solaruy-web`; sus secretos no son intercambiables.
 
-### 3. Base de datos y ejecución
+### 4. Base de datos y ejecución
 
 Con la cadena de conexión configurada, aplicar las migraciones existentes con Entity Framework Core:
 
@@ -159,7 +170,9 @@ Si la aplicación estaba ejecutándose mientras se modificaba el código, detene
 - `Authentication__OpenIdConnect__ClientSecret`: secreto confidencial del cliente; usar User Secrets localmente y una fuente segura de secretos en producción.
 - `Keycloak__Directory__BaseUrl`, `Keycloak__Directory__Realm` y `Keycloak__Directory__ClientId`: ubicación del directorio de técnicos y cliente de cuenta de servicio.
 - `Keycloak__Directory__ClientSecret`: secreto externo del cliente de directorio; user-secrets en desarrollo y variables de entorno en despliegue.
-- `InversorSimulador__Nodos__<identificador>`: lista de paneles simulados del nodo, separados por comas; si no se configura, se utiliza la topología predeterminada.
+- `InversorTcp__Host`, `InversorTcp__Port`: dirección IP y puerto del simulador TCP; por defecto `127.0.0.1:5055`.
+- `InversorTcp__TimeoutSeconds`: límite de espera por operación TCP; por defecto, 3 segundos.
+- El inventario de nodos, parques y paneles se consulta desde MariaDB en la aplicación web y se envía al simulador por TCP; no se configura una topología de prueba.
 - `InversorSimulador__PanelesConFalla`: identificadores de panel que el simulador debe marcar como fallados.
 - `RecoleccionLecturas__Habilitada`: activa la recolección automática; por defecto, `true`.
 - `RecoleccionLecturas__Intervalo`: intervalo de recolección; por defecto, `00:01:00`, configurable entre un segundo y cinco minutos. Se guarda como máximo una lectura por panel/minuto. Reiniciar la aplicación después de modificar estas opciones.
@@ -172,7 +185,7 @@ Para ejecutar las pruebas de la solución:
 dotnet test SolarUY.sln
 ```
 
-Las pruebas arquitectónicas están en `CodeQuality.Tests`. El simulador y sus permisos tienen [19 casos permanentes de integración](SolarUY.Integration.Tests/README.md), incluidos en la solución. La evidencia adicional de navegador y persistencia está en [la auditoría](prompting/auditoria_integral.md) y [su seguimiento](prompting/seguimiento_auditoria.md).
+Las pruebas arquitectónicas están en `CodeQuality.Tests`. El simulador y sus permisos tienen [23 casos permanentes de integración](SolarUY.Integration.Tests/README.md), incluidos en la solución. La evidencia adicional de navegador y persistencia está en [la auditoría](prompting/auditoria_integral.md) y [su seguimiento](prompting/seguimiento_auditoria.md).
 
 El histórico y el recolector tienen pruebas de integración con MariaDB 11.8. Requieren `SOLARUY_HISTORICO_TEST_CONNECTION` apuntando a una base exclusiva de pruebas cuyo nombre comience con `solaruy_req007_test`; el fixture reinicia sus datos. Sin esta variable, esos casos se omiten. La preparación se detalla en [SolarUY.Integration.Tests/README.md](SolarUY.Integration.Tests/README.md).
 
@@ -219,9 +232,10 @@ La documentación funcional y técnica está organizada por requerimiento dentro
 | [`req002_login_keycloak`](prompting/req002_login_keycloak/) | Inicio y cierre de sesión con OpenID Connect, roles y Keycloak local. | Flujo de autenticación y autorización local documentado como verificado; quedan aspectos de configuración de producción pendientes. |
 | [`req003_infraestructura_base_de_datos`](prompting/req003_infraestructura_base_de_datos/) | MariaDB, contexto EF Core y migraciones. | Infraestructura utilizada por parques y mantenimiento; no requiere pantalla propia. Ver tareas operativas pendientes. |
 | [`req004_Mantenimiento_de_paneles`](prompting/req004_Mantenimiento_de_paneles/) | Mantenimiento de paneles. | Implementado con permisos por responsable, estados y filtros; quedan asignaciones de datos locales por revisar. El requerimiento conserva el nombre `requierements.md`. |
-| [`req005_Simulador del inversor`](prompting/req005_Simulador%20del%20inversor/) | Contrato y simulador sustituible de inversor. | Pantalla de consulta/control, autorización en Application y 19 casos permanentes de integración. |
+| [`req005_Simulador del inversor`](prompting/req005_Simulador%20del%20inversor/) | Contrato y simulación de paneles e inversor. | Pantalla de consulta/control, autorización en Application y 19 casos de integración del motor simulado. |
 | [`req006_gestion_multiparque`](prompting/req006_gestion_multiparque/) | Gestión multiparque. | ABM y búsqueda, confirmación de baja y autorización administrativa en las seis operaciones del servicio. |
 | [`req007_Histórico_generación`](prompting/req007_Hist%C3%B3rico_generaci%C3%B3n/) | Histórico de energía y recolección periódica. | Consultas, comparación, extremos y recolección del inventario implementados; pendiente el umbral de rendimiento de la tarea 6.8. |
+| [`req013_simulador_tcp_inversor`](prompting/req013_simulador_tcp_inversor/) | Comunicación TCP con simulador aleatorio de inversor. | Cliente y proceso simulador implementados; 3 pruebas de integración de TCP y estado remoto. |
 
 Los estados de esta tabla son una orientación general. Para conocer el detalle y los bloqueos vigentes, prevalecen las casillas y notas de `tasks.md` y el informe de implementación de cada carpeta.
 

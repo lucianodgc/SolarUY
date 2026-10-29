@@ -1,9 +1,12 @@
 using SolarUY.Application.RecoleccionLecturas;
+using SolarUY.Application.Inversores;
 
 namespace SolarUY.Application.Abstractions;
 
 public interface IInversorClient
 {
+    Task SincronizarInventarioAsync(IReadOnlyList<InventarioNodoInversorDto> nodos, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<MedicionPanelDto>> ObtenerMedicionesRegistradasAsync(
         IReadOnlyList<PanelMedicionDto> paneles, DateTime instanteUtc, CancellationToken cancellationToken = default);
 
@@ -26,6 +29,10 @@ public interface IInversorClient
     Task DesactivarVolcadoRedAsync(CancellationToken cancellationToken = default);
 
     Task<bool> ObtenerEstadoVolcadoRedAsync(CancellationToken cancellationToken = default);
+
+    Task<bool> ObtenerEstadoEncendidoAsync(CancellationToken cancellationToken = default);
+
+    Task EstablecerEstadoEncendidoAsync(bool encendido, CancellationToken cancellationToken = default);
 }
 
 public sealed record PanelInversorEstadoDto(
@@ -33,7 +40,8 @@ public sealed record PanelInversorEstadoDto(
     string PanelId,
     bool EstaActivo,
     EstadoSaludPanel EstadoSalud,
-    decimal PotenciaGeneradaW);
+    decimal PotenciaGeneradaW,
+    string NumeroSerie = "");
 
 public enum EstadoSaludPanel
 {

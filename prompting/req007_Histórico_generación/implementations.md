@@ -117,7 +117,7 @@ La cobertura utiliza los paneles actuales del objetivo. No se reconstruyen cambi
 
 ## Ampliación R1: recolección periódica del inventario
 
-La aplicación recoge al arrancar y luego cada minuto mediciones simuladas de los paneles registrados. Usa sus Guid, número de serie, potencia nominal y estado; la curva solar se evalúa entre 06:00 y 18:00 de Uruguay. Se guardan fecha UTC, potencia en W y salud, incluyendo cero medido durante la noche, inactividad o falla. No se crean registros anteriores a la activación.
+La aplicación recoge al arrancar y luego cada minuto mediciones simuladas de los paneles registrados. Usa sus Guid, número de serie, potencia nominal y estado; la potencia es aleatoria e independiente de la hora real. Se guardan fecha UTC, potencia en W y salud; paneles inactivos o fallados generan cero. No se crean registros anteriores a la activación.
 
 El servicio interno de Application obtiene una sesión exclusiva, consulta paneles instalados sin lectura en el minuto actual, recibe y valida el lote de mediciones y construye las entidades existentes. Solo después de validar el lote completo se guarda de forma atómica. Se vuelve a consultar el inventario en cada ciclo, incluyendo nuevos paneles sin cambiar los registros anteriores.
 

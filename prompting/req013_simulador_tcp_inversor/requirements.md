@@ -9,6 +9,8 @@ El simulador debe generar valores aleatorios de potencia y responder a órdenes 
 ## Alcance
 
 - El panel de control existente en SolarUY consulta valores del simulador y permite enviar las órdenes previstas.
+- La pantalla debe identificar nodos y paneles usando el inventario real persistido en la base de datos, sin inventar una topología predeterminada.
+- La simulación no debe crear, borrar ni modificar los registros de ese inventario.
 - El simulador representa el extremo remoto que contiene el sensor y el inversor.
 - La comunicación entre SolarUY y el simulador usa TCP/IP.
 - Los valores de potencia se generan aleatoriamente y respetan el estado de encendido/apagado.
@@ -20,6 +22,7 @@ El simulador debe generar valores aleatorios de potencia y responder a órdenes 
 
 - SolarUY puede conectarse al simulador por TCP/IP y solicitar el estado y la potencia generada.
 - El simulador genera lecturas de potencia aleatorias dentro de límites válidos definidos para la simulación.
+- La potencia máxima simulada de cada panel no supera su potencia nominal registrada.
 - Una nueva lectura puede variar respecto de la anterior sin necesidad de reiniciar SolarUY.
 - La respuesta permite identificar el estado actual del inversor junto con la lectura.
 - La interfaz presenta los datos recibidos e indica que son simulados.

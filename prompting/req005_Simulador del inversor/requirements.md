@@ -30,10 +30,9 @@ La implementación debe permitir que, en el futuro, el simulador pueda ser reemp
 
 ### 3. Simulación de Potencia
 
-- La potencia generada por los paneles debe variar según la hora del día.
-- Durante las horas sin luz solar, la potencia generada debe ser nula o mínima.
-- Durante las horas centrales del día, la potencia generada debe ser mayor.
-- La simulación debe representar de forma aproximada una curva de generación solar diaria.
+- La potencia generada por los paneles debe variar aleatoriamente dentro de límites válidos, sin depender de la hora real del equipo.
+- Un panel activo y sano debe poder generar potencia a cualquier hora.
+- La potencia debe ser cero cuando el inversor está apagado o el panel está desactivado o fallado.
 
 ### 4. Estado de los Paneles
 
@@ -69,16 +68,16 @@ La implementación debe permitir que, en el futuro, el simulador pueda ser reemp
 
 ## Ampliación de interfaz solicitada
 
-- Pantalla `/simulador` con selección de nodo simulado, paneles, potencia del nodo y estado del volcado a red.
+- Pantalla `/simulador` con selección de nodos y paneles del inventario persistido, potencia del nodo y estado del volcado a red.
 - Administrador puede activar/desactivar paneles y el volcado. Técnico y Consulta solo consultan; esta decisión fue confirmada por el usuario.
-- Los controles actualizan el estado visible después de la operación y previenen envíos repetidos. La pantalla informa que los datos son simulados e independientes de los equipos persistidos.
+- Los controles actualizan el estado simulado visible después de la operación y previenen envíos repetidos. La pantalla informa que las lecturas son simuladas; los controles no modifican el inventario persistido.
 
 ## Pruebas
 
 Se deben incluir tests de la lógica del simulador que verifiquen como mínimo:
 
 - Obtención de información de paneles por nodo.
-- Generación de potencia según la hora del día.
+- Generación aleatoria de potencia independiente de la hora del día.
 - Activación de un panel.
 - Desactivación de un panel.
 - Un panel desactivado no genera potencia.
