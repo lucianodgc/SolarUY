@@ -14,7 +14,7 @@ Requiere `SOLARUY_HISTORICO_TEST_CONNECTION` con una base exclusiva cuyo nombre 
 
 ## Histórico de generación (REQ007)
 
-La ampliación de recolección añade 16 casos de integración: fuente del inventario registrado, día/noche, consumo por el histórico, idempotencia/reinicio, estado/fallas por serie o Guid, instalaciones futuras, nuevos paneles, exclusión entre conexiones, validación atómica del lote, cancelación, recuperación de errores, dos hosts con el worker real, deshabilitación y fallo de arranque de Kestrel por puerto ocupado sin recolectar ni fallar durante el cierre. Usan la misma conexión aislada que el histórico. Ambas clases pertenecen a una colección xUnit sin paralelismo para no interferir al preparar los datos.
+La ampliación de recolección añade 16 casos de integración: fuente del inventario registrado, potencia independiente de la hora, consumo por el histórico, idempotencia/reinicio, estado/fallas por serie o Guid, instalaciones futuras, nuevos paneles, exclusión entre conexiones, validación atómica del lote, cancelación, recuperación de errores, dos hosts con el worker real, deshabilitación y fallo de arranque de Kestrel por puerto ocupado sin recolectar ni fallar durante el cierre. Usan la misma conexión aislada que el histórico. Ambas clases pertenecen a una colección xUnit sin paralelismo para no interferir al preparar los datos.
 
 ```powershell
 dotnet test SolarUY.Integration.Tests/SolarUY.Integration.Tests.csproj --filter FullyQualifiedName~RecoleccionLecturasIntegrationTests
@@ -53,8 +53,16 @@ Para ejecutar únicamente esta suite:
 dotnet test SolarUY.Integration.Tests/SolarUY.Integration.Tests.csproj
 ```
 
-Los 19 casos utilizan xUnit y las versiones de Test SDK/runner ya usadas por Domain.Tests. Resuelven `IInversorService` con `InversorService`, `IInversorClient` y el registro real `AddSolarInfrastructure`. Cada prueba tiene su contenedor; las comprobaciones de singleton usan varios ámbitos del mismo contenedor.
+Los 19 casos de REQ005 utilizan xUnit y las versiones de Test SDK/runner ya usadas por Domain.Tests. Resuelven `IInversorService` y el motor simulado de Infrastructure con topología y reloj controlados. Cada prueba tiene su contenedor; las comprobaciones de singleton usan varios ámbitos del mismo contenedor.
 
 Solo se sustituyen las fronteras de reloj e identidad por valores controlados. La configuración es exclusivamente en memoria, sin conexión, `.env`, user-secrets, MariaDB ni Keycloak. Una máquina sin servicios Docker puede ejecutar la suite. Estas pruebas verifican integración de componentes de simulación y autorización; no son recorridos OIDC ni pruebas de persistencia.
 
-Cobertura: topología predeterminada/configurable, consulta y potencia total, noche/amanecer/mediodía/tarde/anochecer, zona horaria, fallas, activar/desactivar e idempotencia, aislamiento por panel/nodo, volcado a red, estado compartido entre ámbitos y reinicio, permisos de los tres roles, identidad inválida, identificadores desconocidos y cancelación.
+Cobertura: inventario sincronizado sin topología predeterminada, consulta y potencia nominal simulada a cualquier hora, fallas, activar/desactivar e idempotencia, aislamiento por panel/nodo, volcado a red, estado compartido entre ámbitos y reinicio, permisos de los tres roles, identidad inválida, identificadores desconocidos y cancelación.
+
+## Simulador TCP remoto (REQ013)
+
+Tres casos permanentes verifican el cliente TCP y el listener contra el motor simulado: lecturas aleatorias dentro del rango, listado de nodos, operaciones de panel y volcado, mediciones registradas, encendido/apagado global, desconexión y respuesta JSON inválida. El listener se inicia en loopback con un puerto libre durante cada prueba; no se necesitan Docker, MariaDB ni Keycloak.
+
+```powershell
+dotnet test SolarUY.Integration.Tests/SolarUY.Integration.Tests.csproj --filter FullyQualifiedName~InversorTcpIntegrationTests
+```

@@ -8,13 +8,13 @@ Los requisitos no fijan la forma de identificar nodos y paneles, los tipos de re
 
 ## Decisiones aplicadas
 
-1. El puerto conserva los identificadores `string` y DTO de Application definidos originalmente antes de la persistencia de nodos/paneles de req004. La simulación utiliza su propia topología: configurable mediante mapa nodo-panel o, por defecto, `nodo-1` con `panel-1` a `panel-4`. No se vincula automáticamente a los equipos persistidos.
+1. El simulador recibe desde la aplicación una copia actual del inventario de nodos y paneles persistidos. Los identificadores Guid se transmiten como texto para conservar el contrato actual. No crea ni modifica registros del inventario.
 2. Las operaciones son asíncronas y aceptan `CancellationToken`. Las consultas devuelven estado por panel y potencia total del nodo; identificadores desconocidos producen `KeyNotFoundException`.
-3. La potencia se expresa en watts, con máximo de 400 W por panel y curva sinusoidal entre las 06:00 y las 18:00 según la hora local del `TimeProvider`. Fuera de ese intervalo la potencia es cero.
+3. La potencia se expresa en watts, con máximo de 400 W por panel y variación aleatoria independiente del reloj local. Un panel activo, sano y con el inversor encendido puede generar a cualquier hora.
 4. Las fallas se configuran determinísticamente mediante una lista de identificadores de panel. Un panel fallado conserva su estado de salud `Fallado` y genera cero watts. El estado operativo de activación es independiente.
 5. El simulador se registra como singleton para compartir estado en el proceso; no conserva estado tras reinicios ni coordina varias instancias.
 6. Además de la evidencia temporal, el pedido explícito de seguimiento del usuario se concreta con una suite permanente de integración xUnit en `SolarUY.Integration.Tests`, incluida en la solución. Usa el registro real de Infrastructure, los casos de uso de Application y reloj/identidad controlados, sin nuevas pruebas unitarias de Infrastructure ni dependencias de MariaDB/Keycloak.
-7. La ampliación de frontend agrega consulta para Administrador, Tecnico y Consulta, y controles exclusivos de Administrador, según la respuesta explícita del usuario. Los identificadores simulados siguen siendo independientes de las entidades persistidas por req004.
+7. La pantalla usa los nodos, parques, paneles, números de serie, estados y potencias nominales del inventario persistido. Administrador puede operar el estado simulado; Técnico y Consulta solo leen. Las órdenes no persisten cambios en las entidades.
 
 ## Cambios por capa
 
@@ -32,18 +32,18 @@ La interfaz no depende de `Infrastructure`, Blazor, EF Core ni del proveedor de 
 
 Implementar `IInversorClient` en Infrastructure con un simulador cuyo estado sea coherente entre consultas y órdenes durante su ciclo de vida configurado. Debe mantener el estado de activación de cada panel y del volcado a red; desactivar un panel impide que reporte generación y reactivarlo lo incorpora nuevamente. Las órdenes de un panel afectan solo a ese panel. Las consultas de estado deben incluir la salud simulada y reflejar las acciones persistidas en memoria.
 
-Calcular potencia por panel con una curva sinusoidal entre las 06:00 y las 18:00 locales, con máximo de 400 W y cero fuera de ese intervalo. Un panel desactivado o fallado no genera potencia. Los identificadores de panel fallado se reciben mediante `InversorSimulador:PanelesConFalla`; el estado devuelve su salud como `Fallado`.
+Calcular potencia aleatoria por panel con máximo de 400 W, sin consultar la hora real. Un inversor apagado, panel desactivado o panel fallado no genera potencia. Los identificadores de panel fallado se reciben mediante `InversorSimulador:PanelesConFalla`; el estado devuelve su salud como `Fallado`.
 
 Registrar el adaptador en el punto existente de composición de dependencias de Infrastructure para que el host pueda resolver `IInversorClient`. La implementación no debe ser referenciada directamente por Domain o Application. No se introduce una API, dispositivo real, persistencia, biblioteca o servicio externo.
 
 El simulador es singleton dentro del proceso para que consultas y órdenes compartan estado. No persiste entre reinicios ni coordina el estado entre instancias.
 
-La enumeración de nodos devuelve la topología configurada, ordenada por identificador, conservando el nodo predeterminado cuando no existe configuración. Se verifican los comportamientos con pruebas permanentes de integración, sin incorporar pruebas unitarias de Infrastructure ni modificar guardarraíles.
+La enumeración de nodos devuelve la última topología sincronizada desde el inventario. No hay datos predeterminados si la base no contiene nodos. Se verifican los comportamientos con pruebas permanentes de integración, sin incorporar pruebas unitarias de Infrastructure ni modificar guardarraíles.
 
 ### 4. Presentation
 
-`SimuladorInversor.razor`, en `/simulador`, utiliza exclusivamente `IInversorService`. Presenta selección de nodo, actualización manual, potencia en watts, paneles con estado operativo/salud/potencia y estado del volcado. Las acciones se muestran según `PuedeOperar`; el servicio valida los permisos nuevamente. Técnico y Consulta solo leen. Se deshabilitan acciones durante una operación y se muestran errores controlados, estados vacíos y la hora UTC de consulta. Se advierte que la simulación es independiente del inventario y que los cambios duran hasta reiniciar la aplicación. El menú y el inicio incluyen el acceso para los tres roles.
+`SimuladorInversor.razor`, en `/simulador`, utiliza exclusivamente `IInversorService`. Presenta selección de nodo del inventario, parque, paneles identificados por número de serie, potencia en watts, estado operativo/salud y estado del volcado. Actualiza las lecturas automáticamente cada cinco segundos y permite actualización manual. Las acciones se muestran según `PuedeOperar`; el servicio valida los permisos nuevamente. Técnico y Consulta solo leen. Los estados son simulados y los controles no modifican MariaDB. Se deshabilitan acciones durante una operación, se conserva la vista mientras se procesa y se muestran errores controlados, estados vacíos y la hora UTC de consulta. El temporizador se cancela al salir de la página.
 
 ## Verificación prevista
 
-Ejecutar `dotnet test SolarUY.sln` para incluir los 19 casos permanentes del simulador y las pruebas existentes. Los casos verifican consulta por nodo, curva diurna/nocturna, estado/salud, operaciones, aislamiento, composición por ámbitos y permisos. No sustituyen los recorridos OIDC ni una prueba con MariaDB, documentados en la auditoría integral y su seguimiento. Los guardarraíles se ejecutan sin modificar sus pruebas.
+Ejecutar `dotnet test SolarUY.sln` para incluir los casos permanentes del simulador y las pruebas existentes. Los casos verifican inventario sincronizado, lecturas aleatorias limitadas por potencia nominal, independencia de la hora, estado/salud, operaciones, aislamiento, composición por ámbitos y permisos. No sustituyen los recorridos OIDC ni una prueba con MariaDB, documentados en la auditoría integral y su seguimiento. Los guardarraíles se ejecutan sin modificar sus pruebas.

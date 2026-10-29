@@ -11,15 +11,8 @@ Cuando el usuario invoque esta skill, debes ejecutar el siguiente flujo de traba
 
 1. **Localizar Requerimientos:** Busca el archivo `requirements.md` dentro de la carpeta indicada por el usuario en el prompt. Lee su contenido cuidadosamente.
 2. **Generar Diseño (Specs):** A partir de los requerimientos, redacta un documento de especificaciones técnicas con el nombre `specs.md` en esa misma carpeta.
-3. **Reglas Arquitectónicas y Tecnológicas:** El diseño propuesto en `specs.md` DEBE respetar todas las reglas globales del proyecto (las rules cargadas en el contexto, como Clean Architecture, Blazor, evitar MediatR y las tecnologías y versiones autorizadas). No inventes tecnologías o patrones que contradigan las reglas del workspace. Antes de generar `specs.md`, consulta también las decisiones tecnológicas documentadas en `requirements.md`. Si existe una incompatibilidad o falta una decisión necesaria, documenta la duda en `specs.md` y genera una tarea de clarificación en `tasks.md`, sin inventar una solución.
-
-## Alcance arquitectónico
-
-Aunque el documento `specs.md` debe evaluar las cuatro capas (Domain, Application, Infrastructure y Presentation), solo debe definir cambios en las capas que realmente sean necesarias para cumplir los requisitos.
-
-No crear clases, interfaces, casos de uso, controladores ni componentes de presentación únicamente para completar una estructura de capas. Si una capa no necesita cambios, indicarlo expresamente.
-
-4. **Formato de `specs.md`:** Estructura el documento en las cuatro capas arquitectónicas: Domain, Application, Infrastructure y Presentation. Para cada capa, especifica los cambios necesarios o indica expresamente que no requiere modificaciones para esta tarea. No introduzcas componentes ni responsabilidades que no estén justificados por los requisitos y las reglas del workspace.
+3. **Reglas Arquitectónicas:** El diseño propuesto en `specs.md` DEBE respetar todas las reglas globales del proyecto (las rules cargadas en el contexto, como Clean Architecture, Blazor, evitar MediatR, etc.). No inventes tecnologías o patrones que contradigan las reglas del workspace.
+4. **Formato:** Asegúrate de estructurar el documento `specs.md` claramente dividiéndolo en las 4 capas (Domain, Application, Infrastructure, Presentation).
 5. **Generar Tareas:** Después de generar `specs.md`, crea `tasks.md` en la misma carpeta usando `specs.md` como única fuente de alcance técnico. Descompón la implementación en tareas pequeñas, ordenadas según las dependencias entre capas y pasos de entrega.
 6. **Trazabilidad y consistencia:** Cada tarea de `tasks.md` debe corresponder a una decisión o requisito especificado en `specs.md`. No agregues funcionalidades, tecnologías, pruebas o cambios de infraestructura que no estén indicados allí. Si falta un dato necesario, registra la duda como una tarea de clarificación en lugar de inventar una solución.
 7. **Formato de `tasks.md`:** Usa Markdown con una lista de tareas verificables con casillas (`- [ ]`), agrupadas por capa o etapa. Numera las tareas y subtareas de manera jerárquica (por ejemplo, `1.`, `1.1`). Describe cada tarea con un resultado concreto y evita tareas vagas como “implementar todo”. Incluye una etapa de verificación solo cuando las verificaciones estén contempladas en `specs.md`.
