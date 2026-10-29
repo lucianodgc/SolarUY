@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using SolarUY.Application.Abstractions;
+using SolarUY.Application.Inversores;
 using SolarUY.Application.RecoleccionLecturas;
 using SolarUY.Domain.Enums;
 
@@ -7,28 +8,44 @@ namespace SolarUY.Infrastructure.Inversores;
 
 public sealed class InversorSimulador : IInversorClient
 {
-    private const decimal PotenciaMaximaPanelW = 400m;
-    private const double HoraInicioSolar = 6d;
-    private const double HoraFinSolar = 18d;
-
     private readonly object _sync = new();
-    private readonly Dictionary<string, HashSet<string>> _panelesPorNodo;
+    private Dictionary<string, InventarioNodoInversorDto> _nodos = new(StringComparer.Ordinal);
     private readonly HashSet<string> _panelesConFalla;
     private readonly HashSet<(string NodoId, string PanelId)> _panelesDesactivados = [];
-    private readonly TimeProvider _timeProvider;
+    private readonly HashSet<(string NodoId, string PanelId)> _panelesActivados = [];
     private bool _volcadoRedActivo;
+    private bool _inversorEncendido = true;
 
-    public InversorSimulador(IConfiguration configuration, TimeProvider timeProvider)
+    public InversorSimulador(IConfiguration configuration)
     {
-        _timeProvider = timeProvider;
-        _panelesPorNodo = CargarPanelesPorNodo(configuration);
         _panelesConFalla = CargarPanelesConFalla(configuration);
+    }
+
+    public Task SincronizarInventarioAsync(IReadOnlyList<InventarioNodoInversorDto> nodos, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(nodos);
+        var nuevoInventario = nodos.ToDictionary(nodo => nodo.Id, StringComparer.Ordinal);
+        if (nuevoInventario.Values.Any(nodo => string.IsNullOrWhiteSpace(nodo.Id)
+            || nodo.Paneles.Any(panel => string.IsNullOrWhiteSpace(panel.Id) || panel.PotenciaNominalW < 0)))
+            throw new ArgumentException("El inventario contiene identificadores o potencias inválidos.", nameof(nodos));
+
+        lock (_sync)
+        {
+            _nodos = nuevoInventario;
+            var panelesValidos = _nodos.Values.SelectMany(nodo => nodo.Paneles.Select(panel => (NodoId: nodo.Id, PanelId: panel.Id))).ToHashSet();
+            _panelesDesactivados.RemoveWhere(panel => !panelesValidos.Contains(panel));
+            _panelesActivados.RemoveWhere(panel => !panelesValidos.Contains(panel));
+        }
+        return Task.CompletedTask;
     }
 
     public Task<IReadOnlyList<string>> ListarNodosAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        IReadOnlyList<string> nodos = _panelesPorNodo.Keys.Order(StringComparer.Ordinal).ToArray();
+        IReadOnlyList<string> nodos;
+        lock (_sync)
+            nodos = _nodos.Keys.Order(StringComparer.Ordinal).ToArray();
         return Task.FromResult(nodos);
     }
 
@@ -37,19 +54,21 @@ public sealed class InversorSimulador : IInversorClient
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (instanteUtc.Kind != DateTimeKind.Utc) throw new ArgumentException("La medición requiere un instante UTC.", nameof(instanteUtc));
-        var zona = TimeZoneInfo.FindSystemTimeZoneById("America/Montevideo");
-        var horaLocal = TimeZoneInfo.ConvertTime(new DateTimeOffset(instanteUtc), zona);
-        IReadOnlyList<MedicionPanelDto> resultado = paneles.Select(panel => MedirPanelRegistrado(panel, horaLocal)).ToArray();
-        return Task.FromResult(resultado);
+        lock (_sync)
+        {
+            IReadOnlyList<MedicionPanelDto> resultado = paneles.Select(MedirPanelRegistrado).ToArray();
+            return Task.FromResult(resultado);
+        }
     }
 
-    private MedicionPanelDto MedirPanelRegistrado(PanelMedicionDto panel, DateTimeOffset horaLocal)
+    private MedicionPanelDto MedirPanelRegistrado(PanelMedicionDto panel)
     {
         if (panel.PotenciaNominalW < 0) throw new InvalidOperationException($"El panel {panel.Id} tiene una potencia nominal inválida.");
         var fallado = panel.Estado == EstadoPanel.Falla || _panelesConFalla.Contains(panel.NumeroSerie)
             || _panelesConFalla.Contains(panel.Id.ToString("D"));
-        var potencia = panel.Estado == EstadoPanel.Activo && !fallado
-            ? decimal.Round(panel.PotenciaNominalW * CalcularProporcionSolar(horaLocal), 6) : 0m;
+        var potenciaBase = _inversorEncendido && panel.Estado == EstadoPanel.Activo && !fallado
+            ? panel.PotenciaNominalW : 0m;
+        var potencia = AplicarVariacionAleatoria(potenciaBase, 6);
         return new MedicionPanelDto(panel.Id, potencia, fallado ? EstadoSaludLectura.Fallado : EstadoSaludLectura.Sano);
     }
 
@@ -60,10 +79,9 @@ public sealed class InversorSimulador : IInversorClient
         cancellationToken.ThrowIfCancellationRequested();
         lock (_sync)
         {
-            var horaLocal = _timeProvider.GetLocalNow();
-            IReadOnlyList<PanelInversorEstadoDto> estado = ObtenerPaneles(nodoId)
-                .Order(StringComparer.Ordinal)
-                .Select(panelId => CrearEstadoPanel(nodoId, panelId, horaLocal))
+            IReadOnlyList<PanelInversorEstadoDto> estado = ObtenerNodo(nodoId).Paneles
+                .OrderBy(panel => panel.NumeroSerie, StringComparer.Ordinal)
+                .Select(panel => CrearEstadoPanel(nodoId, panel))
                 .ToArray();
             return Task.FromResult(estado);
         }
@@ -76,9 +94,8 @@ public sealed class InversorSimulador : IInversorClient
         cancellationToken.ThrowIfCancellationRequested();
         lock (_sync)
         {
-            var horaLocal = _timeProvider.GetLocalNow();
-            var potencia = ObtenerPaneles(nodoId)
-                .Sum(panelId => CalcularPotencia(panelId, nodoId, horaLocal));
+            var potencia = ObtenerNodo(nodoId).Paneles
+                .Sum(panel => CalcularPotencia(nodoId, panel));
             return Task.FromResult(potencia);
         }
     }
@@ -90,6 +107,7 @@ public sealed class InversorSimulador : IInversorClient
         {
             ValidarPanel(nodoId, panelId);
             _panelesDesactivados.Remove((nodoId, panelId));
+            _panelesActivados.Add((nodoId, panelId));
         }
 
         return Task.CompletedTask;
@@ -101,6 +119,7 @@ public sealed class InversorSimulador : IInversorClient
         lock (_sync)
         {
             ValidarPanel(nodoId, panelId);
+            _panelesActivados.Remove((nodoId, panelId));
             _panelesDesactivados.Add((nodoId, panelId));
         }
 
@@ -130,65 +149,62 @@ public sealed class InversorSimulador : IInversorClient
             return Task.FromResult(_volcadoRedActivo);
     }
 
-    private PanelInversorEstadoDto CrearEstadoPanel(string nodoId, string panelId, DateTimeOffset horaLocal)
+    public Task<bool> ObtenerEstadoEncendidoAsync(CancellationToken cancellationToken = default)
     {
-        var estaActivo = !_panelesDesactivados.Contains((nodoId, panelId));
-        var estaFallado = _panelesConFalla.Contains(panelId);
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (_sync)
+            return Task.FromResult(_inversorEncendido);
+    }
+
+    public Task EstablecerEstadoEncendidoAsync(bool encendido, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (_sync)
+            _inversorEncendido = encendido;
+        return Task.CompletedTask;
+    }
+
+    private PanelInversorEstadoDto CrearEstadoPanel(string nodoId, InventarioPanelInversorDto panel)
+    {
+        var estaActivo = _panelesActivados.Contains((nodoId, panel.Id))
+            || (!_panelesDesactivados.Contains((nodoId, panel.Id)) && panel.Estado == EstadoPanel.Activo);
+        var estaFallado = panel.Estado == EstadoPanel.Falla || _panelesConFalla.Contains(panel.Id)
+            || _panelesConFalla.Contains(panel.NumeroSerie);
         var salud = estaFallado ? EstadoSaludPanel.Fallado : EstadoSaludPanel.Saludable;
-        var potencia = estaActivo ? CalcularPotencia(panelId, nodoId, horaLocal) : 0m;
-        return new PanelInversorEstadoDto(nodoId, panelId, estaActivo, salud, potencia);
+        var potencia = estaActivo && _inversorEncendido ? CalcularPotencia(nodoId, panel) : 0m;
+        return new PanelInversorEstadoDto(nodoId, panel.Id, estaActivo, salud, potencia, panel.NumeroSerie);
     }
 
-    private decimal CalcularPotencia(string panelId, string nodoId, DateTimeOffset horaLocal)
+    private decimal CalcularPotencia(string nodoId, InventarioPanelInversorDto panel)
     {
-        if (_panelesDesactivados.Contains((nodoId, panelId)) || _panelesConFalla.Contains(panelId))
+        if (!_inversorEncendido || _panelesDesactivados.Contains((nodoId, panel.Id))
+            || panel.Estado != EstadoPanel.Activo || panel.Estado == EstadoPanel.Falla
+            || _panelesConFalla.Contains(panel.Id) || _panelesConFalla.Contains(panel.NumeroSerie))
             return 0m;
 
-        return decimal.Round(PotenciaMaximaPanelW * CalcularProporcionSolar(horaLocal), 2);
+        return AplicarVariacionAleatoria(panel.PotenciaNominalW, 2);
     }
 
-    private static decimal CalcularProporcionSolar(DateTimeOffset horaLocal)
+    private static decimal AplicarVariacionAleatoria(decimal potenciaBase, int decimales)
     {
-        var horaDecimal = horaLocal.TimeOfDay.TotalHours;
-        if (horaDecimal <= HoraInicioSolar || horaDecimal >= HoraFinSolar)
-            return 0m;
-
-        var proporcion = Math.Sin(Math.PI * (horaDecimal - HoraInicioSolar) / (HoraFinSolar - HoraInicioSolar));
-        return (decimal)Math.Max(0d, proporcion);
+        if (potenciaBase <= 0m) return 0m;
+        var factor = 0.90d + Random.Shared.NextDouble() * 0.10d;
+        return decimal.Round(potenciaBase * (decimal)factor, decimales);
     }
 
-    private HashSet<string> ObtenerPaneles(string nodoId)
+    private InventarioNodoInversorDto ObtenerNodo(string nodoId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(nodoId);
-        if (!_panelesPorNodo.TryGetValue(nodoId, out var paneles))
-            throw new KeyNotFoundException($"No existe el nodo simulado '{nodoId}'.");
-        return paneles;
+        if (!_nodos.TryGetValue(nodoId, out var nodo))
+            throw new KeyNotFoundException($"No existe el nodo '{nodoId}' en el inventario sincronizado.");
+        return nodo;
     }
 
     private void ValidarPanel(string nodoId, string panelId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(panelId);
-        if (!ObtenerPaneles(nodoId).Contains(panelId))
-            throw new KeyNotFoundException($"No existe el panel simulado '{panelId}' en el nodo '{nodoId}'.");
-    }
-
-    private static Dictionary<string, HashSet<string>> CargarPanelesPorNodo(IConfiguration configuration)
-    {
-        var nodos = configuration.GetSection("InversorSimulador:Nodos").GetChildren()
-            .ToDictionary(
-                nodo => nodo.Key,
-                nodo => (nodo.Value ?? string.Empty)
-                    .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-                    .ToHashSet(StringComparer.Ordinal),
-                StringComparer.Ordinal);
-
-        if (nodos.Count > 0)
-            return nodos;
-
-        return new Dictionary<string, HashSet<string>>(StringComparer.Ordinal)
-        {
-            ["nodo-1"] = ["panel-1", "panel-2", "panel-3", "panel-4"]
-        };
+        if (!ObtenerNodo(nodoId).Paneles.Any(panel => panel.Id == panelId))
+            throw new KeyNotFoundException($"No existe el panel '{panelId}' en el nodo '{nodoId}' del inventario sincronizado.");
     }
 
     private static HashSet<string> CargarPanelesConFalla(IConfiguration configuration)

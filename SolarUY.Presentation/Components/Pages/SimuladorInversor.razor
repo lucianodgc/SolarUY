@@ -1,4 +1,5 @@
 @page "/simulador"
+@implements IAsyncDisposable
 @attribute [Authorize(Roles = "Administrador,Tecnico,Consulta")]
 @inject SolarUY.Application.Inversores.IInversorService Inversor
 @inject ILogger<SimuladorInversor> Logger
@@ -7,11 +8,12 @@
 
 <PageTitle>Simulador de inversor | SolarUY</PageTitle>
 <PageHeader Title="Simulador de inversor" Section="Operación" Description="Consultá el estado de los paneles y la potencia generada en la simulación." />
-<p class="note">Los nodos y paneles de esta pantalla son simulados. Los cambios duran hasta que se reinicia la aplicación. La potencia varía durante el día y es cero fuera del horario solar.</p>
+<p class="note">Los nodos y paneles se leen del inventario de la base de datos. La potencia es simulada y aleatoria; los controles afectan solo la simulación y no modifican los registros guardados. El volcado a red solo representa ese estado: no hay conexión eléctrica real.</p>
 <div class="surface filter-toolbar">
-    <RadzenLabel Text="Nodo simulado" Component="NodoSimulado" />
-    <RadzenDropDown TValue="string" Name="NodoSimulado" Data="_nodos" @bind-Value="_nodoId" Disabled="_ocupado" Style="min-width:180px" />
+    <RadzenLabel Text="Nodo" Component="NodoSimulado" />
+    <RadzenDropDown TValue="string" Name="NodoSimulado" Data="_nodos" TextProperty="Nombre" ValueProperty="Id" @bind-Value="_nodoId" Disabled="_ocupado" Style="min-width:180px" />
     <RadzenButton Text="Consultar / Actualizar" Icon="refresh" Click="CargarAsync" Disabled="_ocupado" IsBusy="_ocupado" />
+    <span class="text-muted small">Actualización automática cada 5 segundos.</span>
 </div>
 @if (_error is not null)
 {
@@ -22,16 +24,22 @@
     <div class="metric-grid">
         <div class="metric-card"><span class="metric-label">Potencia del nodo</span><strong class="metric-value">@_estado.PotenciaGeneradaW.ToString("N2") <small>W</small></strong></div>
         <div class="metric-card"><span class="metric-label">Paneles del nodo</span><strong class="metric-value">@_estado.Paneles.Count</strong></div>
+        <div class="metric-card"><span class="metric-label">Inversor</span><strong class="metric-value">@(_estado.InversorEncendido ? "Encendido" : "Apagado")</strong></div>
         <div class="metric-card"><span class="metric-label">Volcado a la red</span><strong class="metric-value">@(_estado.VolcadoRedActivo ? "Activo" : "Inactivo")</strong></div>
     </div>
     <section class="surface">
         <div class="page-heading">
-            <div><h2>Paneles de @_estado.NodoId</h2><span class="text-muted small">Consulta: @_estado.FechaConsultaUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC</span></div>
+            <div><h2>@_estado.NodoNombre</h2><span class="text-muted small">Parque: @_estado.ParqueNombre · Consulta: @_estado.FechaConsultaUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC</span></div>
             @if (_estado.PuedeOperar)
             {
-                <RadzenButton Text="@(_estado.VolcadoRedActivo ? "Desactivar volcado a red" : "Activar volcado a red")"
-                              ButtonStyle="ButtonStyle.Secondary" Disabled="_ocupado"
-                              Click="@(() => CambiarVolcadoAsync(!_estado.VolcadoRedActivo))" />
+                <div class="action-buttons">
+                    <RadzenButton Text="@(_estado.InversorEncendido ? "Apagar inversor" : "Prender inversor")"
+                                  ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Disabled="_ocupado"
+                                  Click="@(() => CambiarInversorAsync(!_estado.InversorEncendido))" />
+                    <RadzenButton Text="@(_estado.VolcadoRedActivo ? "Desactivar volcado a red" : "Activar volcado a red")"
+                                  ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Secondary" Disabled="_ocupado"
+                                  Click="@(() => CambiarVolcadoAsync(!_estado.VolcadoRedActivo))" />
+                </div>
             }
         </div>
         @if (!_estado.PuedeOperar)
@@ -45,7 +53,7 @@
                     @foreach (var panel in _estado.Paneles)
                     {
                         <tr>
-                            <td><strong>@panel.PanelId</strong></td>
+                            <td><strong>@panel.NumeroSerie</strong><br /><span class="text-muted small">ID: @panel.PanelId</span></td>
                             <td><span class="state-badge @(panel.EstaActivo ? "" : "state-neutral")">@(panel.EstaActivo ? "Activo" : "Inactivo")</span></td>
                             <td><span class="state-badge @(panel.EstadoSalud == EstadoSaludPanel.Fallado ? "state-danger" : "")">@panel.EstadoSalud</span></td>
                             <td>@panel.PotenciaGeneradaW.ToString("N2")</td>
@@ -68,22 +76,30 @@ else if (_ocupado)
 }
 else if (_error is null)
 {
-    <p class="empty-state">No hay nodos simulados disponibles.</p>
+    <p class="empty-state">No hay nodos registrados para mostrar.</p>
 }
 
 @code {
-    private IReadOnlyList<string> _nodos = Array.Empty<string>();
+    private static readonly TimeSpan IntervaloActualizacion = TimeSpan.FromSeconds(5);
+    private IReadOnlyList<InventarioNodoInversorDto> _nodos = Array.Empty<InventarioNodoInversorDto>();
     private string? _nodoId;
     private EstadoInversorDto? _estado;
     private bool _ocupado;
     private string? _error;
+    private readonly CancellationTokenSource _cancelacionActualizacion = new();
+    private Task? _actualizacionAutomatica;
 
-    protected override Task OnInitializedAsync() => CargarAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAsync();
+        _actualizacionAutomatica = ActualizarPeriodicamenteAsync(_cancelacionActualizacion.Token);
+    }
 
     private Task CargarAsync() => EjecutarAsync(async () =>
     {
         _nodos = await Inversor.ListarNodosAsync();
-        _nodoId ??= _nodos.FirstOrDefault();
+        if (_nodoId is null || _nodos.All(nodo => nodo.Id != _nodoId))
+            _nodoId = _nodos.FirstOrDefault()?.Id;
         _estado = null;
     });
 
@@ -92,6 +108,51 @@ else if (_error is null)
 
     private Task CambiarVolcadoAsync(bool activo)
         => EjecutarAsync(() => Inversor.EstablecerVolcadoRedAsync(activo));
+
+    private Task CambiarInversorAsync(bool encendido)
+        => EjecutarAsync(() => Inversor.EstablecerInversorEncendidoAsync(encendido));
+
+    private async Task ActualizarPeriodicamenteAsync(CancellationToken cancellationToken)
+    {
+        using var temporizador = new PeriodicTimer(IntervaloActualizacion);
+        try
+        {
+            while (await temporizador.WaitForNextTickAsync(cancellationToken))
+            {
+                await InvokeAsync(async () =>
+                {
+                    if (_ocupado || _nodoId is null) return;
+
+                    _ocupado = true;
+                    try
+                    {
+                        _estado = await Inversor.ConsultarAsync(_nodoId, cancellationToken);
+                        _error = null;
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    catch (Exception exception)
+                    {
+                        Logger.LogWarning(exception, "Falló la actualización automática del simulador de inversor");
+                        _estado = null;
+                        _error = "No se pudo actualizar la simulación. Se volverá a intentar automáticamente.";
+                    }
+                    finally
+                    {
+                        _ocupado = false;
+                    }
+
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // La navegación fuera de la página detiene la actualización periódica.
+        }
+    }
 
     private async Task EjecutarAsync(Func<Task> accion)
     {
@@ -108,8 +169,17 @@ else if (_error is null)
         catch (Exception exception)
         {
             Logger.LogError(exception, "Error al operar el simulador de inversor");
+            _estado = null;
             _error = "No se pudo consultar o actualizar la simulación. Volvé a intentarlo.";
         }
         finally { _ocupado = false; }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _cancelacionActualizacion.CancelAsync();
+        if (_actualizacionAutomatica is not null)
+            await _actualizacionAutomatica;
+        _cancelacionActualizacion.Dispose();
     }
 }

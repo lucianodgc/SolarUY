@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SolarUY.Application.Abstractions;
 using SolarUY.Application.HistoricoGeneracion;
+using SolarUY.Application.Inversores;
 using SolarUY.Application.RecoleccionLecturas;
 using SolarUY.Domain.Entities;
 using SolarUY.Domain.Enums;
@@ -34,9 +36,9 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
     }
 
     [MariaDbHistoricoTheory]
-    [InlineData(15, 450)]
-    [InlineData(3, 0)]
-    public async Task Ciclo_PersisteInventarioRealYAlimentaHistorico(int horaUtc, decimal potencia)
+    [InlineData(15)]
+    [InlineData(3)]
+    public async Task Ciclo_PersisteInventarioRealYAlimentaHistoricoSinDependerDeLaHora(int horaUtc)
     {
         await PrepararAsync();
         var reloj = new RelojRecoleccion(Instante.Date.AddHours(horaUtc));
@@ -51,15 +53,14 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         {
             Assert.Equal(reloj.GetUtcNow().UtcDateTime, lectura.FechaHora);
             Assert.Equal(DateTimeKind.Utc, lectura.FechaHora.Kind);
-            Assert.Equal(potencia, lectura.PotenciaGeneradaW);
+            Assert.True(lectura.PotenciaGeneradaW > 0m);
             Assert.Equal(EstadoSaludLectura.Sano, lectura.EstadoSalud);
         });
-        Assert.Equal(new[] { "nodo-1" }, await scope.ServiceProvider.GetRequiredService<IInversorClient>().ListarNodosAsync());
         await using var sesion = database.AbrirSesion();
         var inicio = new DateTime(2026, 10, 22, horaUtc - 3, 0, 0);
         var resultado = await sesion.Servicio.ConsultarAsync(new(TipoObjetivoHistorico.Parque, database.Parque.Id,
             PeriodoHistorico.Rango, inicio, inicio.AddMinutes(1)));
-        Assert.Equal(potencia * 3m / 60000m, resultado.EnergiaKWh);
+        Assert.Equal(lecturas.Sum(lectura => lectura.PotenciaGeneradaW) / 60000m, resultado.EnergiaKWh);
         Assert.Equal(CoberturaHistorico.Completa, resultado.Cobertura);
     }
 
@@ -185,7 +186,7 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         var reloj = new RelojRecoleccion(Instante);
         var iniciado = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var continuar = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var real = new InversorSimulador(new ConfigurationBuilder().Build(), reloj);
+        var real = new InversorSimulador(new ConfigurationBuilder().Build());
         var detenido = new InversorIntervenido(real, async (paneles, instante, ct) =>
         {
             iniciado.TrySetResult();
@@ -222,7 +223,7 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         await PrepararAsync();
         var reloj = new RelojRecoleccion(Instante);
         var iniciado = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var real = new InversorSimulador(new ConfigurationBuilder().Build(), reloj);
+        var real = new InversorSimulador(new ConfigurationBuilder().Build());
         var intervenido = new InversorIntervenido(real, async (paneles, instante, ct) =>
         {
             iniciado.TrySetResult();
@@ -288,7 +289,7 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
     {
         await PrepararAsync();
         var reloj = new RelojRecoleccion(Instante);
-        var real = new InversorSimulador(new ConfigurationBuilder().Build(), reloj);
+        var real = new InversorSimulador(new ConfigurationBuilder().Build());
         var intentos = 0;
         var fuente = new InversorIntervenido(real, (paneles, instante, ct) =>
         {
@@ -355,7 +356,7 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         {
             ["InversorSimulador:PanelesConFalla"] = $"{database.Panel.NumeroSerie},{database.SegundoPanel.Id:D}"
         }).Build();
-        await using var provider = CrearProvider(reloj, new InversorSimulador(configuration, reloj));
+        await using var provider = CrearProvider(reloj, new InversorSimulador(configuration));
         await using var scope = provider.CreateAsyncScope();
         Assert.Equal(4, (await scope.ServiceProvider.GetRequiredService<IRecoleccionLecturasService>().RecolectarAsync()).LecturasGuardadas);
         await using var context = database.CrearContexto();
@@ -390,9 +391,11 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         services.AddSingleton<IConfiguration>(configuration);
         services.AddSolarInfrastructure(configuration);
         services.AddSingleton<TimeProvider>(reloj);
-        services.AddScoped<IRecoleccionLecturasService, RecoleccionLecturasService>();
-        services.AddSingleton(new ConfiguracionRecoleccion(60));
-        if (inversor is not null) services.AddSingleton(inversor);
+        services.RemoveAll<IInversorClient>();
+        if (inversor is null) services.AddSingleton<IInversorClient, InversorSimulador>();
+        else services.AddSingleton<IInversorClient>(inversor);
+       services.AddScoped<IRecoleccionLecturasService, RecoleccionLecturasService>();
+       services.AddSingleton(new ConfiguracionRecoleccion(60));
     }
 
     // Deja transcurrir un ciclo de planificación antes de que Kestrel intente abrir el puerto.
@@ -413,6 +416,7 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         Func<IReadOnlyList<PanelMedicionDto>, DateTime, CancellationToken, Task<IReadOnlyList<MedicionPanelDto>>> medir) : IInversorClient
     {
         public Task<IReadOnlyList<MedicionPanelDto>> ObtenerMedicionesRegistradasAsync(IReadOnlyList<PanelMedicionDto> paneles, DateTime instanteUtc, CancellationToken cancellationToken = default) => medir(paneles, instanteUtc, cancellationToken);
+        public Task SincronizarInventarioAsync(IReadOnlyList<InventarioNodoInversorDto> nodos, CancellationToken cancellationToken = default) => original.SincronizarInventarioAsync(nodos, cancellationToken);
         public Task<IReadOnlyList<string>> ListarNodosAsync(CancellationToken cancellationToken = default) => original.ListarNodosAsync(cancellationToken);
         public Task<IReadOnlyList<PanelInversorEstadoDto>> ObtenerEstadoPanelesAsync(string nodoId, CancellationToken cancellationToken = default) => original.ObtenerEstadoPanelesAsync(nodoId, cancellationToken);
         public Task<decimal> ObtenerPotenciaGeneradaAsync(string nodoId, CancellationToken cancellationToken = default) => original.ObtenerPotenciaGeneradaAsync(nodoId, cancellationToken);
@@ -421,5 +425,7 @@ public sealed class RecoleccionLecturasIntegrationTests(HistoricoDatabase databa
         public Task ActivarVolcadoRedAsync(CancellationToken cancellationToken = default) => original.ActivarVolcadoRedAsync(cancellationToken);
         public Task DesactivarVolcadoRedAsync(CancellationToken cancellationToken = default) => original.DesactivarVolcadoRedAsync(cancellationToken);
         public Task<bool> ObtenerEstadoVolcadoRedAsync(CancellationToken cancellationToken = default) => original.ObtenerEstadoVolcadoRedAsync(cancellationToken);
+        public Task<bool> ObtenerEstadoEncendidoAsync(CancellationToken cancellationToken = default) => original.ObtenerEstadoEncendidoAsync(cancellationToken);
+        public Task EstablecerEstadoEncendidoAsync(bool encendido, CancellationToken cancellationToken = default) => original.EstablecerEstadoEncendidoAsync(encendido, cancellationToken);
     }
 }

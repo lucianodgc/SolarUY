@@ -15,6 +15,7 @@ using SolarUY.Application.HistoricoGeneracion;
 using SolarUY.Application.RecoleccionLecturas;
 using SolarUY.Application.Reportes;
 using SolarUY.Application.ParquesSolares;
+using SolarUY.Application.Nodos;
 using SolarUY.Infrastructure;
 using SolarUY.Presentation.Authentication;
 using SolarUY.Presentation.Components;
@@ -28,6 +29,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSolarInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IParqueSolarService, ParqueSolarService>();
+builder.Services.AddScoped<INodoService, NodoService>();
 builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
 builder.Services.AddScoped<ITareaMantenimientoService, TareaMantenimientoService>();
 builder.Services.AddScoped<IInversorService, InversorService>();
@@ -77,6 +79,8 @@ builder.Services.AddSingleton(provider => new ConfiguracionRecoleccion(
         .Value.IntervaloSegundos ?? throw new InvalidOperationException("Falta IntervaloSegundos.")));
 builder.Services.AddScoped<IValidator<CrearParqueSolarDto>, CrearParqueSolarDtoValidator>();
 builder.Services.AddScoped<IValidator<ActualizarParqueSolarDto>, ActualizarParqueSolarDtoValidator>();
+builder.Services.AddScoped<IValidator<CrearNodoDto>, CrearNodoDtoValidator>();
+builder.Services.AddScoped<IValidator<ActualizarNodoDto>, ActualizarNodoDtoValidator>();
 builder.Services.AddRadzenComponents();
 builder.Services
     .AddAuthentication(options =>

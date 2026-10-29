@@ -4,7 +4,7 @@
 
 - [x] 1.1 Confirmar identificadores de texto y DTOs de estado/potencia; configurar el mapa de nodos y paneles, con topología simulada predeterminada.
 - [x] 1.2 Definir operaciones asíncronas con `CancellationToken`, tipos de retorno y `KeyNotFoundException` para identificadores desconocidos.
-- [x] 1.3 Definir potencia en watts, curva sinusoidal de 06:00 a 18:00 locales y máximo de 400 W por panel.
+- [x] 1.3 Definir potencia aleatoria independiente de la hora real, en watts y con máximo de 400 W por panel.
 - [x] 1.4 Configurar fallas mediante identificadores de panel; los paneles fallados reportan salud `Fallado` y potencia cero.
 - [x] 1.5 Registrar el simulador como singleton por proceso; el estado no persiste entre reinicios ni se coordina entre instancias.
 - [x] 1.6 Incorporar la verificación permanente pedida explícitamente por el usuario mediante pruebas de integración en `SolarUY.Integration.Tests`: xUnit, composición real de Application/Infrastructure, reloj e identidad controlados y sin nuevas pruebas unitarias de Infrastructure.
@@ -26,7 +26,8 @@
 - [x] 4.1 Registrar el puerto desde `AddSolarInfrastructure`, sin referencias de Application/Domain a la clase concreta.
 - [x] 4.2 Incorporar `/simulador`, acceso desde inicio/menú, selector de nodos, potencia/estado de paneles y volcado, controles de actualización y mensajes de carga/error.
 - [x] 4.3 Incorporar casos de uso de Application que validan identidad/roles: Administrador opera; Técnico y Consulta solo consultan, según confirmación del usuario.
-- [x] 4.4 Enumerar la topología configurada desde `IInversorClient` y mantener la UI independiente del adaptador y del inventario real.
+- [x] 4.4 Enumerar los nodos y paneles del inventario persistido mediante Application y sincronizarlo con el simulador por TCP.
+- [x] 4.5 Actualizar automáticamente las lecturas cada cinco segundos y detener el refresco al salir de la página.
 
 ## 5. Verificación
 

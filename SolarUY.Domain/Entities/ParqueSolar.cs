@@ -2,6 +2,8 @@ namespace SolarUY.Domain.Entities;
 
 public sealed class ParqueSolar
 {
+    private readonly List<Nodo> _nodos = [];
+
     private ParqueSolar() { }
 
     public ParqueSolar(string nombre, string ubicacion, decimal? capacidadEstimadaMW = null)
@@ -20,6 +22,7 @@ public sealed class ParqueSolar
     public string Ubicacion { get; private set; } = string.Empty;
     public decimal? CapacidadEstimadaMW { get; private set; }
     public DateTime FechaCreacion { get; private set; }
+    public IReadOnlyCollection<Nodo> Nodos => _nodos.AsReadOnly();
 
     public void ActualizarDatos(string nombre, string ubicacion, decimal? capacidadEstimadaMW)
     {
@@ -28,6 +31,20 @@ public sealed class ParqueSolar
         Nombre = nombre;
         Ubicacion = ubicacion;
         CapacidadEstimadaMW = capacidadEstimadaMW;
+    }
+
+    internal void AgregarNodo(Nodo nodo)
+    {
+        ArgumentNullException.ThrowIfNull(nodo);
+        if (!_nodos.Contains(nodo)) _nodos.Add(nodo);
+    }
+
+    public void QuitarNodo(Nodo nodo)
+    {
+        ArgumentNullException.ThrowIfNull(nodo);
+        if (!_nodos.Contains(nodo)) throw new InvalidOperationException("El nodo no pertenece al parque solar.");
+        if (_nodos.Count <= 1) throw new InvalidOperationException("Un parque solar debe conservar al menos un nodo.");
+        _nodos.Remove(nodo);
     }
 
     private static void ValidarDatos(string nombre, string ubicacion)
