@@ -63,12 +63,11 @@ public sealed class HistoricoGeneracionRepository : IHistoricoGeneracionReposito
         await reader.DisposeAsync();
         await using var pendientes = context.Database.GetDbConnection().CreateCommand();
         // En nodo/parque el aviso es global al período: no conocemos su pertenencia.
-        pendientes.CommandText = "SELECT COUNT(*) FROM LecturasPanel WHERE NodoId IS NULL "
-            + "AND FechaHora >= DATE_SUB(@inicio, INTERVAL 5 MINUTE) AND FechaHora < @fin"
-            + (consulta.Tipo == TipoObjetivoHistorico.Panel ? " AND PanelId = @objetivo" : "");
+        pendientes.CommandText = "SELECT COUNT(*) FROM LecturasPanel WHERE NodoId IS NULL AND FechaHora >= DATE_SUB(@inicio, INTERVAL 5 MINUTE) AND FechaHora < @fin AND (@esPanel = 0 OR PanelId = @objetivo)";
         AgregarParametro(pendientes, "@inicio", consulta.InicioUtc);
         AgregarParametro(pendientes, "@fin", consulta.FinUtc);
         AgregarParametro(pendientes, "@objetivo", consulta.ObjetivoId.ToString());
+        AgregarParametro(pendientes, "@esPanel", consulta.Tipo == TipoObjetivoHistorico.Panel ? 1 : 0);
         return new ResultadoHistoricoDto(consulta, total, cobertura, serie)
         {
             LecturasSinNodoHistorico = Convert.ToInt64(await pendientes.ExecuteScalarAsync(cancellationToken))
