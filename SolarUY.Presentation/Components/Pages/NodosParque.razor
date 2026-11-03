@@ -28,7 +28,9 @@ else
                 @foreach (var nodo in _nodos)
                 {
                     <tr><td>@nodo.Nombre</td><td>@nodo.UbicacionEnParque</td><td>@(nodo.CantidadPanelesPrevista?.ToString() ?? "Sin especificar")</td>
-                        <td>@nodo.Inversor.Marca @nodo.Inversor.Modelo</td><td>@nodo.Inversor.Estado</td><td>@(nodo.Inversor.VolcadoRedActivo ? "Activo" : "Inactivo")</td>
+                        <td>@(nodo.Inversor is null ? "No registrado" : $"{nodo.Inversor.Marca} {nodo.Inversor.Modelo}")</td>
+                        <td>@(nodo.Inversor?.Estado.ToString() ?? "No disponible")</td>
+                        <td>@(nodo.Inversor is null ? "No disponible" : nodo.Inversor.VolcadoRedActivo ? "Activo" : "Inactivo")</td>
                         <AuthorizeView Roles="Administrador"><td><div class="action-buttons"><a class="btn btn-outline-primary btn-sm" href="@($"/nodos/{nodo.Id}/editar")">Editar</a><RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Text="Eliminar" Disabled="_ocupado" Click="async () => await EliminarAsync(nodo.Id)" /></div></td></AuthorizeView>
                     </tr>
                 }

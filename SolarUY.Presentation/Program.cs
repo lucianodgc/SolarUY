@@ -198,4 +198,4 @@ app.MapPost("/Account/Logout", async (HttpContext context, IAntiforgery antiforg
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.Run();
+await app.RunAsync();

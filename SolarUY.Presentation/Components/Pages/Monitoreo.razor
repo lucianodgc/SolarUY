@@ -1,11 +1,13 @@
 @page "/monitoreo"
 @attribute [Authorize(Roles = "Administrador,Tecnico,Consulta")]
 @using SolarUY.Application.Monitoreo
+@using SolarUY.Application.RecoleccionLecturas
 @using SolarUY.Domain.Monitoreo
 @using SolarUY.Presentation.Monitoreo
 @implements IAsyncDisposable
 @inject IMonitoreoService Servicio
 @inject SerieMonitoreoService Serie
+@inject ConfiguracionRecoleccion Configuracion
 @inject IJSRuntime Js
 @inject Microsoft.Extensions.Options.IOptions<MonitoreoOptions> Opciones
 @inject ILogger<Monitoreo> Logger
@@ -54,7 +56,9 @@
     @if (_puntos.Count > 0)
     {
         <RadzenChart Style="height:320px">
-            <RadzenLineSeries Data="_puntos" TItem="PuntoGeneracionDto" CategoryProperty="FechaHoraUtc" ValueProperty="PotenciaW" Title="Potencia medida (W)" />
+            <RadzenLineSeries Data="_puntos" TItem="PuntoGeneracionDto" CategoryProperty="FechaHoraUtc" ValueProperty="PotenciaW" Title="Potencia medida (W)">
+                <RadzenMarkers Visible="true" MarkerType="MarkerType.Circle" />
+            </RadzenLineSeries>
             <RadzenCategoryAxis FormatString="{0:HH:mm:ss}"><RadzenAxisTitle Text="Fecha/hora UTC" /></RadzenCategoryAxis>
             <RadzenValueAxis><RadzenAxisTitle Text="Potencia (W)" /></RadzenValueAxis>
         </RadzenChart>
@@ -83,6 +87,7 @@
     private long _version;
     private bool _actualizando;
     private bool _pendiente;
+    private DateTime _ultimaConsultaUtc;
 
     protected override async Task OnInitializedAsync()
     {
@@ -112,7 +117,8 @@
     private async Task CambiarParqueAsync()
     {
         Interlocked.Increment(ref _version);
-        _carga?.Cancel(); _estado = null; _puntos = []; _error = null;
+        if (_carga is not null) await _carga.CancelAsync();
+        _estado = null; _puntos = []; _error = null;
         if (_parqueId == Guid.Empty) return;
         var direccion = Navegacion.GetUriWithQueryParameter("parque", _parqueId);
         if (direccion != Navegacion.Uri) Navegacion.NavigateTo(direccion, replace: true);
@@ -156,7 +162,10 @@
                         : await Servicio.ConsultarAsync(parque, _carga.Token);
                     if (version == Interlocked.Read(ref _version) && parque == _parqueId && !_fin.IsCancellationRequested
                         && (_estado is null || nuevo.EvaluadoUtc >= _estado.EvaluadoUtc))
-                    { _estado = nuevo; _puntos = Serie.Actualizar(nuevo); _error = null; }
+                    {
+                        _estado = nuevo; _puntos = Serie.Actualizar(nuevo); _error = null;
+                        if (!reevaluar) _ultimaConsultaUtc = DateTime.UtcNow;
+                    }
                 }
                 catch (OperationCanceledException) when (_carga.IsCancellationRequested) { }
                 catch (Exception ex) { if (version == Interlocked.Read(ref _version)) RegistrarError(ex); }
@@ -177,10 +186,17 @@
                 var version = Interlocked.Read(ref _version); var parque = _parqueId;
                 try
                 {
-                    var nuevo = await Servicio.ReevaluarAsync(parque, _fin.Token);
+                    var consultarPersistencia = DateTime.UtcNow - _ultimaConsultaUtc >= Configuracion.Intervalo;
+                    var nuevo = consultarPersistencia
+                        ? await Servicio.ConsultarAsync(parque, _fin.Token)
+                        : await Servicio.ReevaluarAsync(parque, _fin.Token);
                     if (version == Interlocked.Read(ref _version) && parque == _parqueId
                         && (_estado is null || nuevo.EvaluadoUtc >= _estado.EvaluadoUtc))
-                    { _estado = nuevo; _puntos = Serie.Actualizar(nuevo); StateHasChanged(); }
+                    {
+                        _estado = nuevo; _puntos = Serie.Actualizar(nuevo);
+                        if (consultarPersistencia) _ultimaConsultaUtc = DateTime.UtcNow;
+                        StateHasChanged();
+                    }
                 }
                 catch (OperationCanceledException) when (_fin.IsCancellationRequested) { }
                 catch (Exception ex) { RegistrarError(ex); }
@@ -205,7 +221,8 @@
 
     public async ValueTask DisposeAsync()
     {
-        _fin.Cancel(); _carga?.Cancel();
+        await _fin.CancelAsync();
+        if (_carga is not null) await _carga.CancelAsync();
         if (_temporizador is not null) await _temporizador;
         try
         {

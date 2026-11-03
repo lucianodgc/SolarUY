@@ -66,8 +66,8 @@ public sealed class NodoService : INodoService
     }
 
     private static NodoDto Mapear(Nodo nodo) => new(nodo.Id, nodo.ParqueId, nodo.Nombre, nodo.UbicacionEnParque,
-        nodo.CantidadPanelesPrevista, new(nodo.Inversor.Id, nodo.Inversor.Marca, nodo.Inversor.Modelo,
-            nodo.Inversor.PotenciaNominalKW, nodo.Inversor.Estado, nodo.Inversor.VolcadoRedActivo));
+        nodo.CantidadPanelesPrevista, nodo.Inversor is null ? null : new(nodo.Inversor.Id, nodo.Inversor.Marca,
+            nodo.Inversor.Modelo, nodo.Inversor.PotenciaNominalKW, nodo.Inversor.Estado, nodo.Inversor.VolcadoRedActivo));
 
     private async Task ExigirAdministradorAsync(CancellationToken cancellationToken)
     {

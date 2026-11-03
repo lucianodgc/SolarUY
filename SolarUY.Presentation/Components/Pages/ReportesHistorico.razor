@@ -120,7 +120,7 @@
     {
         if (_desechado) return;
         var version = ++_version;
-        _consulta?.Cancel();
+        if (_consulta is not null) await _consulta.CancelAsync();
         using var cancelacion = CancellationTokenSource.CreateLinkedTokenSource(_vida.Token);
         _consulta = cancelacion;
         _resultado = null;

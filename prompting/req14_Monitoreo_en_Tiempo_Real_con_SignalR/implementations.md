@@ -22,6 +22,8 @@ La carga inicial, la reconciliación tras suscribirse y la reconexión consultan
 
 Nginx admite negociación HTTP y WebSocket para Blazor y el hub propio, usa cookie de afinidad y otro backend como respaldo. Comparte el estado de disponibilidad entre workers y actualiza la cookie según la instancia que realmente respondió. Ambas aplicaciones comparten claves de Data Protection y nombre SolarUY. Si el circuito Blazor original ya no existe, /monitoreo recarga automáticamente y conserva el parque en la URL; las otras pantallas muestran una instrucción de recarga para preservar formularios. El cliente evita invocar callbacks .NET sobre un circuito desconectado y libera conexiones, temporizadores y listeners al salir.
 
+Como respaldo ante avisos SignalR perdidos, la pantalla vuelve a consultar las lecturas persistidas cada intervalo de recolección; entre consultas reevalúa el snapshot en memoria. El gráfico muestra marcadores para que una muestra inicial aislada también sea visible.
+
 ## Archivos principales
 
 | Área | Archivos |

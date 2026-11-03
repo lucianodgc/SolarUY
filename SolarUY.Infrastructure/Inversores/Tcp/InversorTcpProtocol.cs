@@ -27,7 +27,7 @@ internal static class InversorTcpProtocol
             if (linea.Length + cantidad > MaximoBytesPorLinea)
                 throw new InvalidDataException("El mensaje TCP excede el tamaño permitido.");
 
-            linea.Write(buffer, 0, cantidad);
+            await linea.WriteAsync(buffer.AsMemory(0, cantidad), cancellationToken);
             if (finLinea >= 0)
                 break;
         }

@@ -23,8 +23,9 @@ public sealed class NodoServiceIntegrationTests
 
         var nodo = await service.ObtenerPorIdAsync(id);
         Assert.NotNull(nodo);
-        Assert.Equal("Marca", nodo.Inversor.Marca);
-        Assert.Equal(EstadoInversor.Encendido, nodo.Inversor.Estado);
+        var inversor = Assert.IsType<InversorNodoDto>(nodo.Inversor);
+        Assert.Equal("Marca", inversor.Marca);
+        Assert.Equal(EstadoInversor.Encendido, inversor.Estado);
         await service.ActualizarAsync(id, new() { Nombre = "Nodo actualizado", UbicacionEnParque = "Sur" });
         Assert.Equal("Nodo actualizado", (await service.ObtenerPorIdAsync(id))!.Nombre);
 
@@ -53,6 +54,21 @@ public sealed class NodoServiceIntegrationTests
         var service = CrearServicio(repository, rol);
         Assert.Single(await service.ListarPorParqueAsync(parque.Id));
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.CrearAsync(parque.Id, new()));
+    }
+
+    [Fact]
+    public async Task ListarPorParque_IncluyeNodoExistenteSinInversor()
+    {
+        var repository = new RepositorioNodosPrueba();
+        var parque = repository.AgregarParque();
+        var nodoSinInversor = new Nodo(parque, "Nodo legado", "Sector norte");
+        await repository.AgregarAsync(nodoSinInversor);
+
+        var nodos = await CrearServicio(repository, "Consulta").ListarPorParqueAsync(parque.Id);
+
+        var nodo = Assert.Single(nodos);
+        Assert.Equal("Nodo legado", nodo.Nombre);
+        Assert.Null(nodo.Inversor);
     }
 
     [Fact]
