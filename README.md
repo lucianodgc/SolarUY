@@ -37,13 +37,15 @@ La solución separa la interfaz, los casos de uso, las reglas del negocio y las 
 
 El siguiente diagrama resume el modelo actual. El inversor puede no estar registrado en algunos nodos; las lecturas antiguas sin nodo comprobable se conservan con `NodoId` vacío. `ResponsableId` guarda el identificador del usuario de Keycloak, no una relación directa en MariaDB.
 
-<!-- Pegar aquí la imagen original del MER realizada para la primera entrega. -->
+<img width="988" height="737" alt="MER" src="https://github.com/user-attachments/assets/1869ff6a-645e-4b18-9eb6-f18ba0fb95f5" />
+
 
 ## Arquitectura y despliegue
 
 El diagrama muestra la arquitectura por capas y la propuesta de despliegue distribuido de la primera entrega. La configuración de Nginx para dos instancias está disponible como ejemplo en `deploy/nginx`; el arranque local normal usa una instancia. El chat con IA y su servicio externo aparecen como propuesta y **no están implementados en la aplicación actual**.
 
-<!-- Pegar aquí la imagen original del diagrama de arquitectura/despliegue de la primera entrega. -->
+<img width="1204" height="804" alt="Arquitectura" src="https://github.com/user-attachments/assets/27bb301c-7e24-4ad8-b4e8-98c013fe0d0a" />
+
 
 En el diseño por capas, Presentation recibe la interacción del navegador; Application aplica los permisos y coordina las acciones; Domain contiene las reglas del negocio; Infrastructure guarda datos o se conecta con servicios externos. Keycloak administra la identidad y los roles. El proceso simulador representa al inversor y se comunica por TCP. Las instancias comparten MariaDB; el mecanismo de recolección evita guardar la misma lectura desde varias instancias.
 
