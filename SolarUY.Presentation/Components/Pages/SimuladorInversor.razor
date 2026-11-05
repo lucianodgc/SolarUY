@@ -2,7 +2,9 @@
 @implements IAsyncDisposable
 @attribute [Authorize(Roles = "Administrador,Tecnico,Consulta")]
 @inject SolarUY.Application.Inversores.IInversorService Inversor
+@inject SolarUY.Application.Monitoreo.IMonitoreoService Monitoreo
 @inject ILogger<SimuladorInversor> Logger
+@inject IJSRuntime Js
 @using SolarUY.Application.Inversores
 @using SolarUY.Application.Abstractions
 
@@ -10,10 +12,12 @@
 <PageHeader Title="Simulador de inversor" Section="Operación" Description="Consultá el estado de los paneles y la potencia generada en la simulación." />
 <p class="note">Los nodos y paneles se leen del inventario de la base de datos. La potencia es simulada y aleatoria; los controles afectan solo la simulación y no modifican los registros guardados. El volcado a red solo representa ese estado: no hay conexión eléctrica real.</p>
 <div class="surface filter-toolbar">
+    <RadzenLabel Text="Parque solar" Component="ParqueSimulado" />
+    <RadzenDropDown TValue="Guid" Name="ParqueSimulado" Data="_parques" TextProperty="Nombre" ValueProperty="Id" @bind-Value="_parqueId" Change="SeleccionarParqueAsync" Disabled="_ocupado" Style="min-width:220px" />
     <RadzenLabel Text="Nodo" Component="NodoSimulado" />
-    <RadzenDropDown TValue="string" Name="NodoSimulado" Data="_nodos" TextProperty="Nombre" ValueProperty="Id" @bind-Value="_nodoId" Disabled="_ocupado" Style="min-width:180px" />
+    <RadzenDropDown TValue="string" Name="NodoSimulado" Data="_nodos" TextProperty="Nombre" ValueProperty="Id" @bind-Value="_nodoId" Change="SeleccionarNodoAsync" Disabled="@(_ocupado || _nodos.Count == 0)" Style="min-width:180px" />
     <RadzenButton Text="Consultar / Actualizar" Icon="refresh" Click="CargarAsync" Disabled="_ocupado" IsBusy="_ocupado" />
-    <span class="text-muted small">Actualización automática cada 5 segundos.</span>
+    <span class="text-muted small">Actualización compartida en vivo con Monitoreo.</span>
 </div>
 @if (_error is not null)
 {
@@ -76,31 +80,64 @@ else if (_ocupado)
 }
 else if (_error is null)
 {
-    <p class="empty-state">No hay nodos registrados para mostrar.</p>
+    <p class="empty-state">@(_parques.Count == 0 ? "No hay parques registrados para mostrar." : "Este parque no tiene nodos registrados.")</p>
 }
 
 @code {
-    private static readonly TimeSpan IntervaloActualizacion = TimeSpan.FromSeconds(5);
+    private IReadOnlyList<SolarUY.Application.Monitoreo.ParqueMonitoreoDto> _parques = [];
+    private Guid _parqueId;
+    private IReadOnlyList<InventarioNodoInversorDto> _inventario = [];
     private IReadOnlyList<InventarioNodoInversorDto> _nodos = Array.Empty<InventarioNodoInversorDto>();
     private string? _nodoId;
     private EstadoInversorDto? _estado;
     private bool _ocupado;
     private string? _error;
-    private readonly CancellationTokenSource _cancelacionActualizacion = new();
-    private Task? _actualizacionAutomatica;
+    private IJSObjectReference? _modulo;
+    private IJSObjectReference? _puente;
+    private DotNetObjectReference<SimuladorInversor>? _referencia;
 
     protected override async Task OnInitializedAsync()
     {
         await CargarAsync();
-        _actualizacionAutomatica = ActualizarPeriodicamenteAsync(_cancelacionActualizacion.Token);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            _modulo = await Js.InvokeAsync<IJSObjectReference>("import", "./js/monitoreo.js?v=telemetria-2");
+            _referencia = DotNetObjectReference.Create(this);
+            _puente = await _modulo.InvokeAsync<IJSObjectReference>("crear", _referencia);
+            await SuscribirParqueAsync();
+        }
+        catch (Exception exception) { Logger.LogWarning(exception, "No se pudo iniciar la telemetría compartida del simulador."); }
     }
 
     private Task CargarAsync() => EjecutarAsync(async () =>
     {
-        _nodos = await Inversor.ListarNodosAsync();
+        _parques = await Monitoreo.ListarParquesAsync();
+        _inventario = await Inversor.ListarNodosAsync();
+        if (!_parques.Any(parque => parque.Id == _parqueId))
+            _parqueId = _parques.FirstOrDefault()?.Id ?? Guid.Empty;
+        ActualizarNodosVisibles();
+        _estado = null;
+        await SuscribirParqueAsync();
+    });
+
+    private void ActualizarNodosVisibles()
+    {
+        _nodos = _inventario.Where(nodo => nodo.ParqueId == _parqueId).ToArray();
         if (_nodoId is null || _nodos.All(nodo => nodo.Id != _nodoId))
             _nodoId = _nodos.FirstOrDefault()?.Id;
+    }
+
+    private Task SeleccionarParqueAsync(object? valor) => EjecutarAsync(async () =>
+    {
         _estado = null;
+        _nodoId = null;
+        ActualizarNodosVisibles();
+        await SuscribirParqueAsync();
     });
 
     private Task CambiarPanelAsync(PanelInversorEstadoDto panel)
@@ -112,47 +149,31 @@ else if (_error is null)
     private Task CambiarInversorAsync(bool encendido)
         => EjecutarAsync(() => Inversor.EstablecerInversorEncendidoAsync(encendido));
 
-    private async Task ActualizarPeriodicamenteAsync(CancellationToken cancellationToken)
+    private Task SeleccionarNodoAsync(object? valor) => EjecutarAsync(async () =>
     {
-        using var temporizador = new PeriodicTimer(IntervaloActualizacion);
-        try
-        {
-            while (await temporizador.WaitForNextTickAsync(cancellationToken))
-            {
-                await InvokeAsync(async () =>
-                {
-                    if (_ocupado || _nodoId is null) return;
+        _estado = null;
+        await SuscribirParqueAsync();
+    });
 
-                    _ocupado = true;
-                    try
-                    {
-                        _estado = await Inversor.ConsultarAsync(_nodoId, cancellationToken);
-                        _error = null;
-                    }
-                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                    {
-                        return;
-                    }
-                    catch (Exception exception)
-                    {
-                        Logger.LogWarning(exception, "Falló la actualización automática del simulador de inversor");
-                        _estado = null;
-                        _error = "No se pudo actualizar la simulación. Se volverá a intentar automáticamente.";
-                    }
-                    finally
-                    {
-                        _ocupado = false;
-                    }
-
-                    StateHasChanged();
-                });
-            }
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            // La navegación fuera de la página detiene la actualización periódica.
-        }
+    private async Task SuscribirParqueAsync()
+    {
+        if (_puente is null || _parqueId == Guid.Empty) return;
+        try { await _puente.InvokeVoidAsync("seleccionar", _parqueId.ToString("D")); }
+        catch (JSException exception) { Logger.LogWarning(exception, "No se pudo suscribir el simulador al parque."); }
     }
+
+    [JSInvokable]
+    public Task TelemetriaActualizada(List<TelemetriaNodoDto> nodos) => InvokeAsync(() =>
+    {
+        if (_nodoId is null) return;
+        var nodo = nodos.FirstOrDefault(n => n.ParqueId == _parqueId && n.NodoId == _nodoId);
+        if (nodo is null) return;
+        _estado = new EstadoInversorDto(nodo.NodoId, nodo.NodoNombre, nodo.Parque, nodo.Paneles,
+            nodo.PotenciaGeneradaW, nodo.VolcadoRedActivo, nodo.InversorEncendido,
+            _estado?.PuedeOperar ?? false, nodo.FechaConsultaUtc);
+        _error = null;
+        StateHasChanged();
+    });
 
     private async Task EjecutarAsync(Func<Task> accion)
     {
@@ -177,9 +198,12 @@ else if (_error is null)
 
     public async ValueTask DisposeAsync()
     {
-        await _cancelacionActualizacion.CancelAsync();
-        if (_actualizacionAutomatica is not null)
-            await _actualizacionAutomatica;
-        _cancelacionActualizacion.Dispose();
+        try
+        {
+            if (_puente is not null) { await _puente.InvokeVoidAsync("dispose"); await _puente.DisposeAsync(); }
+            if (_modulo is not null) await _modulo.DisposeAsync();
+        }
+        catch (JSDisconnectedException) { }
+        _referencia?.Dispose();
     }
 }

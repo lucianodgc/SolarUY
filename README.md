@@ -1,93 +1,108 @@
 # SolarUY
 
-SolarUY es una aplicación web para administrar parques solares y consultar su funcionamiento. Permite gestionar parques, nodos y tareas de mantenimiento, monitorear paneles y consultar su generación. Las lecturas del inversor son simuladas; el proyecto no se conecta a equipos solares reales.
+SolarUY es una aplicación web para gestionar parques solares, nodos y mantenimiento de paneles. Permite consultar generación, ver reportes y operar un inversor simulado según el rol del usuario: Administrador, Técnico o Consulta.
 
-## Qué permite hacer
+Monitoreo y Simulador reciben datos por SignalR cada 2 segundos. El historial se guarda cada 30 segundos y alimenta los reportes.
 
-- Iniciar sesión con los perfiles Administrador, Técnico y Consulta.
-- Gestionar parques y nodos según los permisos de cada perfil.
-- Programar y seguir tareas de mantenimiento de paneles.
-- Consultar el estado del simulador del inversor y monitorear cambios en tiempo real.
-- Guardar lecturas simuladas y consultar históricos y reportes CSV.
+## Tecnologías y organización
 
-## Tecnologías
+Se utiliza C# con .NET 8, Blazor Server y Radzen, EF Core con Pomelo y MariaDB 11.8, Keycloak con OpenID Connect, SignalR, TCP y Docker Compose. La aplicación se ejecuta en el servidor; no usa WebAssembly.
 
-- **C# y .NET 8:** lenguaje y plataforma de la aplicación.
-- **Blazor Server y Radzen:** interfaz web interactiva. La aplicación se ejecuta en el servidor; no usa Blazor WebAssembly.
-- **Entity Framework Core 8, Pomelo y MariaDB 11.8:** acceso y almacenamiento de los datos.
-- **Keycloak con OpenID Connect:** inicio de sesión y roles.
-- **SignalR:** conexión interactiva de Blazor y actualizaciones del monitoreo.
-- **TCP:** comunicación entre la aplicación y el proceso que simula el inversor.
-- **Docker Compose:** entorno local para MariaDB, phpMyAdmin y Keycloak.
-- **xUnit, ArchUnitNET y Playwright:** pruebas de código, arquitectura y navegador.
+La solución sigue una arquitectura por capas:
 
-## Cómo se organiza
-
-La solución separa la interfaz, los casos de uso, las reglas del negocio y las conexiones externas:
-
-| Proyecto | Para qué sirve |
+| Proyecto | Responsabilidad |
 | --- | --- |
-| `SolarUY.Presentation` | Páginas Blazor, autenticación y configuración de la aplicación. |
-| `SolarUY.Application` | Acciones del sistema, validaciones y permisos de negocio. |
-| `SolarUY.Domain` | Entidades y reglas propias del negocio. |
-| `SolarUY.Infrastructure` | MariaDB, Entity Framework Core y conexiones externas. |
-| `SolarUY.InversorSimulador` | Proceso aparte que responde como un inversor simulado. |
+| Presentation | Pantallas, autenticación y conexiones SignalR. |
+| Application | Casos de uso, permisos y coordinación. |
+| Domain | Entidades y reglas del negocio. |
+| Infrastructure | Base de datos e integraciones externas. |
+| InversorSimulador | Proceso separado que responde por TCP como un inversor. |
 
-## Modelo de datos
+## Diagramas
 
-El siguiente diagrama resume el modelo actual. El inversor puede no estar registrado en algunos nodos; las lecturas antiguas sin nodo comprobable se conservan con `NodoId` vacío. `ResponsableId` guarda el identificador del usuario de Keycloak, no una relación directa en MariaDB.
+Modelo de datos: los responsables se identifican mediante su usuario de Keycloak, sin una tabla local de usuarios.
 
 <img width="988" height="737" alt="MER" src="https://github.com/user-attachments/assets/1869ff6a-645e-4b18-9eb6-f18ba0fb95f5" />
 
-
-## Arquitectura y despliegue
-
-El diagrama muestra la arquitectura por capas y la propuesta de despliegue distribuido de la primera entrega. La configuración de Nginx para dos instancias está disponible como ejemplo en `deploy/nginx`; el arranque local normal usa una instancia. El chat con IA y su servicio externo aparecen como propuesta y **no están implementados en la aplicación actual**.
+Arquitectura propuesta en la primera entrega. Actualmente se usa una instancia; el balanceo y el chat con IA quedan pendientes.
 
 <img width="1204" height="804" alt="Arquitectura" src="https://github.com/user-attachments/assets/27bb301c-7e24-4ad8-b4e8-98c013fe0d0a" />
 
-
-En el diseño por capas, Presentation recibe la interacción del navegador; Application aplica los permisos y coordina las acciones; Domain contiene las reglas del negocio; Infrastructure guarda datos o se conecta con servicios externos. Keycloak administra la identidad y los roles. El proceso simulador representa al inversor y se comunica por TCP. Las instancias comparten MariaDB; el mecanismo de recolección evita guardar la misma lectura desde varias instancias.
-
 ## Desarrollo con IA y SonarQube
 
-Codex se utilizó como asistente para proponer cambios de código, explicar errores y ayudar a interpretar avisos de SonarQube. Aceleró algunas tareas y nos mostró que generar una propuesta no reemplaza entender y validar el código. Para próximas iteraciones queremos reforzar esa revisión y registrar qué se comprobó.
+Codex ayudó a implementar funcionalidades, explicar errores y revisar avisos de SonarQube. El proceso dejó como mejora pendiente reforzar la comprensión y revisión del código y mantener registros más breves. Los requisitos, especificaciones y resultados están en `prompting/`.
 
-El análisis compartido mostró **14,9 % de cobertura general**. La cobertura se generó con las pruebas del Dominio: **57 pruebas aprobadas**. SonarQube mostró cobertura en siete archivos del Dominio; el porcentaje general también incluye el resto de SolarUY. `ANALYSIS SUCCESSFUL` indica que el informe se envió al servidor, no que el Quality Gate haya sido aprobado. Los avisos se deben revisar en el panel y contrastar con el código antes de decidir qué hacer.
+El análisis compartido registró **14,9 % de cobertura general**, generado con **57 pruebas de dominio aprobadas**. Ese porcentaje incluye también código de otras capas. Enviar el informe a SonarQube no implica aprobar su Quality Gate: los avisos se revisan en el panel y se contrastan con el código.
 
-Los documentos de requerimientos, especificaciones y tareas están en `prompting/`. Los informes de implementación y auditoría guardan detalle técnico; sirven como referencia para consultar una funcionalidad o un hallazgo concreto.
+## Preparación inicial
 
-## Inicio local
+Se necesita .NET SDK 8 y Docker Desktop. Todos los comandos siguientes se ejecutan desde la raíz, en PowerShell.
 
-Se necesita .NET SDK 8 y Docker Desktop con Docker Compose.
-
-1. Crea `.env` a partir de `.env.example` y completa credenciales locales.
-2. Desde la raíz, inicia MariaDB y Keycloak:
-
-   ```powershell
-   docker compose up -d
-   ```
-
-3. Configura la conexión .NET a MariaDB (`ConnectionStrings__SolarUY`) y el secreto del cliente OpenID Connect con User Secrets. Los detalles de Keycloak están en `keycloak/README.md`; `.env` configura Docker, no la aplicación .NET.
-4. Inicia el simulador en una terminal:
-
-   ```powershell
-   dotnet run --project SolarUY.InversorSimulador/SolarUY.InversorSimulador.csproj
-   ```
-
-5. En otra terminal, aplica las migraciones y ejecuta SolarUY:
-
-   ```powershell
-   dotnet ef database update --project SolarUY.Infrastructure/SolarUY.Infrastructure.csproj --startup-project SolarUY.Presentation/SolarUY.Presentation.csproj
-   dotnet run --project SolarUY.Presentation/SolarUY.Presentation.csproj --launch-profile http
-   ```
-
-La aplicación queda en `http://localhost:5219`; el simulador escucha en `127.0.0.1:5055`.
-
-Para ejecutar las pruebas .NET:
+Si aún no tienes `.env`, créalo y completa sus contraseñas:
 
 ```powershell
+Copy-Item .env.example .env
+dotnet restore SolarUY.sln
+docker compose up -d
+```
+
+Guarda la conexión y los secretos de los clientes de Keycloak, reemplazando los ejemplos. El puerto habitual del Compose es 3307; comprueba el tuyo con `docker compose port mariadb 3306`. La contraseña, usuario y base deben coincidir con `.env`, que no se carga automáticamente en .NET.
+
+```powershell
+dotnet user-secrets set "ConnectionStrings:SolarUY" "Server=127.0.0.1;Port=3307;Database=solaruy;User=solaruy;Password=TU_PASSWORD_MARIADB;" --project SolarUY.Presentation
+dotnet user-secrets set "Authentication:OpenIdConnect:ClientSecret" "SECRETO_DE_SOLARUY_WEB" --project SolarUY.Presentation
+dotnet user-secrets set "Keycloak:Directory:ClientSecret" "SECRETO_DE_SOLARUY_TECNICO_DIRECTORY" --project SolarUY.Presentation
+```
+
+Los secretos se copian de **Keycloak → Clients → cliente → Credentials**. La configuración de login y mantenimiento está en [keycloak/README.md](keycloak/README.md) y [keycloak/TECNICOS.md](keycloak/TECNICOS.md). Los usuarios de prueba son `admin.test`, `tecnico.test` y `consulta.test`.
+
+Instala la herramienta de EF si no la tienes y aplica las migraciones. El último comando también se usa cuando cambia la estructura de la base:
+
+```powershell
+dotnet tool install --global dotnet-ef --version 8.0.31
+dotnet ef database update --project SolarUY.Infrastructure/SolarUY.Infrastructure.csproj --startup-project SolarUY.Presentation/SolarUY.Presentation.csproj -- --environment Development
+```
+
+## Iniciar y detener
+
+Inicia Docker y deja el simulador funcionando en una terminal:
+
+```powershell
+docker compose up -d
+dotnet run --project SolarUY.InversorSimulador/SolarUY.InversorSimulador.csproj
+```
+
+En otra terminal, inicia la web:
+
+```powershell
+dotnet run --project SolarUY.Presentation/SolarUY.Presentation.csproj --launch-profile http
+```
+
+Web: http://localhost:5219 · Keycloak: http://localhost:8080 · phpMyAdmin: http://localhost:8081.
+
+Como alternativa al último comando, elige un modo del script. **Solo inicia la web; Docker y el simulador se ejecutan aparte.**
+
+| Comando | Resultado |
+| --- | --- |
+| `.\Iniciar-Demo.ps1` | Conserva los datos y guarda nuevas lecturas. |
+| `.\Iniciar-Demo.ps1 -SinGuardarHistorial` | Conserva los datos sin guardar nuevas lecturas. |
+| `.\Iniciar-Demo.ps1 -ReiniciarDatos` | Restaura los datos del SQL y vuelve a guardar lecturas. |
+| `.\Iniciar-Demo.ps1 -ReiniciarDatos -SinGuardarHistorial` | Restaura los datos del SQL y mantiene el historial vacío. |
+
+**ReiniciarDatos reemplaza los datos actuales de SolarUY** importando una sola vez [solaruy_pruebas.sql](solaruy_pruebas.sql). Detén la web antes de usarlo. El SQL carga 2 parques, 4 nodos, 4 inversores, 12 paneles y 3 tareas, sin lecturas; también se importa desde phpMyAdmin. En otro Keycloak, ajusta el ID del técnico con `-TecnicoId 'ID-REAL-DEL-TECNICO'`.
+
+El restablecimiento usa la base del servicio MariaDB de Compose; la conexión .NET debe apuntar a ella. SinGuardarHistorial afecta solo a esa ejecución y mantiene el monitoreo en vivo.
+
+Para detener la web y el simulador, pulsa **Ctrl + C** en sus terminales. Detén Docker conservando los datos con `docker compose stop`. Para volver, repite los comandos de inicio.
+
+## Comprobaciones
+
+```powershell
+dotnet build SolarUY.sln
+dotnet test SolarUY.Domain.Tests/SolarUY.Domain.Tests.csproj
+dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj
+dotnet test SolarUY.Domain.Tests/SolarUY.Domain.Tests.csproj --collect:"XPlat Code Coverage"
 dotnet test SolarUY.sln
 ```
 
-Algunas pruebas de integración requieren una base MariaDB exclusiva. Sus instrucciones están en [SolarUY.Integration.Tests/README.md](SolarUY.Integration.Tests/README.md).
+La cobertura se genera en `SolarUY.Domain.Tests/TestResults`; no se envía automáticamente a SonarQube. Algunas pruebas requieren una base aislada: ver [SolarUY.Integration.Tests/README.md](SolarUY.Integration.Tests/README.md).

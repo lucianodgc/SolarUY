@@ -145,8 +145,7 @@ public sealed class MonitoreoNginxIntegrationTests(HistoricoDatabase database) :
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
         inicio.Environment["RecoleccionLecturas__Habilitada"] = recolectar.ToString();
         inicio.Environment["RecoleccionLecturas__IntervaloSegundos"] = "2";
-        inicio.Environment["DistribucionMonitoreo__InstanciaId"] = id;
-        inicio.Environment["DistribucionMonitoreo__IntervaloSegundos"] = "1";
+        inicio.Environment["Instancia__Id"] = id;
         inicio.Environment["DataProtection__RutaClaves"] = claves;
         inicio.Environment["Logging__EventLog__LogLevel__Default"] = "None";
         inicio.Environment["Logging__LogLevel__Default"] = "Warning";
@@ -250,9 +249,7 @@ public sealed class MonitoreoNginxFactAttribute : FactAttribute
 {
     public MonitoreoNginxFactAttribute()
     {
-        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SOLARUY_MONITOREO_PROXY_URL"))
-            || string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(HistoricoDatabase.VariableConexion)))
-            Skip = "Requiere Nginx configurado para host.docker.internal:5051/5052 y SOLARUY_MONITOREO_PROXY_URL.";
+        Skip = "Escenario histórico de dos instancias: la distribución persistente se retiró por el alcance actual de una instancia.";
     }
 }
 
@@ -260,8 +257,6 @@ public sealed class MonitoreoPlaywrightFactAttribute : FactAttribute
 {
     public MonitoreoPlaywrightFactAttribute()
     {
-        if (Environment.GetEnvironmentVariable("SOLARUY_MONITOREO_BROWSER_PROXY") != "1"
-            || string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(HistoricoDatabase.VariableConexion)))
-            Skip = "Servidor temporal utilizado por la suite aislada de Playwright.";
+        Skip = "El servidor de pruebas de dos instancias requiere el mecanismo de distribución retirado. No usar esta suite para validar la versión de una instancia.";
     }
 }

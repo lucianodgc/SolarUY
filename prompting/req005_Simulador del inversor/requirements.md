@@ -10,6 +10,13 @@ La implementación debe permitir que, en el futuro, el simulador pueda ser reemp
 
 ## Criterios de Aceptación
 
+### Selección de equipos en la pantalla
+
+- Seleccionar primero un parque solar y después uno de sus nodos.
+- Al cambiar de parque, seleccionar su primer nodo y recibir sus actualizaciones por SignalR.
+- Mostrar «Este parque no tiene nodos registrados» cuando corresponda.
+- Identificar el parque y el nodo junto a los datos y controles.
+
 ### 1. Interfaz IInversorClient
 
 - Debe existir una interfaz `IInversorClient` definida en la capa `Application`.

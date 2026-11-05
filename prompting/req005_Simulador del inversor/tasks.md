@@ -1,5 +1,12 @@
 # Tareas de implementación: Simulador del inversor
 
+## Selección por parque (05/11/2026)
+
+- [x] Agregar selector de parque y filtrar sus nodos.
+- [x] Cambiar la suscripción SignalR al elegir otro parque y consultar el nodo seleccionado.
+- [x] Mostrar el caso de parque sin nodos.
+- [x] Compilar y ejecutar las pruebas de arquitectura: 9 correctas.
+
 ## 1. Aclaraciones previas
 
 - [x] 1.1 Confirmar identificadores de texto y DTOs de estado/potencia; configurar el mapa de nodos y paneles, con topología simulada predeterminada.

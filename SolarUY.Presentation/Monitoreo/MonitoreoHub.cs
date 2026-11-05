@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.SignalR;
 using SolarUY.Application.Monitoreo;
+using SolarUY.Application.Inversores;
 
 namespace SolarUY.Presentation.Monitoreo;
 
@@ -37,7 +38,17 @@ public sealed class MonitoreoHub : Hub
     public static string Grupo(Guid parqueId) => $"monitoreo:{parqueId:D}";
 }
 
-// Entrega exclusivamente local. El transporte entre instancias queda pendiente del acuerdo D2.
+public sealed class NotificadorTelemetriaEnVivo
+{
+    private readonly IHubContext<MonitoreoHub> _hub;
+    public NotificadorTelemetriaEnVivo(IHubContext<MonitoreoHub> hub) => _hub = hub;
+
+    public Task NotificarAsync(Guid parqueId, IReadOnlyList<TelemetriaNodoDto> nodos, CancellationToken cancellationToken)
+        => _hub.Clients.Group(MonitoreoHub.Grupo(parqueId))
+            .SendAsync("TelemetriaActualizada", nodos, cancellationToken);
+}
+
+// Avisa directamente a los usuarios de esta instancia después de guardar las lecturas.
 public sealed class NotificadorLecturasConfirmadas : INotificadorLecturasConfirmadas
 {
     private readonly IHubContext<MonitoreoHub> _hub;

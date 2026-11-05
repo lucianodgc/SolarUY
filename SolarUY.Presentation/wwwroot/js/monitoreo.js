@@ -9,7 +9,13 @@ export async function crear(destino) {
         if (cerrado || window.solarUyCircuitoConectado === false) return;
         // Durante el relevo, el circuito Blazor puede caer antes que el hub propio.
         // invokeMethodAsync también puede lanzar antes de devolver una promesa.
-        try { await destino.invokeMethodAsync(metodo, ...args); } catch { }
+        try { await destino.invokeMethodAsync(metodo, ...args); }
+        catch (error) {
+            if (cerrado || window.solarUyCircuitoConectado === false) return;
+            console.error(`SolarUY: no se pudo procesar ${metodo}.`, error);
+            const indicador = document.querySelector('[data-monitoreo-conexion]');
+            if (indicador) indicador.textContent = 'Error al procesar los datos en vivo';
+        }
     };
     const estado = async texto => {
         if (cerrado) return;
@@ -21,6 +27,10 @@ export async function crear(destino) {
     const suscribir = async () => { if (parque) await conexion.invoke('SuscribirParque', parque); };
     conexion.on('LecturasConfirmadas', id => {
         if (id.toLowerCase() === parque?.toLowerCase()) void avisar('NuevaLectura', id);
+    });
+    conexion.on('TelemetriaActualizada', nodos => {
+        if (nodos?.length && nodos[0].parqueId?.toLowerCase() === parque?.toLowerCase())
+            void avisar('TelemetriaActualizada', nodos);
     });
     conexion.onreconnecting(() => estado('Reconectando'));
     conexion.onreconnected(async () => {
@@ -67,6 +77,7 @@ export async function crear(destino) {
             window.removeEventListener('solaruy:circuito-abajo', circuitoAbajo);
             window.removeEventListener('solaruy:circuito-arriba', circuitoArriba);
             conexion.off('LecturasConfirmadas');
+            conexion.off('TelemetriaActualizada');
             await conexion.stop();
         }
     };
