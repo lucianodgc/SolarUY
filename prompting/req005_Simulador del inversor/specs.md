@@ -18,6 +18,8 @@ Los requisitos no fijan la forma de identificar nodos y paneles, los tipos de re
 
 ## Cambios por capa
 
+La pantalla obtiene los parques mediante la consulta autorizada de `IMonitoreoService` y conserva el inventario obtenido de `IInversorService`. El selector de nodos filtra ese inventario por `ParqueId`. Cambiar de parque descarta el estado anterior, selecciona el primer nodo disponible y cambia el grupo de SignalR mediante el puente existente. Los parques sin nodos permanecen seleccionables y muestran un mensaje. Seleccionar un nodo consulta su estado y permisos antes de continuar con las actualizaciones en vivo.
+
 ### 1. Domain
 
 No requiere modificaciones para esta tarea. No se agregan entidades de panel/inversor ni reglas de dominio que no estén definidas en el modelo existente. La potencia sintética y el estado de simulación son responsabilidad del adaptador de Infrastructure, expuesto mediante el contrato de Application.

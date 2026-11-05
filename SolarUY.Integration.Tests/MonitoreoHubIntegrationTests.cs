@@ -215,6 +215,7 @@ public sealed class MonitoreoHubIntegrationTests(HistoricoDatabase database) : I
             builder.Services.AddCascadingAuthenticationState();
             builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
             builder.Services.AddScoped<IMonitoreoService, MonitoreoService>();
+            builder.Services.AddSingleton<TelemetriaMonitoreoMapper>();
             builder.Services.AddSingleton<GeneracionActualService>();
             builder.Services.AddSingleton(new PoliticaMonitoreo(2, 2));
             builder.Services.AddScoped(_ => new SerieMonitoreoService(120, TimeSpan.FromSeconds(2)));

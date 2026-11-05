@@ -1,4 +1,5 @@
 using SolarUY.Application.Abstractions;
+using SolarUY.Application.Inversores;
 using SolarUY.Domain.Monitoreo;
 
 namespace SolarUY.Application.Monitoreo;
@@ -9,6 +10,35 @@ public sealed record NodoMonitoreoDto(Guid Id, string Nombre, ResumenGeneracion 
 public sealed record EstadoMonitoreoDto(Guid ParqueId, string Nombre, DateTime EvaluadoUtc,
     DateTime? InstanteUtc, ResumenGeneracion Generacion, IReadOnlyList<NodoMonitoreoDto> Nodos);
 public sealed record PuntoGeneracionDto(DateTime FechaHoraUtc, decimal PotenciaW, bool Parcial);
+
+public sealed class TelemetriaMonitoreoMapper
+{
+    public EstadoMonitoreoDto Mapear(Guid parqueId, IReadOnlyList<TelemetriaNodoDto> nodos)
+    {
+        ArgumentNullException.ThrowIfNull(nodos);
+        if (parqueId == Guid.Empty || nodos.Count == 0 || nodos.Any(n => n.ParqueId != parqueId))
+            throw new ArgumentException("La telemetría no corresponde al parque seleccionado.", nameof(nodos));
+
+        var instante = nodos.Max(n => n.FechaConsultaUtc);
+        var estados = nodos.Select(n =>
+        {
+            var paneles = n.Paneles.Select(p => new PanelMonitoreoDto(Guid.Parse(p.PanelId), p.NumeroSerie,
+                new GeneracionPanel(Guid.Parse(p.PanelId), instante, p.PotenciaGeneradaW,
+                    DisponibilidadMonitoreo.Vigente))).ToArray();
+            return new NodoMonitoreoDto(Guid.Parse(n.NodoId), n.NodoNombre,
+                Resumir(paneles.Select(p => p.Generacion).ToArray()), paneles);
+        }).ToArray();
+        var todos = estados.SelectMany(n => n.Paneles).Select(p => p.Generacion).ToArray();
+        return new EstadoMonitoreoDto(parqueId, nodos[0].Parque, instante, instante, Resumir(todos), estados);
+    }
+
+    private static ResumenGeneracion Resumir(IReadOnlyList<GeneracionPanel> paneles)
+    {
+        var fecha = paneles.Count == 0 ? null : paneles.Max(p => p.FechaHoraUtc);
+        return new ResumenGeneracion(paneles.Count == 0 ? null : paneles.Sum(p => p.PotenciaW ?? 0m),
+            paneles.Count, paneles.Count, fecha, fecha);
+    }
+}
 
 public interface IMonitoreoService
 {

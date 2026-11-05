@@ -62,7 +62,7 @@ public sealed class InversorIntegrationTests
         Assert.Empty(await simulador.ListarNodosAsync());
         await simulador.SincronizarInventarioAsync(
         [
-            new InventarioNodoInversorDto("nodo-db", "Nodo DB", "Parque DB",
+            new InventarioNodoInversorDto("nodo-db", "Nodo DB", "Parque DB", Guid.NewGuid(),
                 [new InventarioPanelInversorDto("panel-db", "SERIE-DB", 200m, EstadoPanel.Activo)])
         ]);
 
@@ -240,7 +240,7 @@ public sealed class InversorIntegrationTests
     }
 
     private static IInversorInventarioRepository CrearInventarioPrueba(params (string Id, string Nombre, string Parque, string[] Paneles)[] valores)
-        => new InventarioPrueba(valores.Select(nodo => new InventarioNodoInversorDto(nodo.Id, nodo.Nombre, nodo.Parque,
+        => new InventarioPrueba(valores.Select(nodo => new InventarioNodoInversorDto(nodo.Id, nodo.Nombre, nodo.Parque, Guid.NewGuid(),
             nodo.Paneles.Select(id => new InventarioPanelInversorDto(id, id, 400m, EstadoPanel.Activo)).ToArray())).ToArray());
 
     private sealed class InventarioPrueba(IReadOnlyList<InventarioNodoInversorDto> nodos) : IInversorInventarioRepository

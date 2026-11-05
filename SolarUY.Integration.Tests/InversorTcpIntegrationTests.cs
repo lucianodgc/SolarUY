@@ -29,7 +29,7 @@ public sealed class InversorTcpIntegrationTests
 
         try
         {
-            var inventario = new InventarioNodoInversorDto("nodo-real", "Nodo de prueba TCP", "Parque de prueba TCP",
+            var inventario = new InventarioNodoInversorDto("nodo-real", "Nodo de prueba TCP", "Parque de prueba TCP", Guid.NewGuid(),
                 Enumerable.Range(1, 4).Select(indice => new InventarioPanelInversorDto($"panel-{indice}", $"SERIE-{indice}", 400m, EstadoPanel.Activo)).ToArray());
             await cliente.SincronizarInventarioAsync([inventario]);
             Assert.Equal(new[] { "nodo-real" }, await cliente.ListarNodosAsync());

@@ -1,5 +1,11 @@
 # Pruebas de integración
 
+## Monitoreo con una instancia (05/11/2026)
+
+Se retiró la distribución de avisos mediante MariaDB. `SimplificacionMonitoreoIntegrationTests` comprueba que la migración elimina solo las tablas técnicas, conserva el inventario y las lecturas y permite seguir recolectando sin duplicados. Usa la misma base aislada de las pruebas históricas; nunca la base habitual.
+
+Los escenarios de `MonitoreoNginxIntegrationTests` y su servidor para Playwright permanecen como referencia histórica y se informan explícitamente como omitidos. Dependían del transporte retirado; no validan la versión actual de una instancia. Las pruebas de autorización y notificación local de `MonitoreoHubIntegrationTests` siguen vigentes.
+
 ## Preservación de lecturas y migraciones (29/10/2026)
 
 `RecoleccionMigracionIntegrationTests` verifica duplicados antes del DDL, conservación exacta de datos sin atribución, compatibilidad con instalaciones que ya guardaban nodo y bloqueo de la reversión si existen nodos desconocidos. `ProcedenciaHistoricaIntegrationTests` verifica consulta por panel, exclusión de atribuciones desconocidas, traslado de paneles y corte de tramos. Reportes comprueba también el aviso en CSV.

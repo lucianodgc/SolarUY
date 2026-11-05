@@ -1,5 +1,11 @@
 # Implementación: Simulador del inversor
 
+## Selector de parque (05/11/2026)
+
+En `SimuladorInversor.razor` se agregó un selector de parques y se filtraron los nodos por el parque elegido. Cambiar de parque limpia el estado anterior, selecciona su primer nodo y actualiza la suscripción SignalR; un parque vacío muestra un mensaje. Seleccionar un nodo consulta su estado y permisos. Se conservan el parque y el nodo visibles sobre los controles. Se actualizaron requirements, specs y tasks del requerimiento.
+
+Verificación: la pantalla compiló y las 9 pruebas de CodeQuality pasaron. Se usó una carpeta de salida separada para evitar archivos bloqueados por la aplicación en ejecución. No se ejecutó una comprobación de navegador de este selector; los avisos existentes de NuGet y Sonar continúan.
+
 ## Seguimiento H-07: pruebas permanentes
 
 Por pedido explícito del usuario se incorpora `SolarUY.Integration.Tests` a `SolarUY.sln`, con 19 casos xUnit que resuelven el servicio de Application y el adaptador real mediante `AddSolarInfrastructure`. Se controlan reloj e identidad, sin leer configuración privada ni conectarse a MariaDB/Keycloak. Se cubren los criterios de REQ005 y las restricciones de operación por rol. No se alteran Domain ni el simulador ni se crean pruebas unitarias de Infrastructure. Las tareas 1.6 y 3.5 quedan cerradas con esta entrega ejecutada; las referencias a pendientes en las secciones históricas siguientes corresponden a las revisiones anteriores.

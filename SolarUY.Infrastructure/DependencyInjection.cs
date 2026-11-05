@@ -37,11 +37,10 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IPanelRepository, PanelRepository>();
-        services.AddScoped<IInversorInventarioRepository, InversorInventarioRepository>();
+        services.AddSingleton<IInversorInventarioRepository, InversorInventarioRepository>();
         services.AddScoped<IHistoricoGeneracionRepository, HistoricoGeneracionRepository>();
         services.AddScoped<IRecoleccionLecturasRepository, RecoleccionLecturasRepository>();
         services.AddScoped<IMonitoreoRepository, MonitoreoRepository>();
-        services.AddScoped<IDistribucionMonitoreoRepository, DistribucionMonitoreoRepository>();
         services.AddScoped<ITareaMantenimientoRepository, TareaMantenimientoRepository>();
         services.AddScoped<INodoRepository, NodoRepository>();
 

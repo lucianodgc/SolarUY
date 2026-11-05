@@ -4,8 +4,10 @@
 @using SolarUY.Application.RecoleccionLecturas
 @using SolarUY.Domain.Monitoreo
 @using SolarUY.Presentation.Monitoreo
+@using SolarUY.Application.Inversores
 @implements IAsyncDisposable
 @inject IMonitoreoService Servicio
+@inject TelemetriaMonitoreoMapper MapeadorTelemetria
 @inject SerieMonitoreoService Serie
 @inject ConfiguracionRecoleccion Configuracion
 @inject IJSRuntime Js
@@ -14,60 +16,94 @@
 @inject NavigationManager Navegacion
 
 <PageTitle>Monitoreo | SolarUY</PageTitle>
-<PageHeader Title="Monitoreo en vivo" Section="Energía" Description="Potencia medida del parque, sus nodos y paneles." />
+<PageHeader Title="Monitoreo en vivo" Section="Energía"
+            Description="Potencia medida del parque, sus nodos y paneles." />
 <section class="surface" aria-label="Monitoreo de generación">
     <div class="filter-bar">
         <label>Parque solar
-            <RadzenDropDown Name="ParqueMonitoreo" data-testid="selector-parque" TValue="Guid" Data="_parques" TextProperty="Nombre" ValueProperty="Id"
-                @bind-Value="_parqueId" Change="CambiarParqueAsync" Style="min-width:260px" />
+            <RadzenDropDown Name="ParqueMonitoreo" data-testid="selector-parque" TValue="Guid" Data="_parques"
+                            TextProperty="Nombre" ValueProperty="Id" @bind-Value="_parqueId" Change="CambiarParqueAsync"
+                            Style="min-width:260px" />
         </label>
         <p role="status">Conexión: <span data-monitoreo-conexion>@_conexion</span></p>
     </div>
     <p class="note">Potencia en W · Fechas UTC · Los valores parciales excluyen paneles sin muestras compatibles.</p>
-    @if (_error is not null) { <p role="alert" class="text-danger">@_error</p> }
-    @if (_parques.Count == 0) { <p>No hay parques disponibles.</p> }
+    @if (_error is not null)
+    {
+        <p role="alert" class="text-danger">@_error</p>
+    }
+    @if (_parques.Count == 0)
+    {
+        <p>No hay parques disponibles.</p>
+    }
     @if (_estado is { } estado)
     {
         <h2>@estado.Nombre</h2>
         <p class="metric-value">@Potencia(estado.Generacion.PotenciaW)</p>
-        <p>@Cobertura(estado.Generacion) · Lecturas: @Fecha(estado.Generacion.FechaDesdeUtc) — @Fecha(estado.Generacion.FechaHastaUtc)</p>
-        @foreach (var nodo in estado.Nodos)
-        {
-            <section class="surface" @key="nodo.Id">
-                <h3>@nodo.Nombre · @Potencia(nodo.Generacion.PotenciaW)</h3>
-                <p>@Cobertura(nodo.Generacion)</p>
-                <RadzenDataGrid Data="nodo.Paneles" TItem="PanelMonitoreoDto" AllowPaging="true" PageSize="20">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="PanelMonitoreoDto" Property="NumeroSerie" Title="Panel / serie" />
-                        <RadzenDataGridColumn TItem="PanelMonitoreoDto" Title="Potencia"><Template Context="panel">@Potencia(panel.Generacion.PotenciaW)</Template></RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="PanelMonitoreoDto" Title="Disponibilidad"><Template Context="panel">@Disponibilidad(panel.Generacion.Disponibilidad)</Template></RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="PanelMonitoreoDto" Title="Medición UTC"><Template Context="panel">@Fecha(panel.Generacion.FechaHoraUtc)</Template></RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
-                @if (nodo.Paneles.Count == 0) { <p>Sin paneles.</p> }
+        <p>@Cobertura(estado.Generacion) · Lecturas: @Fecha(estado.Generacion.FechaDesdeUtc) —
+            @Fecha(estado.Generacion.FechaHastaUtc)</p>
+            @foreach (var nodo in estado.Nodos)
+            {
+                <section class="surface" @key="nodo.Id">
+                    <h3>@nodo.Nombre · @Potencia(nodo.Generacion.PotenciaW)</h3>
+                    <p>@Cobertura(nodo.Generacion)</p>
+                    <RadzenDataGrid Data="nodo.Paneles" TItem="PanelMonitoreoDto" AllowPaging="true" PageSize="20">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="PanelMonitoreoDto" Property="NumeroSerie" Title="Panel / serie" />
+                            <RadzenDataGridColumn TItem="PanelMonitoreoDto" Title="Potencia"><Template
+                                Context="panel">@Potencia(panel.Generacion.PotenciaW)</Template></RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="PanelMonitoreoDto" Title="Disponibilidad"><Template
+                                    Context="panel">@Disponibilidad(panel.Generacion.Disponibilidad)</Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="PanelMonitoreoDto" Title="Medición UTC"><Template
+                                    Context="panel">@Fecha(panel.Generacion.FechaHoraUtc)</Template></RadzenDataGridColumn>
+                                </Columns>
+                            </RadzenDataGrid>
+                            @if (nodo.Paneles.Count == 0)
+                            {
+                                <p>Sin paneles.</p>
+                            }
+                        </section>
+                    }
+                    @if (estado.Nodos.Count == 0)
+                    {
+                        <p>Sin nodos.</p>
+                    }
+                }
             </section>
-        }
-        @if (estado.Nodos.Count == 0) { <p>Sin nodos.</p> }
-    }
-</section>
-<section class="surface" aria-label="Gráfico de potencia en vivo">
-    <h2>Evolución de potencia del parque</h2>
-    <p class="note">UTC · W · Hasta @Opciones.Value.MaximoPuntosGrafico puntos. Se inicia un tramo nuevo tras intervalos sin muestras. Los puntos pueden representar cobertura parcial.</p>
-    @if (_puntos.Count > 0)
-    {
-        <RadzenChart Style="height:320px">
-            <RadzenLineSeries Data="_puntos" TItem="PuntoGeneracionDto" CategoryProperty="FechaHoraUtc" ValueProperty="PotenciaW" Title="Potencia medida (W)">
-                <RadzenMarkers Visible="true" MarkerType="MarkerType.Circle" />
-            </RadzenLineSeries>
-            <RadzenCategoryAxis FormatString="{0:HH:mm:ss}"><RadzenAxisTitle Text="Fecha/hora UTC" /></RadzenCategoryAxis>
-            <RadzenValueAxis><RadzenAxisTitle Text="Potencia (W)" /></RadzenValueAxis>
-        </RadzenChart>
-        <details><summary>Fechas y cobertura de los puntos</summary>
-            @foreach (var punto in _puntos) { <p>@Fecha(punto.FechaHoraUtc) · @Potencia(punto.PotenciaW) · @(punto.Parcial ? "Parcial" : "Completo")</p> }
-        </details>
-    }
-    else { <p>Aún no hay puntos disponibles.</p> }
-</section>
+            <section class="surface" aria-label="Gráfico de potencia en vivo">
+                <h2>Evolución de potencia del parque</h2>
+                <p class="note">UTC · W · Hasta @Opciones.Value.MaximoPuntosGrafico puntos. Se inicia un tramo nuevo tras intervalos
+                    sin muestras. Los puntos pueden representar cobertura parcial.</p>
+                    @if (_puntos.Count > 0)
+                    {
+                        <RadzenChart Style="height:320px">
+                            <RadzenLineSeries Data="_puntos" TItem="PuntoGeneracionDto" CategoryProperty="FechaHoraUtc"
+                                              ValueProperty="PotenciaW" Title="Potencia medida (W)">
+                                <RadzenMarkers Visible="true" MarkerType="MarkerType.Circle" />
+                            </RadzenLineSeries>
+                            <RadzenCategoryAxis FormatString="{0:HH:mm:ss}">
+                                <RadzenAxisTitle Text="Fecha/hora UTC" />
+                            </RadzenCategoryAxis>
+                            <RadzenValueAxis>
+                                <RadzenAxisTitle Text="Potencia (W)" />
+                            </RadzenValueAxis>
+                        </RadzenChart>
+                        <details>
+                            <summary>Fechas y cobertura de los puntos</summary>
+                            @foreach (var punto in _puntos)
+                            {
+                                <p>@Fecha(punto.FechaHoraUtc) · @Potencia(punto.PotenciaW) · @(punto.Parcial ?
+                                     "Parcial" : "Completo")</p>
+                                }
+                            </details>
+                        }
+    else
+                        {
+
+                            <p>Aún no hay puntos disponibles.</p>
+                        }
+                    </section>
 
 @code {
     [SupplyParameterFromQuery(Name = "parque")]
@@ -88,6 +124,7 @@
     private bool _actualizando;
     private bool _pendiente;
     private DateTime _ultimaConsultaUtc;
+    private DateTime _ultimaTelemetriaUtc;
 
     protected override async Task OnInitializedAsync()
     {
@@ -105,7 +142,7 @@
         if (!firstRender) return;
         try
         {
-            _modulo = await Js.InvokeAsync<IJSObjectReference>("import", "./js/monitoreo.js");
+            _modulo = await Js.InvokeAsync<IJSObjectReference>("import", "./js/monitoreo.js?v=telemetria-2");
             _referencia = DotNetObjectReference.Create(this);
             _puente = await _modulo.InvokeAsync<IJSObjectReference>("crear", _referencia);
             await CambiarParqueAsync();
@@ -119,6 +156,7 @@
         Interlocked.Increment(ref _version);
         if (_carga is not null) await _carga.CancelAsync();
         _estado = null; _puntos = []; _error = null;
+        _ultimaTelemetriaUtc = default;
         if (_parqueId == Guid.Empty) return;
         var direccion = Navegacion.GetUriWithQueryParameter("parque", _parqueId);
         if (direccion != Navegacion.Uri) Navegacion.NavigateTo(direccion, replace: true);
@@ -133,7 +171,22 @@
     [JSInvokable]
     public Task NuevaLectura(string parqueId) => InvokeAsync(async () =>
     {
-        if (Guid.TryParse(parqueId, out var id) && id == _parqueId) await ActualizarAsync(false);
+        if (_ultimaTelemetriaUtc == default && Guid.TryParse(parqueId, out var id) && id == _parqueId)
+            await ActualizarAsync(false);
+    });
+
+    [JSInvokable]
+    public Task TelemetriaActualizada(List<TelemetriaNodoDto> nodos) => InvokeAsync(() =>
+    {
+        Logger.LogDebug("Muestra de telemetría recibida: {Nodos} nodos.", nodos.Count);
+        if (nodos.Count == 0 || nodos[0].ParqueId != _parqueId) return;
+        var estado = MapeadorTelemetria.Mapear(_parqueId, nodos);
+        _estado = estado;
+        _puntos = Serie.Actualizar(estado);
+        _ultimaTelemetriaUtc = DateTime.UtcNow;
+        _conexion = "Conectado";
+        _error = null;
+        StateHasChanged();
     });
 
     [JSInvokable]
@@ -183,6 +236,16 @@
             while (await timer.WaitForNextTickAsync(_fin.Token)) await InvokeAsync(async () =>
             {
                 if (_estado is null || _conexion == "Sesión no autorizada") return;
+                if (_ultimaTelemetriaUtc != default)
+                {
+                    if (DateTime.UtcNow - _ultimaTelemetriaUtc > TimeSpan.FromSeconds(6))
+                    {
+                        _conexion = "Sin datos recientes";
+                        _estado = null;
+                        StateHasChanged();
+                    }
+                    return;
+                }
                 var version = Interlocked.Read(ref _version); var parque = _parqueId;
                 try
                 {

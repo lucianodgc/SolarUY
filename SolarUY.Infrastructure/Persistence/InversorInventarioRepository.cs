@@ -22,7 +22,7 @@ public sealed class InversorInventarioRepository : IInversorInventarioRepository
         var panelesPorNodo = paneles.GroupBy(panel => panel.NodoId).ToDictionary(grupo => grupo.Key, grupo => grupo.ToArray());
 
         return nodos.Select(nodo => new InventarioNodoInversorDto(
-            nodo.Id.ToString("D"), nodo.Nombre, nodo.Parque.Nombre,
+            nodo.Id.ToString("D"), nodo.Nombre, nodo.Parque.Nombre, nodo.ParqueId,
             panelesPorNodo.GetValueOrDefault(nodo.Id, [])
                 .Select(panel => new InventarioPanelInversorDto(
                     panel.Id.ToString("D"), panel.NumeroSerie, panel.PotenciaNominalW, panel.Estado))

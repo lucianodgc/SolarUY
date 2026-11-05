@@ -4,9 +4,7 @@ using MySqlConnector;
 using SolarUY.Application.RecoleccionLecturas;
 using SolarUY.Application.Exceptions;
 using SolarUY.Domain.Entities;
-using SolarUY.Application.Monitoreo;
 using Microsoft.EntityFrameworkCore.Storage;
-using System.Text.Json;
 
 namespace SolarUY.Infrastructure.Persistence;
 
@@ -70,10 +68,6 @@ public sealed class RecoleccionLecturasRepository : IRecoleccionLecturasReposito
             await VerificarPropiedadAsync(cancellationToken);
             if (lecturas.Count == 0) return;
             await using var transaccion = await context.Database.BeginTransactionAsync(cancellationToken);
-            var filas = await context.Database.ExecuteSqlRawAsync("UPDATE SecuenciaMonitoreo SET Valor = Valor + 1 WHERE Id = 1", cancellationToken);
-            if (filas != 1) throw new InvalidOperationException("Falta la fila coordinadora de monitoreo; no se guardará el lote.");
-            await using var secuencia = CrearComando(context, "SELECT Valor FROM SecuenciaMonitoreo WHERE Id = 1");
-            var numero = Convert.ToInt64(await secuencia.ExecuteScalarAsync(cancellationToken));
             foreach (var lectura in lecturas)
             {
                 if (lectura.Nodo is null || lectura.NodoId is null)
@@ -85,8 +79,6 @@ public sealed class RecoleccionLecturasRepository : IRecoleccionLecturasReposito
             try
             {
                 await context.SaveChangesAsync(cancellationToken);
-                var contenido = JsonSerializer.Serialize(lecturas.Select(l => new LecturaConfirmadaDto(l.Panel.Nodo.ParqueId, l.PanelId, l.FechaHora)).ToArray());
-                await context.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO AvisosMonitoreo (Secuencia, Contenido) VALUES ({numero}, {contenido})", cancellationToken);
                 await transaccion.CommitAsync(cancellationToken);
             }
             catch (DbUpdateException exception) when (exception.InnerException is MySqlException { Number: 1062 })

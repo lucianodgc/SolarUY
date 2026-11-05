@@ -36,6 +36,16 @@ builder.Services.AddScoped<IInversorService, InversorService>();
 builder.Services.AddScoped<IHistoricoGeneracionService, HistoricoGeneracionService>();
 builder.Services.AddScoped<IReporteHistoricoService, ReporteHistoricoService>();
 builder.Services.AddScoped<IRecoleccionLecturasService, RecoleccionLecturasService>();
+builder.Services.AddOptions<TelemetriaEnVivoOptions>().Bind(builder.Configuration.GetSection("TelemetriaEnVivo"))
+    .Validate(o => o.IntervaloSegundos is > 0 and <= 60 && o.ActualizarInventarioSegundos >= o.IntervaloSegundos,
+        "TelemetriaEnVivo requiere intervalos positivos y una actualización de inventario no más frecuente que la telemetría.")
+    .ValidateOnStart();
+builder.Services.AddSingleton<ITelemetriaEnVivoService>(provider => new TelemetriaEnVivoService(
+    provider.GetRequiredService<IInversorInventarioRepository>(),
+    provider.GetRequiredService<IInversorClient>(),
+    provider.GetRequiredService<TimeProvider>(),
+    TimeSpan.FromSeconds(provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<TelemetriaEnVivoOptions>>()
+        .Value.ActualizarInventarioSegundos)));
 builder.Services.AddOptions<MonitoreoOptions>().Bind(builder.Configuration.GetSection("Monitoreo"))
     .Validate<ConfiguracionRecoleccion>((o, recoleccion) => o.IntervalosVigencia > 0 && o.MaximoPuntosGrafico > 0
         && o.IntervalosVigencia <= long.MaxValue / recoleccion.Intervalo.Ticks
@@ -46,17 +56,15 @@ builder.Services.AddSingleton(provider => new PoliticaMonitoreo(
     (int)provider.GetRequiredService<ConfiguracionRecoleccion>().Intervalo.TotalSeconds,
     provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<MonitoreoOptions>>().Value.IntervalosVigencia));
 builder.Services.AddScoped<IMonitoreoService, MonitoreoService>();
+builder.Services.AddSingleton<TelemetriaMonitoreoMapper>();
 builder.Services.AddScoped<AccesoMonitoreoService>();
 builder.Services.AddScoped(provider => new SerieMonitoreoService(
     provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<MonitoreoOptions>>().Value.MaximoPuntosGrafico,
-    provider.GetRequiredService<ConfiguracionRecoleccion>().Intervalo));
+    TimeSpan.FromSeconds(3 * provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<TelemetriaEnVivoOptions>>().Value.IntervaloSegundos)));
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<INotificadorLecturasConfirmadas, NotificadorLecturasConfirmadas>();
-builder.Services.AddOptions<DistribucionMonitoreoOptions>().Bind(builder.Configuration.GetSection("DistribucionMonitoreo"))
-    .Validate(o => !string.IsNullOrWhiteSpace(o.InstanciaId) && o.InstanciaId.Length <= 100
-        && o.IntervaloSegundos is > 0 and <= 4_294_967 && o.TamanoLote > 0, "Configuración de distribución de monitoreo inválida.")
-    .ValidateOnStart();
-builder.Services.AddHostedService<DistribucionMonitoreoWorker>();
+builder.Services.AddSingleton<NotificadorTelemetriaEnVivo>();
+builder.Services.AddHostedService<TelemetriaEnVivoWorker>();
 var rutaClaves = builder.Configuration["DataProtection:RutaClaves"];
 if (!string.IsNullOrWhiteSpace(rutaClaves))
     builder.Services.AddDataProtection().SetApplicationName("SolarUY")
@@ -160,8 +168,7 @@ var app = builder.Build();
 if (!string.IsNullOrWhiteSpace(direccionProxy)) app.UseForwardedHeaders();
 app.Use(async (context, siguiente) =>
 {
-    context.Response.Headers["X-SolarUY-Instancia"] = app.Services
-        .GetRequiredService<Microsoft.Extensions.Options.IOptions<DistribucionMonitoreoOptions>>().Value.InstanciaId;
+    context.Response.Headers["X-SolarUY-Instancia"] = builder.Configuration["Instancia:Id"] ?? "solaruy-local";
     await siguiente();
 });
 
