@@ -24,7 +24,7 @@ Se completaron la distribución durable, la configuración reproducible de Nginx
 
 La pantalla /monitoreo obtiene el estado inicial desde lecturas persistidas, muestra parque/nodos/paneles en W con fechas UTC y distingue cero, ausencia, expiración, intervalo incompatible y muestra de nodo anterior. El dominio calcula las contribuciones sin duplicarlas. El gráfico Radzen conserva puntos acotados, actualiza el mismo intervalo y separa tramos después de huecos.
 
-Cada lote se guarda junto con un aviso durable en una transacción. La fila coordinadora de SecuenciaMonitoreo serializa las secuencias hasta el commit, evitando que un consumidor avance sobre una transacción todavía no confirmada. Un rollback revierte lecturas, aviso y secuencia. Se conserva el bloqueo global del recolector de req011.
+Cada lote se guarda junto con un aviso durable en una transacción. La fila coordinadora de SecuenciaMonitoreo serializa las secuencias hasta el commit, evitando que un consumidor avance sobre una transacción todavía no confirmada. Un rollback revierte lecturas, aviso y secuencia. Se conserva el bloqueo global del recolector de req11.
 
 Cada instancia lee AvisosMonitoreo con su propio cursor persistido en CursoresMonitoreo. Confirma el avance únicamente después de entregar el aviso a su hub local. Ante error de MariaDB, caída del proceso o fallo del notificador, reintenta desde la posición confirmada. La entrega es al menos una vez: las repeticiones invalidan el estado, pero no crean lecturas ni duplican puntos. No se promete entrega exactamente una vez. Los avisos no se purgan automáticamente en esta versión.
 
@@ -51,11 +51,11 @@ Como respaldo ante avisos SignalR perdidos, la pantalla vuelve a consultar las l
 | Integración | MonitoreoIntegrationTests, MonitoreoHubIntegrationTests, DistribucionMonitoreoIntegrationTests y MonitoreoNginxIntegrationTests |
 | Navegador | SolarUY.Browser.Tests/: configuración, cierre global, tests/monitoreo.spec.mjs, package.json y lockfile |
 
-Los cambios previos de req011 permanecen en el árbol de trabajo; no se modificaron los guardarraíles de CodeQuality.Tests ni las reglas/habilidades del proyecto.
+Los cambios previos de req11 permanecen en el árbol de trabajo; no se modificaron los guardarraíles de CodeQuality.Tests ni las reglas/habilidades del proyecto.
 
 ## Configuración y despliegue
 
-Seguir [deploy/nginx/README.md](../../deploy/nginx/README.md). Aplicar las migraciones con un único operador antes de iniciar los binarios nuevos. Si está pendiente req011, revisar primero sus comprobaciones de datos históricos. Los recolectores antiguos no escriben avisos durables: deshabilitar su adquisición durante la transición y habilitarla solamente en versiones compatibles.
+Seguir [deploy/nginx/README.md](../../deploy/nginx/README.md). Aplicar las migraciones con un único operador antes de iniciar los binarios nuevos. Si está pendiente req11, revisar primero sus comprobaciones de datos históricos. Los recolectores antiguos no escriben avisos durables: deshabilitar su adquisición durante la transición y habilitarla solamente en versiones compatibles.
 
 | Configuración | Uso |
 |---|---|
