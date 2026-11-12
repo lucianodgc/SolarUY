@@ -28,6 +28,14 @@ Arquitectura propuesta en la primera entrega. Actualmente se usa una instancia; 
 
 <img width="1204" height="804" alt="Arquitectura" src="https://github.com/user-attachments/assets/27bb301c-7e24-4ad8-b4e8-98c013fe0d0a" />
 
+### Flujo de SignalR
+
+![Flujo de SignalR en SolarUY](docs/diagramas/signalr.svg)
+
+[Editar el diagrama en draw.io](docs/diagramas/signalr.drawio).
+
+El servidor consulta la telemetría cada 2 segundos y la publica en `/hubs/monitoreo` para los usuarios suscritos al parque. El cliente JavaScript recibe los eventos y los pasa a los componentes del servidor; Blazor actualiza la interfaz mediante su circuito SignalR `/_blazor`. En paralelo, el recolector guarda lecturas cada 30 segundos y emite `LecturasConfirmadas` después del guardado. Los intervalos son configurables.
+
 ## Desarrollo con IA y SonarQube
 
 Codex ayudó a implementar funcionalidades, explicar errores y revisar avisos de SonarQube. El proceso dejó como mejora pendiente reforzar la comprensión y revisión del código y mantener registros más breves. Los requisitos, especificaciones y resultados están en `prompting/`.

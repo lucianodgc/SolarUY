@@ -1,5 +1,7 @@
 # Tareas: monitoreo en vivo
 
+- [x] Cierre adicional: crear `resumen.md` con una síntesis breve del trabajo y las verificaciones registradas.
+
 Alcance vigente aprobado el 05/11/2026: una instancia, SignalR directo y retirada de la distribución persistente. Sustituye las tareas anteriores de D2/Nginx; el registro histórico permanece en Git y en implementations.md.
 
 - [x] Mantener telemetría compartida cada 2 segundos y persistencia histórica cada 30 segundos.
