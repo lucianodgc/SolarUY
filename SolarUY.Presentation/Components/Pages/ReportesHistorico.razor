@@ -60,13 +60,13 @@
         <RadzenDataGrid TItem="MantenimientoRealizadoReporteDto" Data="reporte.Mantenimientos" AllowPaging="true" PageSize="15"
             AllowSorting="true" EmptyText="No hay mantenimientos realizados en este período.">
             <Columns>
-                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="NumeroSerie" Title="Panel" />
-                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="Tipo" Title="Tipo" />
-                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="Descripcion" Title="Descripción" />
-                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="ResponsableId" Title="Responsable" />
-                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="Estado" Title="Estado" />
-                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="FechaProgramadaLocal" Title="Programada (Uruguay)" />
-                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="FechaRealizacionLocal" Title="Realizada (Uruguay)" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="NumeroSerie" Title="Panel" Width="140px" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="Tipo" Title="Tipo" Width="140px" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="Descripcion" Title="Descripción" Width="280px" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="ResponsableId" Title="Responsable" Width="180px" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="Estado" Title="Estado" Width="150px" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="FechaProgramadaLocal" Title="Programada (Uruguay)" Width="280px" />
+                <RadzenDataGridColumn TItem="MantenimientoRealizadoReporteDto" Property="FechaRealizacionLocal" Title="Realizada (Uruguay)" Width="280px" />
             </Columns>
         </RadzenDataGrid>
     </section>
@@ -120,7 +120,7 @@
     {
         if (_desechado) return;
         var version = ++_version;
-        if (_consulta is not null) await _consulta.CancelAsync();
+        var anterior = _consulta;
         using var cancelacion = CancellationTokenSource.CreateLinkedTokenSource(_vida.Token);
         _consulta = cancelacion;
         _resultado = null;
@@ -128,6 +128,8 @@
         _ocupado = true;
         try
         {
+            if (anterior is not null) await anterior.CancelAsync();
+            if (_desechado || version != _version || cancelacion.IsCancellationRequested) return;
             if (_inicio is null || (_periodo == PeriodoHistorico.Rango && _fin is null))
                 throw new ArgumentException("Completá las fechas del período.");
             var filtro = new FiltroReporteDto(_parqueId, _nodoId, _periodo,
