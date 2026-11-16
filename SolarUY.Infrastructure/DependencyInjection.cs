@@ -55,7 +55,10 @@ public static class DependencyInjection
 
         services.AddOptions<InversorTcpOptions>()
             .Configure(options => InversorTcpOptions.Cargar(configuration, options))
-            .Validate(options => IPAddress.TryParse(options.Host, out _), "InversorTcp:Host debe ser una dirección IP válida.")
+            .Validate(options => IPAddress.TryParse(options.Host, out _)
+                || (!string.IsNullOrWhiteSpace(options.Host)
+                    && Uri.CheckHostName(options.Host) != UriHostNameType.Unknown),
+                "InversorTcp:Host debe ser una dirección IP o un nombre de host válido.")
             .Validate(options => options.Port is > 0 and <= 65535, "InversorTcp:Port debe estar entre 1 y 65535.")
             .Validate(options => options.TimeoutSeconds is > 0 and <= 30, "InversorTcp:TimeoutSeconds debe estar entre 1 y 30.");
 

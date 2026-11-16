@@ -107,8 +107,14 @@ public sealed class KeycloakTecnicoDirectory : ITecnicoDirectory
     {
         var section = _configuration.GetSection("Keycloak:Directory");
         var baseUrl = section["BaseUrl"];
-        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri)
-            || (uri.Scheme != Uri.UriSchemeHttps && !(uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback))
+        var urlAbsolutaValida = Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri);
+        var permiteHttpInterno = urlAbsolutaValida && uri is not null
+            && string.Equals(_configuration["ASPNETCORE_ENVIRONMENT"], "Development",
+                StringComparison.OrdinalIgnoreCase)
+            && string.Equals(uri.Host, "keycloak", StringComparison.OrdinalIgnoreCase);
+        if (!urlAbsolutaValida || uri is null
+            || (uri.Scheme != Uri.UriSchemeHttps
+                && !(uri.Scheme == Uri.UriSchemeHttp && (uri.IsLoopback || permiteHttpInterno)))
             || !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment)
             || string.IsNullOrWhiteSpace(section["Realm"]) || string.IsNullOrWhiteSpace(section["ClientId"])
             || string.IsNullOrWhiteSpace(section["ClientSecret"]))
