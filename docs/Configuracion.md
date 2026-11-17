@@ -2,7 +2,16 @@
 
 [Inicio](../README.md) · [Arquitectura](Arquitectura.md) · [Pruebas](Revision_Y_Guia_De_Pruebas.md)
 
-Todos los comandos parten de la raíz en PowerShell. Necesitas .NET SDK 8, Docker Desktop con contenedores Linux y `dotnet-ef` 8. Si falta este último: `dotnet tool install --global dotnet-ef --version 8.0.31`.
+Todos los comandos parten de la raíz en PowerShell. Necesitas .NET SDK 8 y Docker Desktop con contenedores Linux.
+
+En una PC nueva, instala `dotnet-ef` antes de ejecutar `Iniciar-Demo.ps1`. El script usa esta herramienta para aplicar las migraciones en ambos modos.
+
+```powershell
+dotnet tool install --global dotnet-ef --version 8.0.31
+dotnet ef --version
+```
+
+Si ya está instalado y PowerShell no lo encuentra, abre una terminal nueva y comprueba que `%USERPROFILE%\.dotnet\tools` esté en el `PATH`.
 
 ## Preparación inicial
 

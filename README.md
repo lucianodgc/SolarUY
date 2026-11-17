@@ -20,7 +20,13 @@ Inicio reúne los accesos por rol. Monitoreo observa potencia, salud y alertas. 
 
 ## Iniciar
 
-Necesitas .NET SDK 8, PowerShell y Docker Desktop. Prepara una vez `.env`, los dos secretos de Keycloak y Ollama siguiendo [Configuración](docs/Configuracion.md). Después, desde la raíz:
+Necesitas .NET SDK 8, PowerShell, Docker Desktop y `dotnet-ef` 8. Ambos modos de `Iniciar-Demo.ps1` usan `dotnet-ef` para aplicar las migraciones. Instálalo una vez en cada PC:
+
+```powershell
+dotnet tool install --global dotnet-ef --version 8.0.31
+```
+
+Prepara `.env`, los dos secretos de Keycloak y Ollama siguiendo [Configuración](docs/Configuracion.md). Después, desde la raíz:
 
 ```powershell
 .\Iniciar-Demo.ps1 -AltaDisponibilidad
