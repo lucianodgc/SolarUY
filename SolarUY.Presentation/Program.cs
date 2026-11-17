@@ -28,15 +28,60 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddOptions<SaludPanelOptions>().Bind(builder.Configuration.GetSection("SaludPanel"))
+    .Validate(o => o.IntervalosDesconexion is > 0 and <= 1000 && o.EvaluacionSegundos is > 0 and <= 3600
+        && o.UmbralFalla > 0 && o.UmbralFalla < o.UmbralDegradado && o.UmbralDegradado <= 1
+        && o.FactorEsperado is > 0 and <= 1, "Configuración de salud inválida.")
+    .Validate(o => !o.EvaluarPotenciaBaja,
+        "La evaluación por potencia baja requiere evidencia de operación que el contrato histórico aún no ofrece; mantenerla deshabilitada.")
+    .ValidateOnStart();
+builder.Services.AddSingleton<SolarUY.Domain.Salud.EvaluacionSaludService>();
+builder.Services.AddSingleton<SolarUY.Domain.Salud.SaludNodoService>();
+builder.Services.AddSingleton(provider =>
+{
+    var o = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<SaludPanelOptions>>().Value;
+    var intervalo = provider.GetRequiredService<ConfiguracionRecoleccion>().Intervalo;
+    return new SolarUY.Domain.Salud.PoliticaSalud(TimeSpan.FromTicks(checked(intervalo.Ticks * o.IntervalosDesconexion)),
+        o.UmbralFalla, o.UmbralDegradado, o.FactorEsperado, o.EvaluarPotenciaBaja);
+});
+builder.Services.AddSingleton(provider => new SolarUY.Application.Salud.ConfiguracionConsultaSalud(
+    TimeSpan.FromSeconds(3L * provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<SaludPanelOptions>>().Value.EvaluacionSegundos)));
+builder.Services.AddScoped<SolarUY.Application.Salud.ISaludPanelService, SolarUY.Application.Salud.SaludPanelService>();
+builder.Services.AddScoped<SolarUY.Application.Salud.IConsultaSaludService, SolarUY.Application.Salud.ConsultaSaludService>();
+builder.Services.AddSingleton<SolarUY.Application.Salud.INotificadorSaludConfirmada, NotificadorSaludConfirmada>();
+builder.Services.AddHostedService<SaludPanelWorker>();
+builder.Services.AddOptions<SaludDistribucionOptions>().Bind(builder.Configuration.GetSection("SaludDistribucion"))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.InstanciaId) && o.InstanciaId.Length <= 100
+        && o.IntervaloSegundos is > 0 and <= 3600, "Configuración de distribución de salud inválida.")
+    .Validate<Microsoft.Extensions.Options.IOptions<SaludPanelOptions>>((o, salud) =>
+        o.IntervaloSegundos <= salud.Value.EvaluacionSegundos,
+        "El observador de salud debe consultar al menos con la frecuencia de evaluación configurada.")
+    .ValidateOnStart();
+builder.Services.AddHostedService<ObservacionSaludWorker>();
 builder.Services.AddSolarInfrastructure(builder.Configuration);
 builder.Services.AddChatbotInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IParqueSolarService, ParqueSolarService>();
 builder.Services.AddScoped<INodoService, NodoService>();
 builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
+
+// Servicios del chatbot
 builder.Services.AddScoped<IConsultaChatbotService, ConsultaChatbotService>();
 builder.Services.AddScoped<IChatbotService, ChatbotService>();
+
+// Servicios de paneles
+builder.Services.AddScoped<SolarUY.Application.Paneles.IPanelService, SolarUY.Application.Paneles.PanelService>();
+builder.Services.AddScoped<IValidator<SolarUY.Application.Paneles.CrearPanelDto>, SolarUY.Application.Paneles.PanelDtoValidator>();
+builder.Services.AddScoped<IValidator<SolarUY.Application.Paneles.ActualizarPanelDto>, SolarUY.Application.Paneles.ActualizarPanelDtoValidator>();
+
 builder.Services.AddScoped<ITareaMantenimientoService, TareaMantenimientoService>();
 builder.Services.AddScoped<IInversorService, InversorService>();
+builder.Services.AddScoped<IOrdenInversorService, OrdenInversorService>();
+builder.Services.AddOptions<OrdenInversorOptions>()
+    .Bind(builder.Configuration.GetSection("OrdenInversor"))
+    .Validate(o => o.CierreAuditoriaSegundos is >= 1 and <= 30 && o.IntentosPersistencia is >= 1 and <= 2,
+        "OrdenInversor requiere cierre de 1–30 segundos y 1–2 intentos de persistencia.")
+    .ValidateOnStart();
+builder.Services.AddSingleton(p => p.GetRequiredService<Microsoft.Extensions.Options.IOptions<OrdenInversorOptions>>().Value);
 builder.Services.AddScoped<IHistoricoGeneracionService, HistoricoGeneracionService>();
 builder.Services.AddScoped<IReporteHistoricoService, ReporteHistoricoService>();
 builder.Services.AddScoped<IRecoleccionLecturasService, RecoleccionLecturasService>();
@@ -124,6 +169,7 @@ builder.Services
             ?? throw new InvalidOperationException("Falta Authentication:OpenIdConnect:ClientId.");
         options.ClientSecret = openIdConnect["ClientSecret"];
         options.ResponseType = "code";
+        options.MapInboundClaims = false;
         options.SaveTokens = true;
         options.GetClaimsFromUserInfoEndpoint = true;
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
@@ -181,9 +227,13 @@ var app = builder.Build();
 if (!string.IsNullOrWhiteSpace(direccionProxy)) app.UseForwardedHeaders();
 app.Use(async (context, siguiente) =>
 {
-    context.Response.Headers["X-SolarUY-Instancia"] = builder.Configuration["Instancia:Id"] ?? "solaruy-local";
+    context.Response.Headers["X-SolarUY-Instancia"] = builder.Configuration["Instancia:Id"]
+        ?? app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<SaludDistribucionOptions>>().Value.InstanciaId;
     await siguiente();
 });
+
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }))
+    .AllowAnonymous();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

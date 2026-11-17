@@ -1,0 +1,40 @@
+@page "/paneles"
+@page "/paneles/nodo/{NodoId:guid}"
+@attribute [Authorize(Roles = "Administrador,Tecnico,Consulta")]
+@rendermode InteractiveServer
+@inject SolarUY.Application.Paneles.IPanelService Service
+@inject DialogService Dialogs
+@inject NotificationService Notifications
+
+<PageTitle>Paneles solares</PageTitle>
+<PageHeader Title="Paneles solares" Section="Gestión del parque" Description="Consultá los paneles activos y el nodo donde están instalados.">
+    <AuthorizeView Roles="Administrador"><a class="btn btn-primary" href="/paneles/alta">Registrar panel</a></AuthorizeView>
+</PageHeader>
+@if (_error is not null) { <p role="alert" class="alert alert-danger">@_error</p> }
+else if (_paneles is null) { <p class="loading-state">Cargando paneles…</p> }
+else if (_paneles.Count == 0) { <div class="surface empty-state"><h2>No hay paneles registrados</h2></div> }
+else
+{
+    <div class="surface table-responsive"><table class="table"><thead><tr><th>Serie</th><th>Marca y modelo</th><th>Potencia</th><th>Estado</th><th>Nodo</th><th>Parque</th><AuthorizeView Roles="Administrador"><th>Acciones</th></AuthorizeView></tr></thead>
+    <tbody>@foreach (var panel in _paneles) { <tr><td>@panel.NumeroSerie</td><td>@panel.Marca @panel.Modelo</td><td>@panel.PotenciaNominalW W</td><td>@panel.Estado</td><td>@panel.Nodo</td><td>@panel.Parque</td><AuthorizeView Roles="Administrador"><td><a class="btn btn-outline-primary btn-sm" href="@($"/paneles/{panel.Id}/editar")">Editar</a> <RadzenButton Text="Dar de baja" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Disabled="_ocupado" Click="async () => await DarDeBajaAsync(panel.Id)" /></td></AuthorizeView></tr> }</tbody></table></div>
+}
+
+@code {
+    [Parameter] public Guid? NodoId { get; set; }
+    private IReadOnlyList<SolarUY.Application.Paneles.PanelDto>? _paneles;
+    private string? _error;
+    private bool _ocupado;
+    protected override async Task OnParametersSetAsync()
+    {
+        try { _paneles = NodoId.HasValue ? await Service.ListarPorNodoAsync(NodoId.Value) : await Service.ListarAsync(); }
+        catch (Exception exception) { _error = exception.Message; }
+    }
+    private async Task DarDeBajaAsync(Guid id)
+    {
+        if (_ocupado || await Dialogs.Confirm("El panel quedará dado de baja y se conservará su historial.", "Confirmar baja", new ConfirmOptions { OkButtonText = "Dar de baja", CancelButtonText = "Cancelar" }) != true) return;
+        _ocupado = true; _error = null;
+        try { await Service.DarDeBajaAsync(id); Notifications.Notify(NotificationSeverity.Success, "Panel dado de baja", "El historial de lecturas y mantenimientos se conserva."); await OnParametersSetAsync(); }
+        catch (Exception exception) { _error = exception.Message; }
+        finally { _ocupado = false; }
+    }
+}

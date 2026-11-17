@@ -41,4 +41,11 @@ public sealed class Nodo
         if (Inversor is not null) throw new InvalidOperationException("El nodo ya tiene un inversor asociado.");
         Inversor = inversor;
     }
+
+    public void ValidarCapacidadPaneles(int cantidadResultante)
+    {
+        if (cantidadResultante < 0) throw new ArgumentOutOfRangeException(nameof(cantidadResultante));
+        if (CantidadPanelesPrevista.HasValue && cantidadResultante > CantidadPanelesPrevista.Value)
+            throw new InvalidOperationException("El nodo no tiene capacidad disponible para otro panel.");
+    }
 }

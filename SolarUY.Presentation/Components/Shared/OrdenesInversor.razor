@@ -1,0 +1,99 @@
+@using SolarUY.Application.Inversores
+@using SolarUY.Application.Abstractions
+@using SolarUY.Domain.Entities
+@using SolarUY.Presentation.Monitoreo
+@inject IInversorService Inversor
+@inject IOrdenInversorService Ordenes
+@inject DialogService Dialogos
+@inject Microsoft.Extensions.Options.IOptions<TelemetriaEnVivoOptions> OpcionesTelemetria
+
+<section class="surface" aria-label="Órdenes al inversor">
+    <h2>Operación del inversor</h2>
+    <p class="note">Volcado: Inversor configurado — alcance global. El parque seleccionado no limita esta operación. La aceptación de una orden se confirma por separado de su efecto observado.</p>
+    @if (_mensaje is not null) { <p role="status">@_mensaje</p> }
+    <AuthorizeView Roles="Administrador">
+        <RadzenButton Text="Activar volcado global" Disabled="@(_ocupado || !_interactivo)" Click="@(() => ConfirmarAsync(AccionOrdenInversor.ActivarVolcadoRed, null, null, "Inversor configurado — alcance global"))" />
+        <RadzenButton Text="Desactivar volcado global" Disabled="@(_ocupado || !_interactivo)" Click="@(() => ConfirmarAsync(AccionOrdenInversor.DesactivarVolcadoRed, null, null, "Inversor configurado — alcance global"))" />
+    </AuthorizeView>
+    @if (_estados.Count == 0) { <p>Estado operacional no disponible.</p> }
+    @foreach (var estado in _estados)
+    {
+        <h3>@estado.NodoNombre</h3>
+        <p>Observado: @estado.FechaConsultaUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC · Volcado global: @(!Vigente(estado) ? "Sin evidencia vigente" : estado.VolcadoRedActivo ? "Activo" : "Inactivo")</p>
+        <table class="table"><thead><tr><th>Panel</th><th>Habilitación observada</th><th>Acciones</th></tr></thead><tbody>
+            @foreach (var panel in estado.Paneles)
+            {
+                <tr><td>@panel.NumeroSerie <small>@panel.PanelId</small></td>
+                    <td>@(!Vigente(estado) ? "Sin evidencia vigente" : panel.EstaActivo ? "Activo" : "Inactivo")</td>
+                    <td><AuthorizeView Roles="Administrador" Context="adminPanel">
+                        <RadzenButton Text="Activar panel" Disabled="@(_ocupado || !_interactivo)" Click="@(() => ConfirmarAsync(AccionOrdenInversor.ActivarPanel, panel.NodoId, panel.PanelId, $"{estado.NodoNombre} / {panel.NumeroSerie} ({panel.PanelId})"))" />
+                        <RadzenButton Text="Desactivar panel" Disabled="@(_ocupado || !_interactivo)" Click="@(() => ConfirmarAsync(AccionOrdenInversor.DesactivarPanel, panel.NodoId, panel.PanelId, $"{estado.NodoNombre} / {panel.NumeroSerie} ({panel.PanelId})"))" />
+                    </AuthorizeView></td>
+                </tr>
+            }
+        </tbody></table>
+    }
+</section>
+
+@code {
+    [Parameter] public Guid ParqueId { get; set; }
+    private Guid _parqueCargado;
+    private IReadOnlyList<EstadoInversorDto> _estados = [];
+    private bool _ocupado;
+    private bool _interactivo;
+    private string? _mensaje;
+    private bool Vigente(EstadoInversorDto estado) => DateTime.UtcNow - estado.FechaConsultaUtc
+        <= TimeSpan.FromSeconds(3 * OpcionesTelemetria.Value.IntervaloSegundos);
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender) return;
+        _interactivo = true;
+        StateHasChanged();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_parqueCargado == ParqueId) return;
+        _parqueCargado = ParqueId; _estados = []; _mensaje = null;
+        await ConsultarAsync(ParqueId);
+    }
+
+    private async Task ConsultarAsync(Guid parque)
+    {
+        try
+        {
+            var nodos = await Inversor.ListarNodosAsync();
+            var estados = new List<EstadoInversorDto>();
+            foreach (var nodo in nodos.Where(n => n.ParqueId == parque)) estados.Add(await Inversor.ConsultarAsync(nodo.Id));
+            if (parque == ParqueId) _estados = estados;
+        }
+        catch { if (parque == ParqueId) { _estados = []; _mensaje = "No se pudo consultar el estado operacional."; } }
+    }
+
+    public Task ActualizarTelemetriaAsync(List<TelemetriaNodoDto> nodos) => InvokeAsync(() =>
+    {
+        _estados = nodos.Where(n => n.ParqueId == ParqueId).Select(n => new EstadoInversorDto(n.NodoId, n.NodoNombre,
+            n.Parque, n.Paneles, n.PotenciaGeneradaW, n.VolcadoRedActivo, n.InversorEncendido, false, n.FechaConsultaUtc)).ToArray();
+        StateHasChanged();
+    });
+
+    private async Task ConfirmarAsync(AccionOrdenInversor accion, string? nodo, string? panel, string destino)
+    {
+        if (_ocupado) return;
+        _ocupado = true; var parque = ParqueId;
+        try
+        {
+            if (await Dialogos.Confirm($"{accion}: {destino}. ¿Confirmás el envío?", "Confirmar orden",
+                new ConfirmOptions { OkButtonText = "Confirmar", CancelButtonText = "Cancelar" }) != true || parque != ParqueId) return;
+            var resultado = await Ordenes.EjecutarAsync(new(Guid.NewGuid(), accion, nodo, panel));
+            if (parque == ParqueId)
+            {
+                _mensaje = MensajeResultadoOrden.Formatear(resultado);
+                await ConsultarAsync(parque);
+            }
+        }
+        catch { if (parque == ParqueId) _mensaje = "No se obtuvo resultado. Consultá el estado antes de confirmar otro intento."; }
+        finally { _ocupado = false; }
+    }
+}

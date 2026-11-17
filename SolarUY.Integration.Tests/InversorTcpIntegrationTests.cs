@@ -101,6 +101,53 @@ public sealed class InversorTcpIntegrationTests
         await responder;
     }
 
+    [Fact]
+    public async Task ClienteTcp_DesactivacionSeConservaEnLecturasYTrasSincronizarInventario()
+    {
+        var opciones = Opciones(ObtenerPuertoLibre());
+        var motor = new InversorSimulador(new ConfigurationBuilder().Build());
+        var servidor = new InversorTcpServer(motor, opciones, NullLogger<InversorTcpServer>.Instance);
+        using var apagado = new CancellationTokenSource();
+        var ejecucion = servidor.EjecutarAsync(apagado.Token);
+        var cliente = new InversorTcpClient(opciones, NullLogger<InversorTcpClient>.Instance);
+        var nodoId = Guid.NewGuid();
+        var panelId = Guid.NewGuid();
+        var nodo = nodoId.ToString("D");
+        var panel = panelId.ToString("D");
+        var inventario = new InventarioNodoInversorDto(nodo, "Nodo", "Parque", Guid.NewGuid(),
+            [new InventarioPanelInversorDto(panel, "SERIE-ORDEN", 400m, EstadoPanel.Activo)]);
+        var medicion = new PanelMedicionDto(panelId, nodoId, "SERIE-ORDEN", 400m, EstadoPanel.Activo);
+        var instante = new DateTime(2026, 11, 16, 12, 0, 0, DateTimeKind.Utc);
+        try
+        {
+            await cliente.SincronizarInventarioAsync([inventario]);
+            Assert.InRange((await cliente.ObtenerMedicionesRegistradasAsync([medicion], instante))[0].PotenciaGeneradaW, 360m, 400m);
+            await cliente.DesactivarPanelAsync(nodo, panel);
+            await cliente.SincronizarInventarioAsync([inventario]);
+            Assert.Equal(0m, (await cliente.ObtenerMedicionesRegistradasAsync([medicion], instante))[0].PotenciaGeneradaW);
+            Assert.Equal(EstadoSaludLectura.Sano, (await cliente.ObtenerMedicionesRegistradasAsync([medicion], instante))[0].EstadoSalud);
+            Assert.False((await cliente.ObtenerEstadoPanelesAsync(nodo))[0].EstaActivo);
+            await cliente.ActivarPanelAsync(nodo, panel);
+            Assert.InRange((await cliente.ObtenerMedicionesRegistradasAsync([medicion], instante))[0].PotenciaGeneradaW, 360m, 400m);
+            await cliente.EstablecerEstadoEncendidoAsync(false);
+            await cliente.ActivarPanelAsync(nodo, panel);
+            Assert.Equal(0m, (await cliente.ObtenerMedicionesRegistradasAsync([medicion], instante))[0].PotenciaGeneradaW);
+            var falladoId = Guid.NewGuid();
+            var fallado = new InventarioPanelInversorDto(falladoId.ToString("D"), "FALLADO", 400m, EstadoPanel.Falla);
+            await cliente.SincronizarInventarioAsync([inventario with { Paneles = [.. inventario.Paneles, fallado] }]);
+            await cliente.DesactivarPanelAsync(nodo, fallado.Id);
+            var lecturaFallada = (await cliente.ObtenerMedicionesRegistradasAsync(
+                [new PanelMedicionDto(falladoId, nodoId, "FALLADO", 400m, EstadoPanel.Falla)], instante))[0];
+            Assert.Equal(0m, lecturaFallada.PotenciaGeneradaW);
+            Assert.Equal(EstadoSaludLectura.Fallado, lecturaFallada.EstadoSalud);
+        }
+        finally
+        {
+            apagado.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => ejecucion);
+        }
+    }
+
     private static IOptions<InversorTcpOptions> Opciones(int port)
         => Options.Create(new InversorTcpOptions { Host = "127.0.0.1", Port = port, TimeoutSeconds = 3 });
 

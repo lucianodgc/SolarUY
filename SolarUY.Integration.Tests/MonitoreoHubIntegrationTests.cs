@@ -215,6 +215,14 @@ public sealed class MonitoreoHubIntegrationTests(HistoricoDatabase database) : I
             builder.Services.AddCascadingAuthenticationState();
             builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
             builder.Services.AddScoped<IMonitoreoService, MonitoreoService>();
+            builder.Services.AddScoped<SolarUY.Application.Inversores.IInversorService, SolarUY.Application.Inversores.InversorService>();
+            builder.Services.AddScoped<SolarUY.Application.Inversores.IOrdenInversorService, SolarUY.Application.Inversores.OrdenInversorService>();
+            builder.Services.AddSingleton(new SolarUY.Application.Inversores.OrdenInversorOptions());
+            builder.Services.AddSingleton<SolarUY.Domain.Salud.EvaluacionSaludService>();
+            builder.Services.AddSingleton<SolarUY.Domain.Salud.SaludNodoService>();
+            builder.Services.AddSingleton(new SolarUY.Application.Salud.ConfiguracionConsultaSalud(TimeSpan.FromSeconds(15)));
+            builder.Services.AddScoped<SolarUY.Application.Salud.IConsultaSaludService, SolarUY.Application.Salud.ConsultaSaludService>();
+            builder.Services.Configure<SaludPanelOptions>(o => o.EvaluacionSegundos = 1);
             builder.Services.AddSingleton<TelemetriaMonitoreoMapper>();
             builder.Services.AddSingleton<GeneracionActualService>();
             builder.Services.AddSingleton(new PoliticaMonitoreo(2, 2));

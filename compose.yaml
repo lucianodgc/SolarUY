@@ -10,6 +10,8 @@ services:
       - "127.0.0.1:3307:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
+    networks:
+      - solaruy_ha
     healthcheck:
       test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       interval: 10s
@@ -26,6 +28,8 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
+    networks:
+      - solaruy_ha
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.1
@@ -33,7 +37,8 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:?Define KEYCLOAK_ADMIN_USERNAME en .env}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Define KEYCLOAK_ADMIN_PASSWORD en .env}
-      KC_HOSTNAME: localhost
+      KC_HOSTNAME: http://localhost:8080
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KEYCLOAK_TEST_ADMIN_PASSWORD: ${KEYCLOAK_TEST_ADMIN_PASSWORD:?Define KEYCLOAK_TEST_ADMIN_PASSWORD en .env}
       KEYCLOAK_TEST_TECH_PASSWORD: ${KEYCLOAK_TEST_TECH_PASSWORD:?Define KEYCLOAK_TEST_TECH_PASSWORD en .env}
       KEYCLOAK_TEST_VIEWER_PASSWORD: ${KEYCLOAK_TEST_VIEWER_PASSWORD:?Define KEYCLOAK_TEST_VIEWER_PASSWORD en .env}
@@ -41,6 +46,113 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - ./keycloak/realm:/opt/keycloak/data/import:ro
+      - keycloak_data:/opt/keycloak/data/h2
+    networks:
+      - solaruy_ha
+    depends_on:
+      keycloak-data-permissions:
+        condition: service_completed_successfully
+
+  keycloak-data-permissions:
+    image: busybox:1.36
+    user: "0:0"
+    command: ["sh", "-c", "chown -R 1000:0 /data && chmod -R ug+rwX /data"]
+    volumes:
+      - keycloak_data:/data
+    restart: "no"
+
+  solaruy-a:
+    build:
+      context: .
+      dockerfile: SolarUY.Presentation/Dockerfile
+    image: solaruy:${SOLARUY_VERSION:-local}
+    environment: &solaruy-environment
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__SolarUY: Server=mariadb;Port=3306;Database=${MARIADB_DATABASE};User=${MARIADB_USER};Password=${MARIADB_PASSWORD}
+      MariaDB__ServerVersion: 11.8.0
+      Authentication__OpenIdConnect__Authority: http://keycloak:8080/realms/solaruy
+      Authentication__OpenIdConnect__ClientId: solaruy-web
+      Authentication__OpenIdConnect__ClientSecret: ${SOLARUY_WEB_CLIENT_SECRET:-}
+      Keycloak__Directory__BaseUrl: http://keycloak:8080
+      Keycloak__Directory__ClientSecret: ${SOLARUY_DIRECTORY_CLIENT_SECRET:-}
+      InversorTcp__Host: host.docker.internal
+      RecoleccionLecturas__Habilitada: "true"
+      SaludPanel__Habilitada: "true"
+      SaludDistribucion__Habilitada: "true"
+      SaludDistribucion__InstanciaId: solaruy-a
+      Instancia__Id: solaruy-a
+      DataProtection__RutaClaves: /var/dpkeys
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - dataprotection_keys:/var/dpkeys
+    networks:
+      solaruy_ha:
+        ipv4_address: 172.29.0.11
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
+
+  solaruy-b:
+    image: solaruy:${SOLARUY_VERSION:-local}
+    pull_policy: never
+    environment:
+      <<: *solaruy-environment
+      RecoleccionLecturas__Habilitada: "true"
+      SaludDistribucion__InstanciaId: solaruy-b
+      Instancia__Id: solaruy-b
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - dataprotection_keys:/var/dpkeys
+    networks:
+      solaruy_ha:
+        ipv4_address: 172.29.0.12
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
+
+  nginx:
+    image: nginx:stable
+    ports:
+      - "127.0.0.1:${SOLARUY_PROXY_PUERTO:-18088}:8080"
+    environment:
+      SOLARUY_INSTANCIA_A: solaruy-a:8080
+      SOLARUY_INSTANCIA_B: solaruy-b:8080
+    volumes:
+      - ./deploy/nginx/monitoreo.conf.template:/etc/nginx/templates/default.conf.template:ro
+    networks:
+      solaruy_ha:
+        ipv4_address: 172.29.0.10
+    depends_on:
+      solaruy-a:
+        condition: service_healthy
+      solaruy-b:
+        condition: service_healthy
 
 volumes:
   mariadb_data:
+  dataprotection_keys:
+  keycloak_data:
+
+networks:
+  solaruy_ha:
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24

@@ -1,0 +1,160 @@
+@using SolarUY.Application.Salud
+@using Microsoft.Extensions.Options
+@using SolarUY.Presentation.Monitoreo
+@implements IAsyncDisposable
+@inject IConsultaSaludService Consultas
+@inject ILogger<SaludMonitoreo> Logger
+@inject IOptions<SaludPanelOptions> OpcionesSalud
+
+<section class="surface" aria-label="Salud y alertas de paneles">
+    <h2>Salud de paneles y nodos</h2>
+    <p class="note">Salud calculada desde lecturas guardadas · Fechas UTC · La comprobación por potencia esperada está deshabilitada.</p>
+    @if (_error is not null) { <p role="alert">@_error</p> }
+    @if (_estado is null) { <p>Sin evaluación disponible.</p> }
+    else
+    {
+        @foreach (var nodo in _estado.Nodos)
+        {
+            <p><strong>@nodo.Nombre:</strong>
+                <span class="salud-indicador" data-vigente="@(nodo.Estado.HasValue ? "si" : "no")" data-estado="@nodo.Estado">●</span>
+                @(nodo.Estado?.ToString() ?? "Sin datos suficientes") · @nodo.Evaluados/@nodo.Total paneles evaluados</p>
+        }
+        <RadzenDataGrid Data="_estado.Paneles" TItem="SaludPanelDto" AllowPaging="true" PageSize="20" EmptyText="Sin paneles.">
+            <Columns>
+                <RadzenDataGridColumn TItem="SaludPanelDto" Property="NumeroSerie" Title="Panel" />
+                <RadzenDataGridColumn TItem="SaludPanelDto" Property="Nodo" Title="Nodo" />
+                <RadzenDataGridColumn TItem="SaludPanelDto" Title="Salud"><Template Context="panel">
+                    <span class="salud-indicador" data-vigente="@(panel.Vigente ? "si" : "no")" data-estado="@panel.Estado">●</span>
+                    @(panel.Vigente ? panel.Estado?.ToString() : "Sin evaluación vigente")
+                    @if (!panel.Vigente && panel.Estado.HasValue) { <span> · Último conocido: @panel.Estado</span> }
+                </Template></RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SaludPanelDto" Property="Motivo" Title="Motivo" />
+                <RadzenDataGridColumn TItem="SaludPanelDto" Title="Evidencia UTC"><Template Context="panel">@Fecha(panel.EvidenciaUtc)</Template></RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SaludPanelDto" Title="Historial"><Template Context="panel">
+                    <RadzenButton Text="Ver cambios" Click="@(() => AbrirHistorialAsync(panel.PanelId, panel.NumeroSerie))" />
+                </Template></RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+        <h3>Alertas activas (@_estado.Alertas.Count)</h3>
+        @if (_estado.Alertas.Count == 0) { <p>No hay alertas activas.</p> }
+        <RadzenDataGrid Data="_estado.Alertas" TItem="AlertaActivaDto" AllowPaging="true" PageSize="20" EmptyText="Sin alertas activas.">
+            <Columns>
+                <RadzenDataGridColumn TItem="AlertaActivaDto" Property="NumeroSerie" Title="Panel" />
+                <RadzenDataGridColumn TItem="AlertaActivaDto" Property="Nodo" Title="Nodo actual" />
+                <RadzenDataGridColumn TItem="AlertaActivaDto" Property="Parque" Title="Parque actual" />
+                <RadzenDataGridColumn TItem="AlertaActivaDto" Property="Condicion" Title="Condición" />
+                <RadzenDataGridColumn TItem="AlertaActivaDto" Title="Detección UTC"><Template Context="alerta">@Fecha(alerta.DeteccionUtc)</Template></RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="AlertaActivaDto" Title="Vigencia"><Template Context="alerta">@(alerta.Vigente ? "Confirmada" : "Última condición; vigencia no demostrada")</Template></RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+    @if (_panelHistorial.HasValue)
+    {
+        <h3>Historial de @_serieHistorial</h3>
+        @if (_historial is { } historial)
+        {
+            @if (historial.Total == 0) { <p>Sin transiciones registradas.</p> }
+            <RadzenDataGrid Data="historial.Elementos" TItem="CambioEstadoSaludDto">
+                <Columns>
+                    <RadzenDataGridColumn TItem="CambioEstadoSaludDto" Title="Anterior"><Template Context="cambio">@(cambio.EstadoAnterior?.ToString() ?? "Sin estado previo")</Template></RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CambioEstadoSaludDto" Property="EstadoNuevo" Title="Nuevo" />
+                    <RadzenDataGridColumn TItem="CambioEstadoSaludDto" Title="Cambio UTC"><Template Context="cambio">@Fecha(cambio.FechaUtc)</Template></RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+            <RadzenPager Count="historial.Total" PageSize="20" PageChanged="PaginaCambiadaAsync" />
+        }
+    }
+</section>
+
+@code {
+    [Parameter] public Guid ParqueId { get; set; }
+    private Guid _parque;
+    private SaludParqueDto? _estado;
+    private PaginaCambiosSaludDto? _historial;
+    private Guid? _panelHistorial;
+    private string? _serieHistorial;
+    private int _pagina;
+    private string? _error;
+    private long _version;
+    private bool _cargando;
+    private bool _pendiente;
+    private readonly CancellationTokenSource _fin = new();
+    private CancellationTokenSource? _carga;
+    private Task? _reloj;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ParqueId == _parque) return;
+        _parque = ParqueId; Interlocked.Increment(ref _version); _carga?.Cancel();
+        _estado = null; _historial = null; _panelHistorial = null; _error = null;
+        await ActualizarAsync();
+        _reloj ??= ReevaluarVistaAsync();
+    }
+    public async Task ActualizarAsync()
+    {
+        if (_parque == Guid.Empty || _fin.IsCancellationRequested) return;
+        if (_cargando) { _pendiente = true; return; }
+        _cargando = true;
+        try
+        {
+            do
+            {
+                _pendiente = false; var parque = _parque; var version = Interlocked.Read(ref _version);
+                _carga?.Dispose(); _carga = CancellationTokenSource.CreateLinkedTokenSource(_fin.Token);
+                try
+                {
+                    var nuevo = await Consultas.ConsultarAsync(parque, _carga.Token);
+                    if (version != Interlocked.Read(ref _version)) continue;
+                    _estado = nuevo; _error = null;
+                    if (_panelHistorial.HasValue && !nuevo.Paneles.Any(p => p.PanelId == _panelHistorial.Value))
+                    { _panelHistorial = null; _historial = null; }
+                    if (_panelHistorial.HasValue) await CargarHistorialAsync();
+                }
+                catch (OperationCanceledException) when (_carga.IsCancellationRequested) { }
+                catch (Exception ex)
+                {
+                    if (version != Interlocked.Read(ref _version)) continue;
+                    Logger.LogWarning(ex, "No se pudo consultar la salud.");
+                    _error = "No se pudo consultar la salud. Los datos conservan su fecha original.";
+                    if (ex is UnauthorizedAccessException) { _estado = null; _historial = null; }
+                }
+            } while (_pendiente && !_fin.IsCancellationRequested);
+        }
+        finally { _cargando = false; if (!_fin.IsCancellationRequested) StateHasChanged(); }
+    }
+    private async Task AbrirHistorialAsync(Guid id, string serie)
+    {
+        _panelHistorial = id; _serieHistorial = serie; _pagina = 0;
+        await ActualizarAsync();
+    }
+    private async Task PaginaCambiadaAsync(PagerEventArgs args)
+    {
+        _pagina = args.PageIndex; await ActualizarAsync();
+    }
+    private async Task CargarHistorialAsync()
+    {
+        var panel = _panelHistorial; var parque = _parque; var pagina = _pagina;
+        if (!panel.HasValue) return;
+        var resultado = await Consultas.HistorialAsync(parque, panel.Value, pagina, 20, _carga!.Token);
+        if (panel == _panelHistorial && parque == _parque && pagina == _pagina) _historial = resultado;
+    }
+    private async Task ReevaluarVistaAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(OpcionesSalud.Value.EvaluacionSegundos));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_fin.Token)) await InvokeAsync(() =>
+            {
+                if (_estado is not null) { _estado = Consultas.Reevaluar(_estado); StateHasChanged(); }
+            });
+        }
+        catch (OperationCanceledException) when (_fin.IsCancellationRequested) { }
+    }
+    private static string Fecha(DateTime? fecha) => fecha?.ToString("yyyy-MM-dd HH:mm:ss 'UTC'") ?? "Sin evidencia";
+    public async ValueTask DisposeAsync()
+    {
+        await _fin.CancelAsync(); if (_carga is not null) await _carga.CancelAsync();
+        if (_reloj is not null) await _reloj;
+        _carga?.Dispose(); _fin.Dispose();
+    }
+}

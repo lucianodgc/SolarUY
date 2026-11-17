@@ -37,10 +37,14 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IPanelRepository, PanelRepository>();
+        services.AddScoped<SolarUY.Application.Paneles.IPanelRepository, PanelRepository>();
         services.AddSingleton<IInversorInventarioRepository, InversorInventarioRepository>();
+        services.AddScoped<IIntentoOrdenInversorRepository, IntentoOrdenInversorRepository>();
         services.AddScoped<IHistoricoGeneracionRepository, HistoricoGeneracionRepository>();
         services.AddScoped<IRecoleccionLecturasRepository, RecoleccionLecturasRepository>();
         services.AddScoped<IMonitoreoRepository, MonitoreoRepository>();
+        services.AddScoped<SolarUY.Application.Salud.ISaludPanelRepository, SaludPanelRepository>();
+        services.AddScoped<SolarUY.Application.Salud.IObservacionSaludRepository, ObservacionSaludRepository>();
         services.AddScoped<ITareaMantenimientoRepository, TareaMantenimientoRepository>();
         services.AddScoped<INodoRepository, NodoRepository>();
 
@@ -55,7 +59,10 @@ public static class DependencyInjection
 
         services.AddOptions<InversorTcpOptions>()
             .Configure(options => InversorTcpOptions.Cargar(configuration, options))
-            .Validate(options => IPAddress.TryParse(options.Host, out _), "InversorTcp:Host debe ser una dirección IP válida.")
+            .Validate(options => IPAddress.TryParse(options.Host, out _)
+                || (!string.IsNullOrWhiteSpace(options.Host)
+                    && Uri.CheckHostName(options.Host) != UriHostNameType.Unknown),
+                "InversorTcp:Host debe ser una dirección IP o un nombre de host válido.")
             .Validate(options => options.Port is > 0 and <= 65535, "InversorTcp:Port debe estar entre 1 y 65535.")
             .Validate(options => options.TimeoutSeconds is > 0 and <= 30, "InversorTcp:TimeoutSeconds debe estar entre 1 y 30.");
 

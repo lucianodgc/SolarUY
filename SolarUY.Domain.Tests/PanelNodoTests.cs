@@ -65,5 +65,31 @@ public sealed class PanelNodoTests
         Assert.Throws<ArgumentException>(() => new Panel(nodo, "Serie", "Marca", "Modelo", 450, default, EstadoPanel.Activo));
         Assert.Throws<ArgumentException>(() => new Panel(nodo, "Serie", "Marca", "Modelo", 450, DateTime.SpecifyKind(fecha, DateTimeKind.Unspecified), EstadoPanel.Activo));
         Assert.Throws<ArgumentOutOfRangeException>(() => new Panel(nodo, "Serie", "Marca", "Modelo", 450, fecha, (EstadoPanel)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new Panel(nodo, "Serie", "Marca", "Modelo", 0, fecha, EstadoPanel.Activo));
+    }
+
+    [Fact]
+    public void Panel_ActualizaTrasladaYDaDeBajaSinPerderIdentidad()
+    {
+        var origen = CrearNodo();
+        var destino = new Nodo(origen.Parque, "Nodo destino", "Sur", 2);
+        var panel = new Panel(origen, "Serie", "Marca", "Modelo", 450, DateTime.UtcNow, EstadoPanel.Activo);
+        var id = panel.Id;
+        panel.Actualizar("Serie 2", "Marca 2", "Modelo 2", 500, DateTime.UtcNow, EstadoPanel.Falla);
+        panel.TrasladarANodo(destino);
+        panel.DarDeBaja();
+        Assert.Equal(id, panel.Id);
+        Assert.Equal(destino.Id, panel.NodoId);
+        Assert.Equal(EstadoPanel.Falla, panel.Estado);
+        Assert.True(panel.EstaDadoDeBaja);
+        Assert.Throws<InvalidOperationException>(() => panel.TrasladarANodo(origen));
+    }
+
+    [Fact]
+    public void Nodo_RechazaCantidadSuperiorALaCapacidad()
+    {
+        var nodo = CrearNodo();
+        nodo.ValidarCapacidadPaneles(4);
+        Assert.Throws<InvalidOperationException>(() => nodo.ValidarCapacidadPaneles(5));
     }
 }

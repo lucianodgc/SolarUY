@@ -16,6 +16,7 @@ public sealed class PanelConfiguration : IEntityTypeConfiguration<Panel>
         builder.Property(panel => panel.Modelo).IsRequired();
         builder.Property(panel => panel.FechaInstalacion)
             .HasConversion(value => value, value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
+        builder.Property(panel => panel.EstaDadoDeBaja).HasDefaultValue(false);
         builder.HasOne(panel => panel.Nodo).WithMany().HasForeignKey(panel => panel.NodoId).OnDelete(DeleteBehavior.Restrict);
     }
 }

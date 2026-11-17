@@ -1,0 +1,36 @@
+@page "/paneles/alta"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+@inject SolarUY.Application.Paneles.IPanelService Service
+@inject NavigationManager Navigation
+
+<PageTitle>Registrar panel</PageTitle>
+<PageHeader Title="Registrar panel" Section="Gestión del parque" Description="Ingresá los datos y el identificador del nodo de destino."></PageHeader>
+@if (_error is not null) { <p role="alert" class="alert alert-danger">@_error</p> }
+<RadzenTemplateForm TItem="SolarUY.Application.Paneles.CrearPanelDto" Data="_modelo" Submit="GuardarAsync"><div class="surface">
+    <RadzenTextBox @bind-Value="_nodoId" Placeholder="Id del nodo" Style="width:100%" />
+    <RadzenTextBox @bind-Value="_modelo.NumeroSerie" Placeholder="Número de serie" Style="width:100%" />
+    <RadzenTextBox @bind-Value="_modelo.Marca" Placeholder="Marca" Style="width:100%" />
+    <RadzenTextBox @bind-Value="_modelo.Modelo" Placeholder="Modelo" Style="width:100%" />
+    <RadzenNumeric @bind-Value="_modelo.PotenciaNominalW" Placeholder="Potencia nominal (W)" Style="width:100%" />
+    <RadzenDatePicker @bind-Value="_modelo.FechaInstalacion" DateFormat="yyyy-MM-dd" Style="width:100%" />
+    <RadzenDropDown @bind-Value="_modelo.Estado" Data="_estados" Style="width:100%" />
+    <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" IsBusy="_ocupado" Disabled="_ocupado" /> <a class="btn btn-light" href="/paneles">Cancelar</a>
+</div></RadzenTemplateForm>
+
+@code {
+    private readonly SolarUY.Application.Paneles.CrearPanelDto _modelo = new() { FechaInstalacion = DateTime.UtcNow, Estado = EstadoPanel.Activo };
+    private readonly EstadoPanel[] _estados = [EstadoPanel.Activo, EstadoPanel.Inactivo, EstadoPanel.Falla];
+    private string _nodoId = string.Empty;
+    private string? _error;
+    private bool _ocupado;
+    private async Task GuardarAsync(SolarUY.Application.Paneles.CrearPanelDto modelo)
+    {
+        if (_ocupado) return;
+        if (!Guid.TryParse(_nodoId, out var nodoId)) { _error = "El identificador del nodo no es válido."; return; }
+        _ocupado = true; _error = null; modelo.NodoId = nodoId; modelo.FechaInstalacion = DateTime.SpecifyKind(modelo.FechaInstalacion, DateTimeKind.Utc);
+        try { await Service.CrearAsync(modelo); Navigation.NavigateTo("/paneles"); }
+        catch (Exception exception) { _error = exception.Message; }
+        finally { _ocupado = false; }
+    }
+}
