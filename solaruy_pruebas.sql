@@ -1,150 +1,24 @@
--- SolarUY: base de pruebas para MariaDB 11.8.
--- IMPORTAR ESTE ARCHIVO REEMPLAZA LOS DATOS ACTUALES DE SOLARUY EN LA BASE SELECCIONADA.
--- Seleccionar primero una base de desarrollo; detener SolarUY antes de importar.
--- Incluye estructura y migraciones vigentes al 05/11/2026. No contiene contraseñas.
--- No modifica Keycloak. Las tareas se asignan al tecnico.test del entorno local.
--- En otro entorno, ajustar @TecnicoDemoId al ID real del técnico.
--- Datos: 2 parques, 4 nodos, 4 inversores, 12 paneles, 3 tareas y 0 lecturas.
--- Los cambios de estructura no son transaccionales en MariaDB.
-
-SET @DemoForeignKeyChecks = @@FOREIGN_KEY_CHECKS;
-SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS CursoresMonitoreo;
-DROP TABLE IF EXISTS AvisosMonitoreo;
-DROP TABLE IF EXISTS SecuenciaMonitoreo;
-DROP TABLE IF EXISTS LecturasPanel;
-DROP TABLE IF EXISTS TareasMantenimiento;
-DROP TABLE IF EXISTS Inversores;
-DROP TABLE IF EXISTS Paneles;
-DROP TABLE IF EXISTS Nodos;
-DROP TABLE IF EXISTS ParquesSolares;
-DROP TABLE IF EXISTS __EFMigrationsHistory;
-
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*M!100616 SET @OLD_NOTE_VERBOSITY=@@NOTE_VERBOSITY, NOTE_VERBOSITY=0 */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Inversores` (
-  `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `NodoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `Marca` longtext NOT NULL,
-  `Modelo` longtext NOT NULL,
-  `PotenciaNominalKW` decimal(65,30) NOT NULL,
-  `Estado` int(11) NOT NULL,
-  `VolcadoRedActivo` tinyint(1) NOT NULL,
-  PRIMARY KEY (`Id`),
-  UNIQUE KEY `IX_Inversores_NodoId` (`NodoId`),
-  CONSTRAINT `FK_Inversores_Nodos_NodoId` FOREIGN KEY (`NodoId`) REFERENCES `Nodos` (`Id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `LecturasPanel` (
-  `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `PanelId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `FechaHora` datetime(6) NOT NULL,
-  `PotenciaGeneradaW` decimal(18,6) NOT NULL,
-  `EstadoSalud` int(11) NOT NULL,
-  `NodoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
-  PRIMARY KEY (`Id`),
-  UNIQUE KEY `IX_LecturasPanel_PanelId_FechaHora` (`PanelId`,`FechaHora`),
-  KEY `IX_LecturasPanel_PanelId_FechaHora_PotenciaGeneradaW` (`PanelId`,`FechaHora`,`PotenciaGeneradaW`),
-  KEY `IX_LecturasPanel_NodoId_FechaHora` (`NodoId`,`FechaHora`),
-  KEY `IX_LecturasPanel_PanelId_FechaHora_NodoId_PotenciaGeneradaW` (`PanelId`,`FechaHora`,`NodoId`,`PotenciaGeneradaW`),
-  CONSTRAINT `FK_LecturasPanel_Nodos_NodoId` FOREIGN KEY (`NodoId`) REFERENCES `Nodos` (`Id`),
-  CONSTRAINT `FK_LecturasPanel_Paneles_PanelId` FOREIGN KEY (`PanelId`) REFERENCES `Paneles` (`Id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Nodos` (
-  `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `ParqueId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `Nombre` longtext NOT NULL,
-  `UbicacionEnParque` longtext NOT NULL,
-  `CantidadPanelesPrevista` int(11) DEFAULT NULL,
-  PRIMARY KEY (`Id`),
-  KEY `IX_Nodos_ParqueId` (`ParqueId`),
-  CONSTRAINT `FK_Nodos_ParquesSolares_ParqueId` FOREIGN KEY (`ParqueId`) REFERENCES `ParquesSolares` (`Id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Paneles` (
-  `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `NodoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `NumeroSerie` varchar(255) NOT NULL,
-  `Marca` longtext NOT NULL,
-  `Modelo` longtext NOT NULL,
-  `PotenciaNominalW` decimal(65,30) NOT NULL,
-  `FechaInstalacion` datetime(6) NOT NULL,
-  `Estado` int(11) NOT NULL,
-  PRIMARY KEY (`Id`),
-  UNIQUE KEY `IX_Paneles_NumeroSerie` (`NumeroSerie`),
-  KEY `IX_Paneles_NodoId` (`NodoId`),
-  CONSTRAINT `FK_Paneles_Nodos_NodoId` FOREIGN KEY (`NodoId`) REFERENCES `Nodos` (`Id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `ParquesSolares` (
-  `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `Nombre` varchar(100) NOT NULL,
-  `Ubicacion` varchar(200) NOT NULL,
-  `CapacidadEstimadaMW` decimal(65,30) DEFAULT NULL,
-  `FechaCreacion` datetime(6) NOT NULL,
-  PRIMARY KEY (`Id`),
-  UNIQUE KEY `IX_ParquesSolares_Nombre` (`Nombre`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `TareasMantenimiento` (
-  `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `PanelId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `Tipo` longtext NOT NULL,
-  `Descripcion` longtext NOT NULL,
-  `FechaProgramada` datetime(6) NOT NULL,
-  `FechaRealizacion` datetime(6) DEFAULT NULL,
-  `Estado` int(11) NOT NULL,
-  `ResponsableId` longtext NOT NULL,
-  PRIMARY KEY (`Id`),
-  KEY `IX_TareasMantenimiento_PanelId` (`PanelId`),
-  CONSTRAINT `FK_TareasMantenimiento_Paneles_PanelId` FOREIGN KEY (`PanelId`) REFERENCES `Paneles` (`Id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `__EFMigrationsHistory` (
-  `MigrationId` varchar(150) NOT NULL,
-  `ProductVersion` varchar(32) NOT NULL,
-  PRIMARY KEY (`MigrationId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
-
+-- SolarUY: datos de demostración para una base de desarrollo con migraciones aplicadas.
+-- REEMPLAZA LOS DATOS ACTUALES. Detener todas las webs y recolectores antes de importar.
+-- Iniciar-Demo aplica primero las migraciones. Este archivo no recrea tablas ni modifica
+-- __EFMigrationsHistory. El borrado y la carga son transaccionales; no deshabilitar las FK.
+-- Incluye 2 parques, 4 nodos, 4 inversores, 12 paneles, 3 tareas y ninguna lectura.
+-- No modifica Keycloak; @TecnicoDemoId permite elegir un técnico real del entorno.
 
 SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 1;
+START TRANSACTION;
 
--- Datos de ejemplo. Fechas expresadas en UTC.
+DELETE FROM IntentosOrdenInversor;
+DELETE FROM AlertasPanel;
+DELETE FROM CambiosEstadoSaludPanel;
+DELETE FROM SaludPaneles;
+DELETE FROM LecturasPanel;
+DELETE FROM TareasMantenimiento;
+DELETE FROM Paneles;
+DELETE FROM Inversores;
+DELETE FROM Nodos;
+DELETE FROM ParquesSolares;
+
 SET @TecnicoDemoId = COALESCE(@TecnicoDemoId, '05f692fb-c636-4164-a7eb-d1fb640d7415');
 START TRANSACTION;
 
@@ -185,18 +59,5 @@ INSERT INTO `TareasMantenimiento` (`Id`, `PanelId`, `Tipo`, `Descripcion`, `Fech
 ('4498bb85-96cc-437e-bca7-57e7a4638382', '65656fe7-6366-424e-ba27-48c8380df028', 'Inspección', 'Revisar el panel inactivo antes de volver a utilizarlo.', UTC_TIMESTAMP(6) + INTERVAL 2 DAY, NULL, 0, @TecnicoDemoId),
 ('3536cb41-6b0a-4a3a-9e33-a0fc7178a7ad', '8338a89b-5873-407c-bbb6-0747f8e90077', 'Reparación', 'Revisar la falla simulada y sus conexiones.', UTC_TIMESTAMP(6) - INTERVAL 1 DAY, NULL, 1, @TecnicoDemoId);
 
-INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES
-('20261008040649_AddParqueSolar', '8.0.31'),
-('20261015023351_AddMantenimientoPaneles', '8.0.31'),
-('20261022130747_AddLecturaPanel', '8.0.31'),
-('20261028235200_AddInversorNodo', '8.0.31'),
-('20261029023745_AddRecoleccionPeriodica', '8.0.31'),
-('20261029120000_AddDistribucionMonitoreo', '8.0.31'),
-('20261029130000_PreserveUnknownHistoricalNodes', '8.0.31'),
-('20261029140000_AddHistoricalNodeCoverage', '8.0.31'),
-('20261105010000_RemoveDistribucionMonitoreo', '8.0.31');
-
 COMMIT;
--- LecturasPanel queda vacía: no se insertan mediciones.
-
-SET FOREIGN_KEY_CHECKS = @DemoForeignKeyChecks;
+-- No se inventan mediciones: la recolección generará las nuevas lecturas.

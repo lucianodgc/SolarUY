@@ -14,6 +14,8 @@ Por pedido del usuario se simplifica la ejecución a una instancia. Este alcance
 
 Los 2 segundos son la frecuencia configurada, no una garantía de latencia: la comunicación TCP y la disponibilidad del servidor pueden demorarlo.
 
+Al suscribirse o regresar a un parque autorizado, el hub entrega al cliente la última muestra compartida si no supera tres intervalos de telemetría y no tiene fecha futura. La caché es local a la instancia y solo la alimenta el worker; no se consulta de nuevo el simulador por suscriptor. Sin muestra vigente, la interfaz indica que espera la primera muestra. Una consulta inicial del histórico no sobrescribe telemetría recibida mientras estaba pendiente.
+
 ## Persistencia
 
 RecoleccionLecturasRepository mantiene la transacción del lote, la validación del nodo histórico, la exclusión del recolector y la prevención de duplicados. No escribe avisos, cursores ni secuencias técnicas.

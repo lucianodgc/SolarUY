@@ -22,7 +22,7 @@ internal static class ReporteCsv
             cancellationToken.ThrowIfCancellationRequested();
             EscribirFila(texto, ["Generacion", .. comunes, FormatoReporte.FechaLocal(punto.Intervalo.InicioUtc),
                 FormatoReporte.FechaLocal(punto.Intervalo.FinUtc), Numero(punto.EnergiaKWh), punto.Cobertura.ToString(),
-                .. new string?[9]]);
+                null, reporte.Filtro.PanelId?.ToString("D"), reporte.Panel, .. new string?[6]]);
         }
         foreach (var tarea in reporte.Mantenimientos)
         {

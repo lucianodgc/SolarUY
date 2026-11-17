@@ -21,15 +21,14 @@ public sealed class ReporteHistoricoService : IReporteHistoricoService
     public async Task<IReadOnlyList<OpcionHistoricoDto>> ListarOpcionesAsync(CancellationToken cancellationToken = default)
     {
         await AutorizarAsync(cancellationToken);
-        return (await _historico.ListarOpcionesAsync(cancellationToken))
-            .Where(opcion => opcion.Tipo is TipoObjetivoHistorico.Parque or TipoObjetivoHistorico.Nodo).ToArray();
+        return await _historico.ListarOpcionesAsync(cancellationToken);
     }
 
     public async Task<ResultadoReporteDto> ConsultarAsync(FiltroReporteDto filtro, CancellationToken cancellationToken = default)
     {
         await AutorizarAsync(cancellationToken);
         ArgumentNullException.ThrowIfNull(filtro);
-        if (filtro.ParqueId == Guid.Empty || filtro.NodoId == Guid.Empty || !Enum.IsDefined(filtro.Periodo))
+        if (filtro.ParqueId == Guid.Empty || filtro.NodoId == Guid.Empty || filtro.PanelId == Guid.Empty || !Enum.IsDefined(filtro.Periodo))
             throw new ArgumentException("Seleccioná un parque, nodo y período válidos.");
         var opciones = await _historico.ListarOpcionesAsync(cancellationToken);
         var parque = opciones.SingleOrDefault(o => o.Tipo == TipoObjetivoHistorico.Parque && o.Id == filtro.ParqueId)
@@ -42,13 +41,22 @@ public sealed class ReporteHistoricoService : IReporteHistoricoService
             if (nodo.ParqueId != filtro.ParqueId)
                 throw new ArgumentException("El nodo seleccionado no pertenece al parque.");
         }
-        var generacion = await _historico.ConsultarAsync(new(nodo is null ? TipoObjetivoHistorico.Parque : TipoObjetivoHistorico.Nodo,
-            nodo?.Id ?? parque.Id, filtro.Periodo, filtro.InicioLocal, filtro.FinLocal), cancellationToken);
+        OpcionHistoricoDto? panel = null;
+        if (filtro.PanelId is { } panelId)
+        {
+            panel = opciones.SingleOrDefault(o => o.Tipo == TipoObjetivoHistorico.Panel && o.Id == panelId)
+                ?? throw new KeyNotFoundException("El panel seleccionado no existe.");
+            if (panel.ParqueId != filtro.ParqueId || (filtro.NodoId.HasValue && panel.NodoId != filtro.NodoId))
+                throw new ArgumentException("El panel no pertenece al parque o nodo seleccionado.");
+        }
+        var tipo = panel is not null ? TipoObjetivoHistorico.Panel : nodo is not null ? TipoObjetivoHistorico.Nodo : TipoObjetivoHistorico.Parque;
+        var generacion = await _historico.ConsultarAsync(new(tipo,
+            panel?.Id ?? nodo?.Id ?? parque.Id, filtro.Periodo, filtro.InicioLocal, filtro.FinLocal), cancellationToken);
         var consulta = generacion.Consulta;
         var mantenimientos = await _mantenimientos.ListarRealizadosParaReporteAsync(
-            new(filtro.ParqueId, filtro.NodoId, consulta.InicioUtc, consulta.FinUtc), cancellationToken);
+            new(filtro.ParqueId, filtro.NodoId, consulta.InicioUtc, consulta.FinUtc, filtro.PanelId), cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
-        return new(filtro, parque.Etiqueta, nodo?.Etiqueta, generacion, mantenimientos);
+        return new(filtro, parque.Etiqueta, nodo?.Etiqueta, generacion, mantenimientos, panel?.Etiqueta);
     }
 
     public async Task<ArchivoReporteCsvDto> ExportarCsvAsync(ResultadoReporteDto reporte,
@@ -57,8 +65,8 @@ public sealed class ReporteHistoricoService : IReporteHistoricoService
         await AutorizarAsync(cancellationToken);
         ArgumentNullException.ThrowIfNull(reporte);
         var consulta = reporte.Generacion.Consulta;
-        var tipo = reporte.Filtro.NodoId.HasValue ? TipoObjetivoHistorico.Nodo : TipoObjetivoHistorico.Parque;
-        if (consulta.Tipo != tipo || consulta.ObjetivoId != (reporte.Filtro.NodoId ?? reporte.Filtro.ParqueId)
+        var tipo = reporte.Filtro.PanelId.HasValue ? TipoObjetivoHistorico.Panel : reporte.Filtro.NodoId.HasValue ? TipoObjetivoHistorico.Nodo : TipoObjetivoHistorico.Parque;
+        if (consulta.Tipo != tipo || consulta.ObjetivoId != (reporte.Filtro.PanelId ?? reporte.Filtro.NodoId ?? reporte.Filtro.ParqueId)
             || consulta.InicioUtc >= consulta.FinUtc || string.IsNullOrWhiteSpace(reporte.Parque))
             throw new ArgumentException("El resultado no corresponde a un reporte válido.");
         return ReporteCsv.Crear(reporte, cancellationToken);

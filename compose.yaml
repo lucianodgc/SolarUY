@@ -85,7 +85,8 @@ services:
       Keycloak__Directory__BaseUrl: http://keycloak:8080
       Keycloak__Directory__ClientSecret: ${SOLARUY_DIRECTORY_CLIENT_SECRET:-}
       InversorTcp__Host: simulador
-      Chatbot__Ollama__Endpoint: http://host.docker.internal:11434/
+      Chatbot__Ollama__Endpoint: ${SOLARUY_OLLAMA_ENDPOINT:-http://host.docker.internal:11434/}
+      Chatbot__Ollama__PermitirRemoto: ${SOLARUY_OLLAMA_PERMITIR_REMOTO:-false}
       Chatbot__Ollama__PermitirHostDocker: "true"
       ReverseProxy__Direccion: 172.29.0.10
       RecoleccionLecturas__Habilitada: "true"

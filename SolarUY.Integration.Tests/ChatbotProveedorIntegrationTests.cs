@@ -37,6 +37,32 @@ public sealed class ChatbotProveedorIntegrationTests
         else Assert.Throws<ArgumentException>(() => new OllamaChatClient(opciones));
     }
 
+    [Theory]
+    [InlineData("http://192.168.1.50:11434/", "false", false)]
+    [InlineData("http://192.168.1.50:11434/", "true", true)]
+    [InlineData("http://100.90.0.20:11434/", "true", true)]
+    [InlineData("https://ollama.ejemplo.com/", "true", true)]
+    [InlineData("https://usuario:clave@ollama.ejemplo.com/", "true", false)]
+    [InlineData("http://192.168.1.50:11434/api/chat", "true", false)]
+    [InlineData("http://192.168.1.50:11434/?token=secreto", "true", false)]
+    [InlineData("http://192.168.1.50:11434/#fragmento", "true", false)]
+    [InlineData("ftp://192.168.1.50/", "true", false)]
+    public void OllamaRemotoExigeHabilitacionYUrlBaseValida(string endpoint, string permitir, bool valido)
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Chatbot:Ollama:Endpoint"] = endpoint,
+            ["Chatbot:Ollama:PermitirRemoto"] = permitir
+        }).Build();
+        var servicios = new ServiceCollection();
+        servicios.AddChatbotInfrastructure(configuration);
+        using var provider = servicios.BuildServiceProvider();
+        var opciones = provider.GetRequiredService<IOptions<ChatbotOptions>>().Value;
+        Assert.Equal(valido, opciones.TieneOpcionesValidas);
+        if (valido) new OllamaChatClient(opciones).Dispose();
+        else Assert.Throws<ArgumentException>(() => new OllamaChatClient(opciones));
+    }
+
     [Fact]
     public async Task Ollama_AdaptadorNativoInvocaMcpSinClaveDeOpenAiNiCredencialesEnElPayload()
     {

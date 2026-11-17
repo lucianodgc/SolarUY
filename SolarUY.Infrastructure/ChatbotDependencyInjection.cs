@@ -16,6 +16,8 @@ public static class ChatbotDependencyInjection
             options.EndpointOllama = configuration["Chatbot:Ollama:Endpoint"] ?? options.EndpointOllama;
             options.PermitirHostDocker = bool.TryParse(configuration["Chatbot:Ollama:PermitirHostDocker"], out var permitirDocker)
                 && permitirDocker;
+            options.PermitirRemoto = bool.TryParse(configuration["Chatbot:Ollama:PermitirRemoto"], out var permitirRemoto)
+                && permitirRemoto;
             if (configuration["Chatbot:Ollama:Contexto"] is { } contexto)
                 options.ContextoOllama = int.TryParse(contexto, out var tokens) ? tokens : 0;
             options.TransporteMcp = configuration["Chatbot:Mcp:Transporte"] ?? options.TransporteMcp;

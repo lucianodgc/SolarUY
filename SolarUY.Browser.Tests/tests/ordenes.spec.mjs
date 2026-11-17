@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-const region = page => page.getByRole('region', { name: 'Órdenes al inversor' });
+const region = page => page.locator('main');
 async function control(accion) {
   const id = randomUUID();
   await fs.writeFile('.runtime/ordenes/control.json', JSON.stringify({ id, accion }));
@@ -19,17 +19,19 @@ async function abrir(page, instancia, datos, cookie = datos.cookie) {
   ]);
   await expect.poll(async () => (await page.request.get(`${datos.proxy}/lib/signalr/8.0.17/signalr.min.js`)).headers()['x-solaruy-instancia']).toBe(`req17-${instancia}`);
   await expect.poll(async () => {
-    const respuesta = await page.goto(`/monitoreo?parque=${datos.parque}`);
+    const respuesta = await page.goto('/simulador');
     return respuesta.headers()['x-solaruy-instancia'];
   }).toBe(`req17-${instancia}`);
-  await expect(region(page).getByRole('heading', { name: 'Operación del inversor' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Simulador de inversor', exact: true })).toBeVisible();
+  await page.locator('[name="ParqueSimulado"]').click();
+  await page.getByRole('option', { name: 'Parque histórico', exact: true }).click();
 }
 async function confirmar(page, boton, destino) {
   await boton.click();
   const dialogo = page.getByRole('dialog');
   await expect(dialogo).toContainText(destino);
   await dialogo.getByRole('button', { name: 'Confirmar', exact: true }).click();
-  await expect(region(page).getByRole('status')).toContainText('Confirmada');
+  await expect(region(page).getByRole('status').filter({ hasText: 'Intento' })).toContainText('Confirmada');
 }
 test('órdenes auditadas, observación A/B, roles, simulador y relevo detrás de Nginx', async ({ page, browser }) => {
   let datos;
@@ -50,28 +52,28 @@ test('órdenes auditadas, observación A/B, roles, simulador y relevo detrás de
   try {
     await abrir(page, 'a', datos); await abrir(b, 'b', datos);
     await expect(fila(page).getByRole('cell', { name: 'Activo', exact: true })).toBeVisible();
-    await fila(page).getByRole('button', { name: 'Desactivar panel', exact: true }).evaluate(el => { el.click(); el.click(); });
+    await fila(page).getByRole('button', { name: 'Desactivar', exact: true }).evaluate(el => { el.click(); el.click(); });
     await expect(page.getByRole('dialog')).toHaveCount(1);
     await expect(page.getByRole('dialog')).toContainText(datos.panel);
     await page.getByRole('dialog').getByRole('button', { name: 'Cancelar', exact: true }).click();
     expect((await control('auditoria')).cantidad).toBe(0);
-    await confirmar(page, fila(page).getByRole('button', { name: 'Desactivar panel', exact: true }), datos.panel);
+    await confirmar(page, fila(page).getByRole('button', { name: 'Desactivar', exact: true }), datos.panel);
     for (const p of [page, b]) await expect(fila(p).getByRole('cell', { name: 'Inactivo', exact: true })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Monitoreo de generación' }).getByRole('row')
       .filter({ has: page.getByRole('cell', { name: 'A', exact: true }) }).first()).toContainText('0,00 W');
-    await confirmar(b, fila(b).getByRole('button', { name: 'Activar panel', exact: true }), datos.panel);
+    await confirmar(b, fila(b).getByRole('button', { name: 'Activar', exact: true }), datos.panel);
     await expect(fila(page).getByRole('cell', { name: 'Activo', exact: true })).toBeVisible();
-    await confirmar(page, region(page).getByRole('button', { name: 'Activar volcado global', exact: true }), 'alcance global');
-    await expect(region(b).getByText(/Volcado global: Activo/).first()).toBeVisible();
-    await confirmar(b, region(b).getByRole('button', { name: 'Desactivar volcado global', exact: true }), 'alcance global');
-    await expect(region(page).getByText(/Volcado global: Inactivo/).first()).toBeVisible();
+    await confirmar(page, region(page).getByRole('button', { name: 'Activar volcado a red', exact: true }), 'alcance global');
+    await expect(region(b).locator('.metric-card').filter({ hasText: 'Volcado a la red' }).getByText('Activo', { exact: true })).toBeVisible();
+    await confirmar(b, region(b).getByRole('button', { name: 'Desactivar volcado a red', exact: true }), 'alcance global');
+    await expect(region(page).locator('.metric-card').filter({ hasText: 'Volcado a la red' }).getByText('Inactivo', { exact: true })).toBeVisible();
     const auditoria = await control('auditoria'); expect(auditoria.cantidad).toBe(4); expect(auditoria.confirmadas).toBe(4);
     expect(auditoria.actores).toEqual(['prueba-nginx']);
-    await page.getByTestId('selector-parque').click();
+    await page.locator('[name="ParqueSimulado"]').click();
     await page.getByRole('option', { name: 'Otro parque', exact: true }).click();
-    await expect(region(page).getByRole('status')).toHaveCount(0);
+    await expect(region(page).getByRole('status').filter({ hasText: 'Intento' })).toHaveCount(0);
     await expect(region(page).getByRole('cell').filter({ hasText: 'D' }).first()).toBeVisible();
-    await page.getByTestId('selector-parque').click();
+    await page.locator('[name="ParqueSimulado"]').click();
     await page.getByRole('option', { name: 'Parque histórico', exact: true }).click();
     const anteriores = conexiones;
     await page.evaluate(() => window.__socketsOrdenes.filter(s => s.url.includes('/hubs/monitoreo')).forEach(s => s.close()));
@@ -80,7 +82,7 @@ test('órdenes auditadas, observación A/B, roles, simulador y relevo detrás de
     for (const cookie of [datos.consulta, datos.tecnico]) {
       const lectura = await browser.newContext(); const p = await lectura.newPage();
       await abrir(p, 'b', datos, cookie);
-      await expect(region(p).getByRole('button')).toHaveCount(0); await lectura.close();
+      await expect(region(p).getByRole('button', { name: /^(Activar|Desactivar|Apagar|Prender)/ })).toHaveCount(0); await lectura.close();
     }
     await page.goto('/simulador');
     await expect(page.getByRole('heading', { name: 'Simulador de inversor', exact: true })).toBeVisible();
@@ -90,18 +92,18 @@ test('órdenes auditadas, observación A/B, roles, simulador y relevo detrás de
     expect((await control('auditoria')).cantidad).toBe(4);
     await activarVolcado.click(); await page.getByRole('dialog').getByRole('button', { name: 'Confirmar', exact: true }).click();
     await expect(page.getByRole('status').filter({ hasText: 'Intento' })).toContainText('Confirmada');
-    await expect(region(b).getByText(/Volcado global: Activo/).first()).toBeVisible();
-    await page.goto(`/monitoreo?parque=${datos.parque}`);
-    await expect(region(page).getByRole('button', { name: 'Desactivar volcado global', exact: true })).toBeEnabled();
+    await expect(region(b).locator('.metric-card').filter({ hasText: 'Volcado a la red' }).getByText('Activo', { exact: true })).toBeVisible();
+    await page.goto('/simulador');
+    await expect(region(page).getByRole('button', { name: 'Desactivar volcado a red', exact: true })).toBeEnabled();
     const recarga = page.waitForEvent('framenavigated', { predicate: frame => frame === page.mainFrame(), timeout: 30000 });
     await control('relevar');
     await recarga;
-    await expect(region(page).getByRole('heading', { name: 'Operación del inversor' })).toBeVisible();
-    await confirmar(page, region(page).getByRole('button', { name: 'Desactivar volcado global', exact: true }), 'alcance global');
+    await expect(page.getByRole('heading', { name: 'Simulador de inversor', exact: true })).toBeVisible();
+    await confirmar(page, region(page).getByRole('button', { name: 'Desactivar volcado a red', exact: true }), 'alcance global');
     await control('restaurar');
     await abrir(page, 'a', datos); await abrir(b, 'b', datos);
-    await region(page).getByRole('button', { name: 'Activar volcado global', exact: true }).click();
-    await region(b).getByRole('button', { name: 'Desactivar volcado global', exact: true }).click();
+    await region(page).getByRole('button', { name: 'Activar volcado a red', exact: true }).click();
+    await region(b).getByRole('button', { name: 'Activar volcado a red', exact: true }).click();
     await Promise.all([
       page.getByRole('dialog').getByRole('button', { name: 'Confirmar', exact: true }).click(),
       b.getByRole('dialog').getByRole('button', { name: 'Confirmar', exact: true }).click()

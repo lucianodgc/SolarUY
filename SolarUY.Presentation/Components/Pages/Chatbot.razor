@@ -28,9 +28,10 @@
     <div class="chat-input">
         <label for="pregunta-chat">Tu pregunta</label>
         <RadzenTextArea id="pregunta-chat" Name="PreguntaChat" @bind-Value="_pregunta" Rows="3"
+            @oninput="@(args => _pregunta = args.Value?.ToString() ?? string.Empty)"
             Disabled="_ocupado" Style="width:100%" aria-label="Pregunta al asistente" />
         <div class="action-buttons">
-            <RadzenButton Text="Enviar pregunta" Icon="send" Click="EnviarAsync" Disabled="@(_ocupado || string.IsNullOrWhiteSpace(_pregunta))" />
+            <RadzenButton Text="Enviar pregunta" Icon="send" ButtonStyle="ButtonStyle.Primary" Click="EnviarAsync" Disabled="@(_ocupado || string.IsNullOrWhiteSpace(_pregunta))" />
             <RadzenButton Text="Nueva conversación" Icon="restart_alt" Click="ReiniciarAsync" Disabled="_ocupado" ButtonStyle="ButtonStyle.Light" />
         </div>
     </div>

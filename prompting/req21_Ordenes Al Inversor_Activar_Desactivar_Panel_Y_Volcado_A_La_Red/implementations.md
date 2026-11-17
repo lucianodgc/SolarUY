@@ -12,7 +12,7 @@ D1–D4 están documentadas en `specs.md`. Las cuatro órdenes usan el mismo `II
 - Infrastructure: `IntentoOrdenInversorRepository`, configuración EF y migración `20261117025007_AddAuditoriaOrdenesInversor`. La tabla nueva no tiene cascadas ni FK hacia inventario o usuarios: conserva identificadores y nombre observado aunque luego se elimine o traslade el destino. No reconstruye intentos anteriores.
 - TCP: se exige una respuesta con `exito` booleano y resultado `true` para confirmar. Resultado falso/rechazo explícito se separan de respuestas inválidas, pérdida de conexión, timeout y cancelación después de posible envío.
 - Simulador: telemetría y adquisición histórica comparten la condición de generación. Desactivar conserva 0 W tras sincronizar el mismo inventario; una falla explícita sigue siendo falla. Se mantienen seis decimales en lecturas históricas y dos en telemetría. Activar no elimina fallas, no cambia el estado administrativo ni garantiza generación.
-- Presentation: `OrdenesInversor.razor` en Monitoreo, confirmaciones Radzen con destino, controles de Administrador, resultados con identidad del intento y observación operacional fechada. Las muestras vencidas se muestran sin evidencia vigente; no se deduce habilitación de la potencia o auditoría. Consume la telemetría existente, sin nuevas adquisiciones, puntos sintéticos ni métodos de escritura en el hub.
+- Presentation: los controles auditados y sus confirmaciones se concentran en `SimuladorInversor.razor`. Se retira el componente duplicado `OrdenesInversor.razor`; Monitoreo conserva telemetría, salud y alertas y enlaza al Simulador. La autorización efectiva de Administrador y la auditoría permanecen en Application.
 - Simulador: sus controles de panel/volcado solicitan confirmación y muestran el resultado auditado. Los botones se habilitan después de conectar el circuito Blazor y se bloquean mientras una confirmación/orden está en curso.
 - Autenticación: `UsuarioActualDto.Sub` es compatible con lectores que usan `Id`; las órdenes no utilizan el fallback NameIdentifier. OIDC conserva el claim original mediante `MapInboundClaims=false`, y el servicio solo admite un sub inequívoco en identidades autenticadas.
 - Pruebas: integración con MariaDB/TCP, adaptación de la composición de pruebas existentes y suite Playwright aislada con Nginx/dos procesos. Las fixtures y rutas de control de pruebas no se incorporan a la aplicación productiva.
@@ -102,7 +102,7 @@ SolarUY.Infrastructure/Persistence/IntentoOrdenInversorConfiguration.cs
 SolarUY.Infrastructure/Persistence/IntentoOrdenInversorRepository.cs
 SolarUY.Integration.Tests/OrdenInversorIntegrationTests.cs
 SolarUY.Integration.Tests/OrdenNginxIntegrationTests.cs
-SolarUY.Presentation/Components/Shared/OrdenesInversor.razor
+SolarUY.Presentation/Components/Pages/SimuladorInversor.razor
 SolarUY.Presentation/Monitoreo/MensajeResultadoOrden.cs
 prompting/req21_Ordenes Al Inversor_Activar_Desactivar_Panel_Y_Volcado_A_La_Red/implementations.md
 SolarUY.Application/Abstractions/UsuarioActualDto.cs

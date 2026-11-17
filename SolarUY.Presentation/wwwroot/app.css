@@ -15,6 +15,21 @@ a { color: #236b4b; }
 .page-actions { display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
 .surface, .module-card { padding: 25px; background: #fff; border: 1px solid #e1e8e0; border-radius: 12px; box-shadow: 0 2px 3px #1f3c2b03; }
 .form-surface { max-width: 800px; }
+.reporte-periodo { margin-top: 32px; margin-bottom: 16px; }
+.form-stack { display: flex; flex-direction: column; gap: 20px; }
+.form-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.form-stack fieldset .form-field { margin-bottom: 20px; }
+.form-surface .rz-label, .mb-3 > .rz-label { display: block; margin-bottom: 8px; }
+.filter-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 20px; margin-bottom: 24px; }
+.filter-bar > label { display: flex; flex-direction: column; gap: 8px; flex: 1 1 220px; min-width: 0; }
+.filter-bar .rz-dropdown, .filter-bar .rz-datepicker { width: 100%; min-width: 0 !important; }
+.filter-toolbar .form-field { flex: 1 1 220px; }
+.filter-bar > .checkbox-field { flex-direction: row; align-items: center; align-self: center; }
+.surface + .surface { margin-top: 24px; }
+.surface > .action-buttons { margin-top: 20px; }
+.table .action-buttons { min-width: 150px; }
+.table td > .btn + .rz-button, .rz-button + .rz-button, .rz-button + .btn { margin-left: 8px; }
+.action-buttons > .rz-button, .action-buttons > .btn { margin-left: 0; }
 .filter-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .filter-toolbar { margin-bottom: 20px; }
 .filter-toolbar .rz-textbox { max-width: 100%; }

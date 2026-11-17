@@ -52,3 +52,7 @@ Los nombres de rol son exactamente `Administrador`, `Tecnico` y `Consulta`. La a
 - Pruebas de presentación/configuración de rutas para confirmar el acceso permitido y la denegación para cada rol.
 - Incluir casos de lectura de datos generales, escritura administrativa, órdenes al inversor y límites de acceso al mantenimiento.
 - No se prescribe una tecnología de pruebas nueva. Usar los proyectos y mecanismos de pruebas existentes.
+
+## Navegación y mantenimiento vigentes
+
+Inicio incluye accesos a parques, paneles, monitoreo, reportes, asistente, simulador y cuenta según sus roles. Mantenimiento solo se ofrece a Administrador/Tecnico. Altas y órdenes solo a Administrador; iniciar/completar mantenimiento exige rol Tecnico y coincidencia con ResponsableId, incluso si el usuario tiene además rol Administrador. La cancelación se mantiene para administrador o técnico asignado.

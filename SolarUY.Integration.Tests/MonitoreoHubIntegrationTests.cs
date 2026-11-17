@@ -53,6 +53,31 @@ public sealed class MonitoreoHubIntegrationTests(HistoricoDatabase database) : I
     }
 
     [MariaDbHistoricoTheory]
+    [InlineData(0, true)]
+    [InlineData(-30, false)]
+    [InlineData(30, false)]
+    public async Task SuscripcionRecibeSoloUltimaTelemetriaVigente(int desfaseSegundos, bool recibir)
+    {
+        await database.ReiniciarAsync();
+        await using var app = await CrearHostAsync();
+        var notificador = app.Services.GetRequiredService<NotificadorTelemetriaEnVivo>();
+        await notificador.NotificarAsync(database.Parque.Id,
+            [new(database.Parque.Id, database.Parque.Nombre, database.Panel.NodoId.ToString(), "Nodo",
+                [], 0m, false, true, DateTime.UtcNow.AddSeconds(desfaseSegundos))], CancellationToken.None);
+        using var cliente = Cliente(app, out var cookies);
+        await cliente.PostAsync("/pruebas/ingresar/Consulta", null);
+        using var socket = await ConectarAsync(app, cookies);
+        await EnviarAsync(socket, JsonSerializer.Serialize(new { type = 1, invocationId = "1", target = "SuscribirParque", arguments = new[] { database.Parque.Id } }));
+        var mensaje = await RecibirAsync(socket);
+        if (recibir)
+        {
+            Assert.Equal("TelemetriaActualizada", mensaje.GetProperty("target").GetString());
+            Assert.Equal(database.Parque.Id, mensaje.GetProperty("arguments")[0][0].GetProperty("parqueId").GetGuid());
+        }
+        else Assert.Equal(3, mensaje.GetProperty("type").GetInt32());
+    }
+
+    [MariaDbHistoricoTheory]
     [InlineData(true)]
     [InlineData(false)]
     public async Task Worker_DistingueFalloDePersistenciaYFalloDePublicacion(bool fallaPersistencia)
@@ -203,6 +228,7 @@ public sealed class MonitoreoHubIntegrationTests(HistoricoDatabase database) : I
         builder.Services.AddSignalR();
         builder.Services.AddAuthorization();
         builder.Services.AddScoped<AccesoMonitoreoService>();
+        builder.Services.AddSingleton<NotificadorTelemetriaEnVivo>();
         builder.Services.AddSingleton<INotificadorLecturasConfirmadas, NotificadorLecturasConfirmadas>();
         if (notificador is not null) builder.Services.AddSingleton(notificador);
         builder.Services.AddScoped<IRecoleccionLecturasService, RecoleccionLecturasService>();

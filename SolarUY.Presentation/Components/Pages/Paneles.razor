@@ -16,7 +16,7 @@ else if (_paneles.Count == 0) { <div class="surface empty-state"><h2>No hay pane
 else
 {
     <div class="surface table-responsive"><table class="table"><thead><tr><th>Serie</th><th>Marca y modelo</th><th>Potencia</th><th>Estado</th><th>Nodo</th><th>Parque</th><AuthorizeView Roles="Administrador"><th>Acciones</th></AuthorizeView></tr></thead>
-    <tbody>@foreach (var panel in _paneles) { <tr><td>@panel.NumeroSerie</td><td>@panel.Marca @panel.Modelo</td><td>@panel.PotenciaNominalW W</td><td>@panel.Estado</td><td>@panel.Nodo</td><td>@panel.Parque</td><AuthorizeView Roles="Administrador"><td><a class="btn btn-outline-primary btn-sm" href="@($"/paneles/{panel.Id}/editar")">Editar</a> <RadzenButton Text="Dar de baja" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Disabled="_ocupado" Click="async () => await DarDeBajaAsync(panel.Id)" /></td></AuthorizeView></tr> }</tbody></table></div>
+    <tbody>@foreach (var panel in _paneles) { <tr><td>@panel.NumeroSerie</td><td>@panel.Marca @panel.Modelo</td><td>@panel.PotenciaNominalW.ToString("0.############################") W</td><td>@panel.Estado</td><td>@panel.Nodo</td><td>@panel.Parque</td><AuthorizeView Roles="Administrador"><td><div class="action-buttons"><a class="btn btn-outline-primary btn-sm" href="@($"/paneles/{panel.Id}/editar")">Editar</a> <RadzenButton Text="Dar de baja" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Disabled="_ocupado" Click="async () => await DarDeBajaAsync(panel.Id)" /></div></td></AuthorizeView></tr> }</tbody></table></div>
 }
 
 @code {

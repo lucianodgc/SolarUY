@@ -52,7 +52,7 @@ Fuente única de alcance técnico: `specs.md` de esta carpeta. Tareas completada
 
 ## 5. Presentation y configuración
 
-- [x] 5. Incorporar controles, confirmación y resultados en el monitoreo. (PRE1–PRE3)
+- [x] 5. Centralizar controles, confirmación y resultados en Simulador; Monitoreo solo observa efectos y enlaza a Simulador. (PRE1–PRE3)
   - [x] 5.1. Mostrar las cuatro operaciones al Administrador efectivo y conservar consulta de monitoreo/salud para Tecnico y Consulta. (PRE1)
   - [x] 5.2. Incorporar confirmación Radzen por acción con destino identificable; indicar el alcance global del volcado y no enviar al cancelar. (PRE1)
   - [x] 5.3. Obtener y presentar habilitación operacional con su disponibilidad/fecha, adaptando los DTO necesarios sin inferirla por potencia o estado administrativo. (PRE1)
@@ -83,3 +83,8 @@ Fuente única de alcance técnico: `specs.md` de esta carpeta. Tareas completada
   - [x] 7.1. Documentar acuerdos D1–D4, semántica de confirmación/reintentos, modelo y límites de auditoría, migración y configuración. (Sección 8)
   - [x] 7.2. Incluir pasos reproducibles de las cuatro órdenes, integración con entradas existentes y resultados V1–V9, con las comprobaciones omitidas. (Sección 8)
   - [x] 7.3. Revisar consistencia de requisitos, especificaciones y tareas con el alcance finalmente aprobado. (Sección 8)
+
+## Ajuste de interfaz — 17/11/2026
+
+- [x] Retirar el componente duplicado de órdenes y adaptar el escenario de navegador a Simulador.
+- [ ] Repetir el recorrido visual de esta interfaz con los cambios vigentes.

@@ -1,5 +1,9 @@
 # Implementación de req1: alta de parque solar
 
+## Presentación decimal — 17/11/2026
+
+Los formularios `AltaParqueSolar.razor` y `EditarParqueSolar.razor` usan un formato decimal con cifras opcionales: `0.003300…` se muestra como `0.0033`, conservando la precisión del valor y sin modificar persistencia ni validaciones. Compilación y 9 pruebas de `CodeQuality.Tests` aprobadas; revisión visual en navegador pendiente.
+
 ## Actualización de integración frontend
 
 El alta se integra en el inicio, el menú administrativo y el listado de parques, con formulario compartido visualmente con edición y opciones de regreso/cancelación. El recorrido de navegador confirmó alta de un parque temporal, edición y baja posterior. El historial de la base está aplicado y no hay migraciones pendientes. Detalle vigente en [frontend_integracion.md](../Reportes%20de%20codex/frontend_integracion.md); las secciones siguientes conservan la descripción de la entrega original.

@@ -19,7 +19,7 @@ Administrador:
 - Asignar y reasignar a un técnico habilitado.
 - Consultar todas las tareas.
 - Editar tipo, descripción, fecha programada y responsable exclusivamente en Pendiente o EnCurso.
-- Iniciar, completar y cancelar según las transiciones permitidas.
+- Cancelar según las transiciones permitidas. Iniciar y completar queda reservado al técnico asignado con rol Tecnico.
 
 Tecnico:
 - Consultar únicamente las tareas asignadas.

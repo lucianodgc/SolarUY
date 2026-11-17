@@ -6,7 +6,7 @@
 
 - [x] 1.1 Definir JSON Lines UTF-8 con una solicitud y respuesta JSON por conexión, con estado, resultado y error opcional.
 - [x] 1.2 Mantener lecturas aleatorias por panel en watts, independientes de la hora real, con factor 0,90–1,00; el estado de encendido/apagado es global.
-- [x] 1.3 Configurar host/puerto `127.0.0.1:5055` y arranque manual mediante `dotnet run` del proyecto simulador .NET 8.
+- [x] 1.3 Configurar host/puerto `127.0.0.1:5055` y arranque automático del simulador mediante Iniciar-Demo, con espera de disponibilidad, cierre del proceso propio y logs. Se conserva dotnet run para trabajo independiente.
 
 ## 2. Application
 

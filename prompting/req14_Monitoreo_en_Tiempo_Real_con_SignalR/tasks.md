@@ -15,3 +15,8 @@ Alcance vigente aprobado el 05/11/2026: una instancia, SignalR directo y retirad
 - [x] Aplicar la migración local y comprobar conservación de datos.
 - [x] Comprobar actualizaciones en navegador después de retirar las tablas.
 - [x] Actualizar README, requisitos y especificación para el alcance actual.
+
+## Ajuste de interfaz — 17/11/2026
+
+- [x] Retirar órdenes de Monitoreo y enlazar al Simulador, conservando telemetría y salud.
+- [ ] Repetir el recorrido visual de esta interfaz con los cambios vigentes.

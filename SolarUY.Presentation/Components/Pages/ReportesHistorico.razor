@@ -1,4 +1,5 @@
 @page "/reportes"
+@page "/historico-generacion"
 @attribute [Authorize(Roles = "Administrador,Tecnico,Consulta")]
 @using SolarUY.Application.HistoricoGeneracion
 @using SolarUY.Application.Reportes
@@ -8,9 +9,9 @@
 @inject ILogger<ReportesHistorico> Logger
 
 <PageTitle>Reportes | SolarUY</PageTitle>
-<PageHeader Title="Reportes" Section="Energía" Description="Explorá la generación y los mantenimientos realizados. Descargá los datos del reporte en CSV." />
+<PageHeader Title="Reportes" Section="Energía" Description="Generación por parque, nodo o panel, comparación de períodos, gráficos, detalle y CSV." />
 <section class="surface" aria-label="Filtros del reporte">
-    <p class="note">Fechas de Uruguay. El fin del rango es exclusivo. La energía sin mediciones queda sin datos.</p>
+    <p class="note">Fechas de Uruguay. El fin del rango es exclusivo. Sin datos significa que faltan mediciones, también en horas futuras; no equivale a generación cero.</p>
     <div class="filter-bar">
         <label>Parque
             <RadzenDropDown Name="ParqueReporte" TValue="Guid" Data="_parques" TextProperty="Etiqueta" ValueProperty="Id"
@@ -18,7 +19,12 @@
         </label>
         <label>Nodo (opcional)
             <RadzenDropDown Name="NodoReporte" TValue="Guid?" Data="_nodos" TextProperty="Etiqueta" ValueProperty="Id"
-                @bind-Value="_nodoId" Change="FiltrosCambiadosAsync" AllowClear="true" Placeholder="Todos los nodos"
+                @bind-Value="_nodoId" Change="CambiarNodoAsync" AllowClear="true" Placeholder="Todos los nodos"
+                Disabled="_inicializando" Style="min-width:260px" />
+        </label>
+        <label>Panel (opcional)
+            <RadzenDropDown Name="PanelReporte" TValue="Guid?" Data="_paneles" TextProperty="Etiqueta" ValueProperty="Id"
+                @bind-Value="_panelId" Change="FiltrosCambiadosAsync" AllowClear="true" Placeholder="Todos los paneles"
                 Disabled="_inicializando" Style="min-width:260px" />
         </label>
         <label>Período
@@ -29,16 +35,32 @@
     <div class="filter-bar">
         <label>Fecha del período / inicio
             <RadzenDatePicker Name="InicioReporte" TValue="DateTime?" @bind-Value="_inicio" Change="@((DateTime? valor) => ActualizarAsync())"
-                ShowTime="@(_periodo == PeriodoHistorico.Rango)" DateFormat="yyyy-MM-dd HH:mm" Disabled="_inicializando" />
+                ShowTime="true" HourFormat="24" DateFormat="yyyy-MM-dd HH:mm" Disabled="_inicializando" />
         </label>
         @if (_periodo == PeriodoHistorico.Rango)
         {
             <label>Fin exclusivo
                 <RadzenDatePicker Name="FinReporte" TValue="DateTime?" @bind-Value="_fin" Change="@((DateTime? valor) => ActualizarAsync())"
-                    ShowTime="true" DateFormat="yyyy-MM-dd HH:mm" Disabled="_inicializando" />
+                    ShowTime="true" HourFormat="24" DateFormat="yyyy-MM-dd HH:mm" Disabled="_inicializando" />
             </label>
         }
     </div>
+    <div class="filter-bar">
+        <label class="checkbox-field"><RadzenCheckBox TValue="bool" @bind-Value="_comparar" Change="@((bool valor) => ActualizarAsync())" /> Comparar otro período</label>
+        @if (_comparar)
+        {
+            <label>Segundo período / inicio
+                <RadzenDatePicker TValue="DateTime?" @bind-Value="_segundoInicio" Change="@((DateTime? valor) => ActualizarAsync())" ShowTime="true" HourFormat="24" DateFormat="yyyy-MM-dd HH:mm" />
+            </label>
+            @if (_periodo == PeriodoHistorico.Rango)
+            {
+                <label>Segundo fin exclusivo
+                    <RadzenDatePicker TValue="DateTime?" @bind-Value="_segundoFin" Change="@((DateTime? valor) => ActualizarAsync())" ShowTime="true" HourFormat="24" DateFormat="yyyy-MM-dd HH:mm" />
+                </label>
+            }
+        }
+    </div>
+    <p class="note">Diario, Mensual y Anual consultan el período completo. Para respetar las horas elegidas, seleccioná Rango y completá el fin exclusivo.</p>
     <div class="action-buttons">
         <RadzenButton Text="Actualizar reporte" Icon="refresh" Click="ActualizarAsync" Disabled="@(_inicializando || _parqueId == Guid.Empty)" />
         <RadzenButton Text="Exportar CSV" Icon="download" Click="ExportarAsync" Disabled="@(_resultado is null || _ocupado || _descargando)" IsBusy="_descargando" />
@@ -50,10 +72,16 @@
 {
     <p class="empty-state">No hay parques disponibles para consultar.</p>
 }
-@if (_resultado is { } reporte)
+@foreach (var reporte in new[] { _resultado, _comparacion }.OfType<ResultadoReporteDto>())
 {
+    <h2 class="reporte-periodo">@(ReferenceEquals(reporte, _comparacion) ? "Segundo período" : "Período principal")</h2>
+    @if (ReferenceEquals(reporte, _comparacion))
+    {
+        <div class="action-buttons"><RadzenButton Text="Exportar CSV del segundo período" Icon="download" Click="@(() => ExportarPeriodoAsync(reporte))" Disabled="@(_ocupado || _descargando)" /></div>
+        <p class="note">Compará la cobertura y la duración de ambos períodos; los totales observados no se normalizan.</p>
+    }
     <GraficoGeneracionReporte Resultado="reporte.Generacion" Datos="reporte.Grafico" />
-    <ResultadoHistorico Resultado="reporte.Generacion" Titulo="@(reporte.Nodo ?? reporte.Parque)" />
+    <ResultadoHistorico Resultado="reporte.Generacion" Titulo="@(reporte.Panel ?? reporte.Nodo ?? reporte.Parque)" />
     <section class="surface" aria-label="Mantenimientos realizados">
         <h2>Mantenimientos realizados</h2>
         <p>Tareas completadas durante el período del reporte. Fechas en Uruguay (America/Montevideo).</p>
@@ -76,6 +104,12 @@
     private IReadOnlyList<OpcionHistoricoDto> _opciones = [];
     private IReadOnlyList<OpcionHistoricoDto> _parques = [];
     private IReadOnlyList<OpcionHistoricoDto> _nodos = [];
+    private IReadOnlyList<OpcionHistoricoDto> _paneles = [];
+    private Guid? _panelId;
+    private bool _comparar;
+    private ResultadoReporteDto? _comparacion;
+    private DateTime? _segundoInicio = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "America/Montevideo").Date.AddDays(-1);
+    private DateTime? _segundoFin = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "America/Montevideo").Date;
     private Guid _parqueId;
     private Guid? _nodoId;
     private PeriodoHistorico _periodo;
@@ -105,11 +139,26 @@
     }
 
     private void ActualizarNodos()
-        => _nodos = _opciones.Where(o => o.Tipo == TipoObjetivoHistorico.Nodo && o.ParqueId == _parqueId).ToArray();
+    {
+        _nodos = _opciones.Where(o => o.Tipo == TipoObjetivoHistorico.Nodo && o.ParqueId == _parqueId).ToArray();
+        ActualizarPaneles();
+    }
+
+    private void ActualizarPaneles()
+        => _paneles = _opciones.Where(o => o.Tipo == TipoObjetivoHistorico.Panel && o.ParqueId == _parqueId
+            && (!_nodoId.HasValue || o.NodoId == _nodoId)).ToArray();
+
+    private Task CambiarNodoAsync(object? valor)
+    {
+        _panelId = null;
+        ActualizarPaneles();
+        return ActualizarAsync();
+    }
 
     private async Task CambiarParqueAsync(object? valor)
     {
         _nodoId = null;
+        _panelId = null;
         ActualizarNodos();
         await ActualizarAsync();
     }
@@ -124,19 +173,35 @@
         using var cancelacion = CancellationTokenSource.CreateLinkedTokenSource(_vida.Token);
         _consulta = cancelacion;
         _resultado = null;
+        _comparacion = null;
         _error = null;
         _ocupado = true;
         try
         {
             if (anterior is not null) await anterior.CancelAsync();
             if (_desechado || version != _version || cancelacion.IsCancellationRequested) return;
-            if (_inicio is null || (_periodo == PeriodoHistorico.Rango && _fin is null))
+            if (_inicio is null || (_periodo == PeriodoHistorico.Rango && _fin is null)
+                || (_comparar && (_segundoInicio is null || (_periodo == PeriodoHistorico.Rango && _segundoFin is null))))
                 throw new ArgumentException("Completá las fechas del período.");
             var filtro = new FiltroReporteDto(_parqueId, _nodoId, _periodo,
                 DateTime.SpecifyKind(_inicio.Value, DateTimeKind.Unspecified),
-                _fin.HasValue ? DateTime.SpecifyKind(_fin.Value, DateTimeKind.Unspecified) : null);
+                _fin.HasValue ? DateTime.SpecifyKind(_fin.Value, DateTimeKind.Unspecified) : null, _panelId);
+            var comparar = _comparar;
+            var segundoInicio = _segundoInicio;
+            var segundoFin = _segundoFin;
             var resultado = await Reportes.ConsultarAsync(filtro, cancelacion.Token);
-            if (!_desechado && version == _version && !cancelacion.IsCancellationRequested) _resultado = resultado;
+            ResultadoReporteDto? comparacion = null;
+            if (comparar)
+                comparacion = await Reportes.ConsultarAsync(filtro with
+                {
+                    InicioLocal = DateTime.SpecifyKind(segundoInicio!.Value, DateTimeKind.Unspecified),
+                    FinLocal = segundoFin.HasValue ? DateTime.SpecifyKind(segundoFin.Value, DateTimeKind.Unspecified) : null
+                }, cancelacion.Token);
+            if (!_desechado && version == _version && !cancelacion.IsCancellationRequested)
+            {
+                _resultado = resultado;
+                _comparacion = comparacion;
+            }
         }
         catch (OperationCanceledException) when (cancelacion.IsCancellationRequested) { }
         catch (Exception exception) { if (!_desechado && version == _version) MostrarError(exception); }
@@ -146,9 +211,11 @@
         }
     }
 
-    private async Task ExportarAsync()
+    private Task ExportarAsync() => _resultado is { } reporte ? ExportarPeriodoAsync(reporte) : Task.CompletedTask;
+
+    private async Task ExportarPeriodoAsync(ResultadoReporteDto reporte)
     {
-        if (_resultado is not { } reporte || _ocupado || _descargando) return;
+        if (_ocupado || _descargando) return;
         var version = _version;
         _descargando = true;
         _error = null;

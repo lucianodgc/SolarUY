@@ -2,6 +2,10 @@
 
 La adquisición periódica se mantiene en req11. Las menciones a recolección en este documento corresponden a la ampliación inicial y no definen otro recolector.
 
+## Diferencia respecto de Reportes (req8)
+
+Req7 mantiene los cálculos y consultas históricas reutilizables. La interfaz está unificada en Reportes (req8): parque/nodo/panel, extremos, comparación, gráficos, detalle, mantenimiento y CSV. No existe una pantalla ni un acceso de menú separado para Histórico; la ruta anterior es un alias de /reportes.
+
 ## Descripción General
 
 Como usuario del sistema SolarUY, quiero consultar el historial de generación de energía de un parque solar, nodo o panel, para conocer la energía generada durante un día, mes o año determinado, comparar períodos y analizar el rendimiento de las instalaciones.
