@@ -10,11 +10,13 @@ La aplicación sigue Clean Architecture en cuatro capas y se ejecuta en dos inst
 
 ## Funcionalidades
 
-- **Administrador:** gestiona inventario, asigna mantenimiento y envía órdenes al inversor.
-- **Tecnico:** consulta el sistema y gestiona sus tareas asignadas.
+- **Administrador:** gestiona inventario, programa/asigna/edita/cancela mantenimiento y envía órdenes desde Simulador.
+- **Tecnico:** consulta el sistema e inicia, completa o cancela únicamente sus tareas asignadas.
 - **Consulta:** accede a paneles, monitoreo, salud, histórico, reportes y chatbot según sus permisos.
 
 El chatbot solo consulta información autorizada; no modifica datos ni ejecuta órdenes.
+
+Inicio reúne los accesos por rol. Monitoreo observa potencia, salud y alertas. Reportes integra histórico por parque/nodo/panel, comparación de períodos, gráficos, detalle, mantenimientos realizados y CSV.
 
 ## Iniciar
 
@@ -25,6 +27,8 @@ Necesitas .NET SDK 8, PowerShell y Docker Desktop. Prepara una vez `.env`, los d
 ```
 
 Abre **http://localhost:18088**. Para detener conservando datos: `docker compose stop`.
+
+Para desarrollar con una web local: `.\Iniciar-Demo.ps1` prepara las dependencias Docker, aplica migraciones e inicia simulador y web en **http://localhost:5219**. Requiere los secretos locales de [Configuración](docs/Configuracion.md). Ctrl+C cierra la web y el simulador; las dependencias Docker permanecen activas.
 
 ## Documentación
 

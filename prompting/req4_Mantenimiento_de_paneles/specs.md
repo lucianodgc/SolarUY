@@ -49,7 +49,7 @@ Crear verifica panel existente y técnico válido. Asignar y editar vuelven a va
 
 IUsuarioActual.ObtenerAsync devuelve UsuarioActualDto con autenticación, Id estable y roles sin dependencias de ASP.NET. Los casos de uso rechazan anonimato, identidad ausente y usuarios sin Administrador/Tecnico. Datos de entrada nunca prueban identidad o roles del actor.
 
-Administrador crea, asigna, edita y consulta todas las tareas. Puede iniciar, completar y cancelar según D2. Tecnico consulta y cambia estado exclusivamente de sus tareas; no crea, edita, reasigna ni enumera todo el directorio. Consulta por sí solo no recibe acceso.
+Administrador crea, asigna, edita, cancela y consulta todas las tareas. Solo quien tenga rol Tecnico y sea el responsable asignado puede iniciar o completar una tarea; tener únicamente rol Administrador no lo permite. Esta regla se valida antes de mutar la entidad y también en las acciones del DTO. La escritura condicional vuelve a exigir la identidad del responsable. Tecnico consulta y cambia estado exclusivamente de sus tareas; no crea, edita, reasigna ni enumera todo el directorio. Consulta por sí solo no recibe acceso.
 
 Lectura individual y modificaciones por identificador aplican el mismo alcance que los listados. Un filtro enviado por el técnico no amplía ese alcance. Para sus selectores de panel se devuelven solo paneles asociados a sus tareas.
 

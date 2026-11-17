@@ -8,7 +8,13 @@
 <PageHeader Title="Editar nodo" Section="Gestión del parque" Description="Actualizá los datos del nodo."></PageHeader>
 @if (_error is not null) { <p role="alert" class="alert alert-danger">@_error</p> }
 else if (_modelo is null) { <p class="loading-state">Cargando nodo…</p> }
-else { <RadzenTemplateForm TItem="ActualizarNodoDto" Data="_modelo" Submit="GuardarAsync"><div class="surface"><RadzenTextBox @bind-Value="_modelo.Nombre" Placeholder="Nombre" Style="width:100%" /><RadzenTextBox @bind-Value="_modelo.UbicacionEnParque" Placeholder="Ubicación en el parque" Style="width:100%" /><RadzenNumeric @bind-Value="_modelo.CantidadPanelesPrevista" Placeholder="Cantidad de paneles prevista" Style="width:100%" /><RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" IsBusy="_ocupado" Disabled="_ocupado" /></div></RadzenTemplateForm> }
+else { <RadzenTemplateForm TItem="ActualizarNodoDto" Data="_modelo" Submit="GuardarAsync"><div class="surface form-surface form-stack">
+<div class="form-field"><RadzenLabel Text="Nombre" Component="Nombre" /><RadzenTextBox @bind-Value="_modelo.Nombre" Style="width:100%" Name="Nombre" /></div>
+
+<div class="form-field"><RadzenLabel Text="Ubicación en el parque" Component="UbicacionEnParque" /><RadzenTextBox @bind-Value="_modelo.UbicacionEnParque" Style="width:100%" Name="UbicacionEnParque" /></div>
+
+<div class="form-field"><RadzenLabel Text="Cantidad de paneles prevista (opcional)" Component="CantidadPanelesPrevista" /><RadzenNumeric @bind-Value="_modelo.CantidadPanelesPrevista" Style="width:100%" Name="CantidadPanelesPrevista" /></div>
+<div class="action-buttons"><RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" IsBusy="_ocupado" Disabled="_ocupado" /><a class="btn btn-light" href="@($"/parques-solares/{_parqueId}/nodos")">Cancelar</a></div></div></RadzenTemplateForm> }
 
 @code {
     [Parameter] public Guid NodoId { get; set; }

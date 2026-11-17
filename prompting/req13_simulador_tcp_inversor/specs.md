@@ -17,7 +17,7 @@ La interfaz continúa dependiendo de Application y el transporte TCP queda encap
 - La generación aleatoria por panel se limita a entre el 90 % y el 100 % de su potencia nominal registrada. Paneles inactivos/fallados y el inversor apagado generan cero.
 - El estado de encendido/apagado es global al simulador; inicia encendido. Apagado fuerza a cero la potencia de todos los paneles. Las operaciones existentes de panel y volcado a red se conservan.
 - El host, puerto y espera máxima se configuran en `InversorTcp:Host`, `InversorTcp:Port` e `InversorTcp:TimeoutSeconds`; por defecto son `127.0.0.1`, `5055` y 3 segundos. No son secretos.
-- El simulador se inicia manualmente en desarrollo con `dotnet run --project SolarUY.InversorSimulador/SolarUY.InversorSimulador.csproj`; no se inicia automáticamente junto con la web.
+- `Iniciar-Demo.ps1` prepara las dependencias Docker, espera MariaDB/Keycloak, aplica migraciones locales y compila/inicia el simulador en segundo plano antes de la web. Al finalizar cierra únicamente el proceso que inició, con logs en artifacts/demo. Rechaza puertos locales ocupados y detiene webs/Nginx/simulador Docker al cambiar a modo local. El arranque manual con `dotnet run --project SolarUY.InversorSimulador` sigue disponible para trabajo independiente; no debe ejecutarse simultáneamente con el arranque gestionado. En alta disponibilidad se utiliza el contenedor del simulador.
 - El estado del simulador vive mientras corre su proceso y no se guarda en MariaDB.
 
 ## Cambios por capa

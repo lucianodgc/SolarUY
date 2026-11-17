@@ -2,6 +2,10 @@
 
 Fecha: 16 de noviembre de 2026.
 
+Ollama remoto — 17/11/2026: se incorpora `PermitirRemoto` (false por defecto), validación de URL base HTTP/HTTPS y `Iniciar-Demo.ps1 -OllamaRemoto <URL>` para web local y ambas webs Docker. Compose admite variables externas persistentes documentadas en `.env.example` y `docs/Configuracion.md`. Se conservan el modelo, herramientas MCP, permisos, bloqueo de redirecciones y validación de certificados. Verificación: 17 pruebas de integración del proveedor y 9 de arquitectura aprobadas; parámetros locales/Docker y restauración del entorno comprobados con comandos sustituidos, sin iniciar servicios. Conexión entre dos PCs reales o mediante VPN pendiente.
+
+Actualización del 17/11/2026: `Chatbot.razor` actualiza el texto en `oninput` y habilita Enviar pregunta mientras se escribe; se conserva el bloqueo para espacios y consultas en curso y se explicita el estilo primario. Compilación y 9 pruebas de arquitectura aprobadas. Pendiente comprobar escritura/borrado/pegado en navegador. No se cambiaron el modelo ni los parámetros de rendimiento ni se midió la latencia en el equipo.
+
 ## Resultado y decisiones
 
 Se implementó el panel `/chatbot` en Blazor/Radzen, los servicios de Application, las seis herramientas MCP de lectura y la integración con Microsoft Agent Framework. El proveedor predeterminado es **Ollama local con `qwen3:8b`**, por decisión explícita del usuario. OpenAI permanece opcional y no se utiliza automáticamente cuando falla Ollama.

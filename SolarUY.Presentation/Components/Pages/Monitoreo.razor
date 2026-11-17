@@ -36,7 +36,11 @@
     {
         <p>No hay parques disponibles.</p>
     }
-    @if (_estado is { } estado)
+    @if (_parqueId != Guid.Empty && _ultimaTelemetriaUtc == default && _conexion is not "Sesión no autorizada" and not "Sin datos recientes")
+    {
+        <p class="loading-state" role="status">Recibiendo la primera muestra en vivo del parque…</p>
+    }
+    else if (_estado is { } estado)
     {
         <h2>@estado.Nombre</h2>
         <p class="metric-value">@Potencia(estado.Generacion.PotenciaW)</p>
@@ -72,7 +76,7 @@
                 }
             </section>
             <SaludMonitoreo ParqueId="_parqueId" @ref="_salud" />
-            <OrdenesInversor ParqueId="_parqueId" @ref="_ordenes" />
+            <p class="note">Para operar paneles o el volcado a red, abrí el <a href="/simulador">Simulador de inversor</a>.</p>
             <section class="surface" aria-label="Gráfico de potencia en vivo">
                 <h2>Evolución de potencia del parque</h2>
                 <p class="note">UTC · W · Hasta @Opciones.Value.MaximoPuntosGrafico puntos. Se inicia un tramo nuevo tras intervalos
@@ -128,7 +132,6 @@
     private DateTime _ultimaConsultaUtc;
     private DateTime _ultimaTelemetriaUtc;
     private SaludMonitoreo? _salud;
-    private OrdenesInversor? _ordenes;
 
     [JSInvokable]
     public Task SaludActualizada(string parqueId) => InvokeAsync(async () =>
@@ -189,11 +192,10 @@
     });
 
     [JSInvokable]
-    public Task TelemetriaActualizada(List<TelemetriaNodoDto> nodos) => InvokeAsync(async () =>
+    public Task TelemetriaActualizada(List<TelemetriaNodoDto> nodos) => InvokeAsync(() =>
     {
         Logger.LogDebug("Muestra de telemetría recibida: {Nodos} nodos.", nodos.Count);
         if (nodos.Count == 0 || nodos[0].ParqueId != _parqueId) return;
-        if (_ordenes is not null) await _ordenes.ActualizarTelemetriaAsync(nodos);
         var estado = MapeadorTelemetria.Mapear(_parqueId, nodos);
         _estado = estado;
         _puntos = Serie.Actualizar(estado);
@@ -227,7 +229,7 @@
                 {
                     var nuevo = reevaluar ? await Servicio.ReevaluarAsync(parque, _carga.Token)
                         : await Servicio.ConsultarAsync(parque, _carga.Token);
-                    if (version == Interlocked.Read(ref _version) && parque == _parqueId && !_fin.IsCancellationRequested
+                    if (_ultimaTelemetriaUtc == default && version == Interlocked.Read(ref _version) && parque == _parqueId && !_fin.IsCancellationRequested
                         && (_estado is null || nuevo.EvaluadoUtc >= _estado.EvaluadoUtc))
                     {
                         _estado = nuevo; _puntos = Serie.Actualizar(nuevo); _error = null;

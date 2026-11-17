@@ -1,5 +1,9 @@
 # Implementación: ABM de paneles y asignación a nodos
 
+## Presentación decimal — 17/11/2026
+
+`Paneles.razor`, `AltaPanel.razor` y `EditarPanel.razor` muestran la potencia sin ceros decimales sobrantes: `550.000…` se presenta como `550`. El formato conserva las cifras significativas y no cambia valores guardados ni reglas de negocio. Compilación y 9 pruebas de `CodeQuality.Tests` aprobadas; revisión visual en navegador pendiente.
+
 ## Cambios realizados
 
 - Se confirmaron e incorporaron las decisiones de capacidad máxima, traslado entre nodos, estados y baja lógica.

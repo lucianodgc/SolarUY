@@ -18,6 +18,8 @@
     {
         <p class="empty-state">No hay lecturas con cobertura en este período.</p>
     }
+    @if (MostrarDetalle)
+    {
     <RadzenDataGrid Data="@Resultado.Serie" TItem="PuntoHistoricoDto" AllowPaging="true" PageSize="31" AllowSorting="false" AllowColumnResize="true">
         <Columns>
             <RadzenDataGridColumn TItem="PuntoHistoricoDto" Title="Intervalo (Uruguay)">
@@ -35,9 +37,11 @@
             </RadzenDataGridColumn>
         </Columns>
     </RadzenDataGrid>
+    }
 </section>
 
 @code {
     [Parameter, EditorRequired] public ResultadoHistoricoDto Resultado { get; set; } = null!;
     [Parameter] public string Titulo { get; set; } = "Generación histórica";
+    [Parameter] public bool MostrarDetalle { get; set; } = true;
 }

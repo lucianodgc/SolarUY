@@ -61,3 +61,14 @@ Dependencias: implementación de etapas 2–4 y respuestas a Q1/Q2 para los caso
 ## 6. Cierre y documentación
 
 - [x] 6. Crear el archivo implementations.md en la misma carpeta detallando los cambios realizados, archivos tocados y resultado de las pruebas. (C1)
+
+## Ajuste de interfaz — 17/11/2026
+
+- [x] Unificar en Reportes resumen, gráficos, tabla, consulta por panel, comparación y CSV; explicar ausencia de muestras y horas futuras.
+- [ ] Repetir el recorrido visual de esta interfaz con los cambios vigentes.
+
+## Unificación vigente
+
+- [x] Integrar paneles, comparación, tabla y extremos en Reportes, CSV por período y validación de pertenencia en Application.
+- [x] Quitar la página independiente del histórico y su acceso duplicado; conservar su URL como alias.
+- [ ] Recorrer visualmente la pantalla unificada, incluido ancho móvil y descarga de ambos períodos.

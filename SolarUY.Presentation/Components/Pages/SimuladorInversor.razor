@@ -16,11 +16,11 @@
 <PageHeader Title="Simulador de inversor" Section="Operación" Description="Consultá el estado de los paneles y la potencia generada en la simulación." />
 <p class="note">Los nodos y paneles se leen del inventario. Las órdenes quedan auditadas y afectan el simulador compartido; la siguiente adquisición conserva su efecto. El volcado es global al inversor configurado y no representa una conexión eléctrica real.</p>
 <div class="surface filter-toolbar">
-    <RadzenLabel Text="Parque solar" Component="ParqueSimulado" />
+    <div class="form-field"><RadzenLabel Text="Parque solar" Component="ParqueSimulado" />
     <RadzenDropDown TValue="Guid" Name="ParqueSimulado" Data="_parques" TextProperty="Nombre" ValueProperty="Id" @bind-Value="_parqueId" Change="SeleccionarParqueAsync" Disabled="_ocupado" Style="min-width:220px" />
-    <RadzenLabel Text="Nodo" Component="NodoSimulado" />
+    </div><div class="form-field"><RadzenLabel Text="Nodo" Component="NodoSimulado" />
     <RadzenDropDown TValue="string" Name="NodoSimulado" Data="_nodos" TextProperty="Nombre" ValueProperty="Id" @bind-Value="_nodoId" Change="SeleccionarNodoAsync" Disabled="@(_ocupado || _nodos.Count == 0)" Style="min-width:180px" />
-    <RadzenButton Text="Consultar / Actualizar" Icon="refresh" Click="CargarAsync" Disabled="_ocupado" IsBusy="_ocupado" />
+    </div><RadzenButton Text="Consultar / Actualizar" Icon="refresh" Click="CargarAsync" Disabled="_ocupado" IsBusy="_ocupado" />
     <span class="text-muted small">Actualización compartida en vivo con Monitoreo.</span>
 </div>
 @if (_error is not null)

@@ -23,6 +23,7 @@ public sealed class TareaMantenimientoRepository : ITareaMantenimientoRepository
             && tarea.Estado == EstadoTareaMantenimiento.Completada && tarea.FechaRealizacion.HasValue
             && tarea.FechaRealizacion >= consulta.InicioUtc && tarea.FechaRealizacion < consulta.FinUtc);
         if (consulta.NodoId is { } nodoId) query = query.Where(tarea => tarea.Panel.NodoId == nodoId);
+        if (consulta.PanelId is { } panelId) query = query.Where(tarea => tarea.PanelId == panelId);
         return await query.OrderBy(tarea => tarea.FechaRealizacion).ThenBy(tarea => tarea.Id)
             .Select(tarea => new MantenimientoRealizadoReporteDto(tarea.Id, tarea.PanelId, tarea.Panel.NumeroSerie,
                 tarea.Tipo, tarea.Descripcion, tarea.ResponsableId, tarea.Estado, tarea.FechaProgramada, tarea.FechaRealizacion!.Value))

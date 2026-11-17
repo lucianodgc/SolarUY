@@ -12,6 +12,7 @@
 <PageHeader Title="Mantenimiento de paneles" Section="Operación" Description="Consultá las tareas, su vencimiento y el avance de los trabajos. Las fechas se muestran en UTC.">
     <AuthorizeView Roles="Administrador"><a class="btn btn-primary" href="/mantenimiento/crear">Crear tarea</a></AuthorizeView>
 </PageHeader>
+<p class="note">El administrador programa, asigna, edita y cancela tareas. Solo el técnico asignado puede iniciarlas y completarlas; también puede cancelar sus tareas.</p>
 @if (_error is not null)
 {
     <p role="alert" class="alert alert-danger">@_error</p>

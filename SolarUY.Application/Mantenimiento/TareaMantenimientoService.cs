@@ -46,10 +46,10 @@ public sealed class TareaMantenimientoService : ITareaMantenimientoService
     }
 
     public Task IniciarAsync(Guid id, CancellationToken cancellationToken = default)
-        => ModificarAsync(id, false, null, tarea => tarea.Iniciar(), cancellationToken);
+        => ModificarAsync(id, false, null, tarea => tarea.Iniciar(), cancellationToken, soloTecnicoAsignado: true);
 
     public Task CompletarAsync(Guid id, CancellationToken cancellationToken = default)
-        => ModificarAsync(id, false, null, tarea => tarea.Completar(DateTime.UtcNow), cancellationToken);
+        => ModificarAsync(id, false, null, tarea => tarea.Completar(DateTime.UtcNow), cancellationToken, soloTecnicoAsignado: true);
 
     public Task CancelarAsync(Guid id, CancellationToken cancellationToken = default)
         => ModificarAsync(id, false, null, tarea => tarea.Cancelar(), cancellationToken);
@@ -89,18 +89,21 @@ public sealed class TareaMantenimientoService : ITareaMantenimientoService
     }
 
     private async Task ModificarAsync(Guid id, bool soloAdministrador, string? responsableDestino,
-        Action<TareaMantenimiento> cambiar, CancellationToken cancellationToken, TareaMantenimientoOriginal? originalEsperado = null)
+        Action<TareaMantenimiento> cambiar, CancellationToken cancellationToken, TareaMantenimientoOriginal? originalEsperado = null,
+        bool soloTecnicoAsignado = false)
     {
         var usuario = await ObtenerUsuarioAsync(cancellationToken);
         if (soloAdministrador) ExigirAdministrador(usuario);
         var tarea = await CargarAsync(id, usuario, cancellationToken);
+        if (soloTecnicoAsignado && !EsTecnicoAsignado(tarea, usuario))
+            throw new MantenimientoException("Solo el técnico asignado puede iniciar o completar la tarea.");
         var original = originalEsperado ?? new TareaMantenimientoOriginal(tarea.Estado, tarea.ResponsableId, tarea.Tipo,
             tarea.Descripcion, tarea.FechaProgramada, tarea.FechaRealizacion);
         if (responsableDestino is not null) await ValidarTecnicoAsync(responsableDestino, cancellationToken);
         try { cambiar(tarea); }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         { throw new MantenimientoException(exception.Message); }
-        if (!await _tareas.GuardarAsync(tarea, original, Alcance(usuario), cancellationToken))
+        if (!await _tareas.GuardarAsync(tarea, original, soloTecnicoAsignado ? usuario.Id : Alcance(usuario), cancellationToken))
             throw new MantenimientoConflictoException();
     }
 
@@ -125,6 +128,8 @@ public sealed class TareaMantenimientoService : ITareaMantenimientoService
     }
 
     private static bool EsAdministrador(UsuarioActualDto usuario) => usuario.Roles.Contains("Administrador");
+    private static bool EsTecnicoAsignado(TareaMantenimiento tarea, UsuarioActualDto usuario)
+        => usuario.Roles.Contains("Tecnico") && string.Equals(tarea.ResponsableId, usuario.Id, StringComparison.Ordinal);
     private static string? Alcance(UsuarioActualDto usuario) => EsAdministrador(usuario) ? null : usuario.Id;
 
     private static void ExigirAdministrador(UsuarioActualDto usuario)
@@ -135,9 +140,11 @@ public sealed class TareaMantenimientoService : ITareaMantenimientoService
     private static TareaMantenimientoDto Proyectar(TareaMantenimiento tarea, UsuarioActualDto usuario, DateTime referencia)
     {
         var editable = tarea.Estado is EstadoTareaMantenimiento.Pendiente or EstadoTareaMantenimiento.EnCurso;
+        var tecnicoAsignado = EsTecnicoAsignado(tarea, usuario);
         return new(tarea.Id, tarea.PanelId, tarea.Panel.NumeroSerie, tarea.Tipo, tarea.Descripcion,
             tarea.FechaProgramada, tarea.FechaRealizacion, tarea.ResponsableId, tarea.Estado, tarea.EstaVencida(referencia),
-            tarea.Estado == EstadoTareaMantenimiento.Pendiente, tarea.Estado == EstadoTareaMantenimiento.EnCurso,
+            tecnicoAsignado && tarea.Estado == EstadoTareaMantenimiento.Pendiente,
+            tecnicoAsignado && tarea.Estado == EstadoTareaMantenimiento.EnCurso,
             editable, editable && EsAdministrador(usuario));
     }
 }

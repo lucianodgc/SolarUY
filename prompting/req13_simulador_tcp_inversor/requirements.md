@@ -6,6 +6,8 @@ Como usuario de SolarUY, quiero consultar y controlar un inversor simulado que r
 
 El simulador debe generar valores aleatorios de potencia y responder a órdenes de encendido y apagado. El panel de control de SolarUY se comunicará con el simulador por TCP/IP, como muestra el esquema. El simulador será software ejecutable en los equipos de desarrollo; no se requiere una placa ARM, un Blackberry ni un sensor físico.
 
+En desarrollo, Iniciar-Demo prepara automáticamente MariaDB/Keycloak en Docker, aplica migraciones e inicia simulador y web locales. Espera disponibilidad, rechaza puertos ocupados y cierra solo el simulador propio al finalizar. El modo de alta disponibilidad conserva el simulador en Docker.
+
 ## Alcance
 
 - El panel de control existente en SolarUY consulta valores del simulador y permite enviar las órdenes previstas.

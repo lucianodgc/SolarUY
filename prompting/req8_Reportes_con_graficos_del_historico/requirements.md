@@ -1,14 +1,20 @@
 # Requerimientos: Reportes con gráficos del histórico (Radzen) y exportación
 
+## Presentación y relación con Histórico (req7)
+
+Reportes es la única interfaz de generación histórica: muestra gráficos, resumen, tabla de intervalos y extremos, mantenimientos y CSV por parque, nodo o panel. Permite comparar dos períodos y exportar cada uno, conservando sus filtros y cobertura. Sin datos significa ausencia de mediciones, incluidas las franjas futuras, y nunca generación cero.
+
 ## Descripción General
 
 Como usuario del sistema SolarUY, quiero visualizar reportes gráficos de la generación histórica de energía y consultar los mantenimientos realizados, para analizar el rendimiento de las instalaciones durante diferentes períodos y exportar la información.
 
 ## Criterios de Aceptación
 
+- Los selectores de fecha permiten elegir hora en formato de 24 horas. Diario/Mensual/Anual conservan el período completo; Rango respeta las horas y el fin exclusivo. Separar visualmente el encabezado de cada período de los filtros anteriores.
+
 1. **Pantalla de reportes:** El sistema debe disponer de una pantalla que permita visualizar la generación histórica mediante gráficos de barras y líneas utilizando componentes Radzen.
 2. **Visualización histórica:** Los gráficos deben mostrar la generación de energía por día, mes y año, reutilizando los servicios de consulta del histórico existentes en `Application`.
-3. **Filtros:** Permitir filtrar la información por parque solar, nodo y rango de fechas.
+3. **Filtros:** Permitir filtrar la información por parque solar, nodo, panel y rango de fechas.
 4. **Actualización de gráficos:** Los gráficos y resultados deben actualizarse correctamente al modificar los filtros seleccionados.
 5. **Exportación CSV:** Permitir descargar los datos del reporte en formato CSV, respetando los filtros y períodos seleccionados.
 6. **Resumen de mantenimiento:** Mostrar los mantenimientos realizados durante el período seleccionado, reutilizando la información y funcionalidades existentes de la card de mantenimiento.

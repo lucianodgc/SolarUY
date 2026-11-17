@@ -113,7 +113,7 @@ La consulta no invoca `SaveChanges`, no modifica lecturas ni las recrea a partir
 
 ### P1. Página y navegación
 
-Crear `HistoricoGeneracion.razor` en `/historico-generacion` con Blazor Server y Radzen, e incorporar su acceso al menú según Q6. Registrar `IHistoricoGeneracionService` en el punto de composición existente del host. La protección de página y menú debe coincidir con la autorización del servicio.
+Integrar la consulta histórica en `ReportesHistorico.razor` en `/reportes` con Blazor Server y Radzen. `/historico-generacion` se conserva como alias de la misma página; solo Reportes aparece en el menú. Registrar `IHistoricoGeneracionService` en el punto de composición existente del host. La protección de página y menú debe coincidir con la autorización del servicio.
 
 Permitir seleccionar parque, nodo o panel del inventario persistido, período diario/mensual/anual, rangos y períodos a comparar. Obtener opciones mediante `ListarOpcionesAsync`; no reutilizar el servicio administrativo de parques para conceder acceso a otros roles ni utilizar la topología del simulador.
 

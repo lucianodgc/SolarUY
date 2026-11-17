@@ -2,7 +2,7 @@
 
 ## 1. Alcance y contratos comprobados
 
-Fuente funcional: `requirements.md` de esta carpeta. Entrega 3. Incorporar en el monitoreo las órdenes de activar/desactivar panel y activar/desactivar volcado, con confirmación visual, autorización efectiva de Administrador y auditoría persistente. Conservar .NET 8, EF Core 8, Pomelo 8.0.3, MariaDB 11.8, Blazor Server/Radzen y Keycloak. No agregar un proveedor, bus, ORM ni mecanismo de comunicación distinto del vigente.
+Fuente funcional: `requirements.md` de esta carpeta. Entrega 3. Centralizar en Simulador de inversor las órdenes de activar/desactivar panel y activar/desactivar volcado, con confirmación visual, autorización efectiva de Administrador y auditoría persistente. Conservar .NET 8, EF Core 8, Pomelo 8.0.3, MariaDB 11.8, Blazor Server/Radzen y Keycloak. No agregar un proveedor, bus, ORM ni mecanismo de comunicación distinto del vigente.
 
 Referencias de la base revisada antes de implementar req21 (resultado final en `implementations.md`):
 
@@ -113,7 +113,7 @@ No resolver esta divergencia cambiando `Panel.Estado` desde un comando ni forzan
 
 ### PRE1. Controles y confirmación
 
-Extender `Monitoreo.razor` con controles Radzen para las cuatro operaciones. Mostrar controles de emisión solo al Administrador efectivo; Tecnico y Consulta conservan la consulta de monitoreo y salud. La autorización en Application sigue siendo obligatoria aunque la vista oculte botones.
+Usar exclusivamente `SimuladorInversor.razor` para los controles Radzen de las cuatro operaciones. `Monitoreo.razor` no contiene órdenes ni el componente retirado de operación; ofrece un enlace al simulador. Mostrar controles de emisión solo al Administrador efectivo; Tecnico y Consulta conservan la consulta de monitoreo y salud. La autorización en Application sigue siendo obligatoria aunque la vista oculte botones.
 
 Usar confirmación explícita mediante el mecanismo Radzen disponible antes de invocar cada caso de uso. Identificar acción, panel/serie y nodo/parque cuando corresponda. En volcado, indicar el ámbito global del inversor configurado aprobado en D1 y advertir de forma concreta que el parque seleccionado no delimita esa orden. Cancelar el diálogo no envía la orden.
 

@@ -8,17 +8,26 @@
 <PageHeader Title="Registrar nodo" Section="Gestión del parque" Description="El nodo se crea junto con su inversor."></PageHeader>
 @if (_error is not null) { <p role="alert" class="alert alert-danger">@_error</p> }
 <RadzenTemplateForm TItem="CrearNodoDto" Data="_modelo" Submit="GuardarAsync">
-    <div class="surface"><RadzenFieldset Text="Nodo">
-        <RadzenTextBox Name="Nombre" @bind-Value="_modelo.Nombre" Placeholder="Nombre" Style="width:100%" />
-        <RadzenTextBox Name="Ubicacion" @bind-Value="_modelo.UbicacionEnParque" Placeholder="Ubicación en el parque" Style="width:100%" />
-        <RadzenNumeric Name="CantidadPaneles" @bind-Value="_modelo.CantidadPanelesPrevista" Placeholder="Cantidad de paneles prevista" Style="width:100%" />
+    <div class="surface form-surface form-stack"><RadzenFieldset Text="Nodo">
+
+<div class="form-field"><RadzenLabel Text="Nombre" Component="Nombre" /><RadzenTextBox Name="Nombre" @bind-Value="_modelo.Nombre" Style="width:100%" /></div>
+
+<div class="form-field"><RadzenLabel Text="Ubicación en el parque" Component="Ubicacion" /><RadzenTextBox Name="Ubicacion" @bind-Value="_modelo.UbicacionEnParque" Style="width:100%" /></div>
+
+<div class="form-field"><RadzenLabel Text="Cantidad de paneles prevista (opcional)" Component="CantidadPaneles" /><RadzenNumeric Name="CantidadPaneles" @bind-Value="_modelo.CantidadPanelesPrevista" Style="width:100%" /></div>
+
     </RadzenFieldset><RadzenFieldset Text="Inversor">
-        <RadzenTextBox Name="Marca" @bind-Value="_modelo.MarcaInversor" Placeholder="Marca" Style="width:100%" />
-        <RadzenTextBox Name="Modelo" @bind-Value="_modelo.ModeloInversor" Placeholder="Modelo" Style="width:100%" />
-        <RadzenNumeric Name="Potencia" @bind-Value="_modelo.PotenciaNominalKW" Placeholder="Potencia nominal (kW)" Style="width:100%" />
-        <RadzenDropDown Name="Estado" @bind-Value="_modelo.EstadoInversor" Data="_estados" Style="width:100%" />
-        <RadzenCheckBox Name="Volcado" @bind-Value="_modelo.VolcadoRedActivo" /> <label for="Volcado">Volcado a red activo</label>
-    </RadzenFieldset><RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" IsBusy="_ocupado" Disabled="_ocupado" /> <a class="btn btn-light" href="@($"/parques-solares/{ParqueId}/nodos")">Cancelar</a></div>
+
+<div class="form-field"><RadzenLabel Text="Marca" Component="Marca" /><RadzenTextBox Name="Marca" @bind-Value="_modelo.MarcaInversor" Style="width:100%" /></div>
+
+<div class="form-field"><RadzenLabel Text="Modelo" Component="Modelo" /><RadzenTextBox Name="Modelo" @bind-Value="_modelo.ModeloInversor" Style="width:100%" /></div>
+
+<div class="form-field"><RadzenLabel Text="Potencia nominal (kW)" Component="Potencia" /><RadzenNumeric Name="Potencia" @bind-Value="_modelo.PotenciaNominalKW" Style="width:100%" /></div>
+
+<div class="form-field"><RadzenLabel Text="Estado del inversor" Component="Estado" /><RadzenDropDown Name="Estado" @bind-Value="_modelo.EstadoInversor" Data="_estados" Style="width:100%" /></div>
+
+        <RadzenCheckBox Name="Volcado" @bind-Value="_modelo.VolcadoRedActivo" /> <RadzenLabel Text="Volcado a red activo" Component="Volcado" />
+    </RadzenFieldset><div class="action-buttons"><RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" IsBusy="_ocupado" Disabled="_ocupado" /> <a class="btn btn-light" href="@($"/parques-solares/{ParqueId}/nodos")">Cancelar</a></div></div>
 </RadzenTemplateForm>
 
 @code {

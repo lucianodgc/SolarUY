@@ -1,5 +1,11 @@
 # Implementación de req14: Monitoreo en tiempo real
 
+## Carga inicial — 17/11/2026
+
+El notificador conserva por parque la última muestra compartida. El hub la entrega tras autorizar la suscripción y solo si sigue vigente (máximo tres intervalos, sin fechas futuras). La interfaz distingue espera inicial y no sobrescribe telemetría con una consulta histórica pendiente. No se añaden adquisiciones por usuario. En el diagnóstico real había cero lecturas; con el arranque local normal se guardaron 60 muestras y la salud dejó de mostrar todos desconectados (11 Normal, 1 Falla). Se detuvo la ejecución de diagnóstico al finalizar.
+
+Verificación: 44 integraciones aprobadas de SignalR, workers y reportes; 1 omitida (servidor de inspección manual), 0 fallidas con el simulador requerido activo. Incluye entrega inicial vigente y rechazo de muestras vencidas/futuras. Arquitectura: 9 aprobadas. Primera pasada sin simulador: 4 fallos de espera, resueltos al preparar el prerrequisito. Evidencia en artifacts/monitoreo-carga/. No se ejecutó recorrido visual en navegador.
+
 ## Estado vigente: una instancia (05/11/2026)
 
 Por pedido del usuario se retiraron el repositorio, contrato, worker y configuración de distribución persistente. El guardado conserva la transacción y ya no escribe avisos ni secuencias. Los avisos posteriores al guardado se entregan directamente por SignalR local. La telemetría visual sigue cada 2 segundos y el historial cada 30 segundos.

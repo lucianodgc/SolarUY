@@ -10,7 +10,7 @@ Fuente funcional: `requirements.md` de esta carpeta. El alcance comprende una pa
 
 - Reutilizar `IHistoricoGeneracionService`, `FiltroHistoricoDto`, `ResultadoHistoricoDto`, `PuntoHistoricoDto` y `OpcionHistoricoDto` de req7. No duplicar SQL, integración de potencia a energía, agrupaciones, máximos/mínimos ni reglas temporales del histórico.
 - Mantener .NET 8, Blazor Server, Radzen.Blazor 6.0.0, EF Core 8, Pomelo 8.0.3 y MariaDB 11.8. No incorporar bibliotecas de gráficos, CSV o pruebas adicionales ni introducir MediatR.
-- Consultar el inventario persistido: parque obligatorio y nodo opcional perteneciente al parque. Sin nodo, el reporte representa el parque completo; con nodo, únicamente ese nodo. No agregar filtro por panel, comparación entre períodos, PDF ni exportación de imágenes a este requerimiento.
+- Consultar parque obligatorio, nodo opcional y panel opcional pertenecientes al parque y al nodo seleccionado. La selección más específica define el objetivo. Integrar comparación de dos períodos, tabla, extremos, gráficos y CSV por período. No agregar PDF ni exportación de imágenes.
 - La card Mantenimiento de `Home.razor` enlaza a `MantenimientoPaneles.razor`. Esta página usa `ITareaMantenimientoService` y `TareaMantenimientoDto`; no existe un componente independiente que pueda reutilizarse como resumen. Reutilizar sus registros, conceptos y campos de consulta, sin copiar el flujo de gestión al reporte.
 - El servicio de mantenimiento actual permite Administrador y Tecnico, y limita al técnico a sus tareas. El criterio 8 de req8 autoriza a los tres roles a leer reportes de todos los parques: incorporar una consulta específica de solo lectura para el reporte, conservando los permisos de gestión y la página `/mantenimiento`.
 - No modificar el recolector ni reconstruir mediciones faltantes desde reportes. La consulta y su rendimiento pertenecen a req7; la tarea 6.8 quedó verificada allí en la revisión del 17/11/2026.
@@ -32,7 +32,7 @@ Confirmado por el usuario durante la implementación:
 - Un único archivo con generación y mantenimiento, diferenciados mediante `TipoRegistro` (`Generacion` o `Mantenimiento`).
 - Separador punto y coma, UTF-8 sin BOM, fechas ISO 8601 con desplazamiento explícito de Uruguay y decimales con punto, sin redondeo adicional.
 - Intervalos sin datos con energía vacía y cobertura `SinDatos`; cero medido conserva el valor cero. Se permite exportar aunque no haya mediciones ni tareas.
-- Esquema técnico de columnas, en orden: `TipoRegistro`, `ParqueId`, `Parque`, `NodoId`, `Nodo`, `Periodo`, `InicioPeriodo`, `FinPeriodo`, `ZonaHoraria`, `EnergiaTotalKWh`, `CoberturaPeriodo`, `InicioIntervalo`, `FinIntervalo`, `EnergiaKWh`, `Cobertura`, `TareaId`, `PanelId`, `Panel`, `TipoMantenimiento`, `Descripcion`, `Responsable`, `Estado`, `FechaProgramada`, `FechaRealizacion`. Los metadatos de período se repiten en cada fila; las columnas de la otra clase de registro quedan vacías. Los valores se entrecomillan y las comillas internas se duplican, conservando saltos de línea y caracteres españoles.
+- Esquema técnico de columnas, en orden: `TipoRegistro`, `ParqueId`, `Parque`, `NodoId`, `Nodo`, `Periodo`, `InicioPeriodo`, `FinPeriodo`, `ZonaHoraria`, `EnergiaTotalKWh`, `CoberturaPeriodo`, `InicioIntervalo`, `FinIntervalo`, `EnergiaKWh`, `Cobertura`, `TareaId`, `PanelId`, `Panel`, `TipoMantenimiento`, `Descripcion`, `Responsable`, `Estado`, `FechaProgramada`, `FechaRealizacion`. Los metadatos de período se repiten en cada fila; en filas de generación por panel también se identifican PanelId y Panel; las demás columnas de mantenimiento quedan vacías. Los valores se entrecomillan y las comillas internas se duplican, conservando saltos de línea y caracteres españoles.
 
 El archivo contiene todos los intervalos, incluidos los vacíos, y únicamente los mantenimientos seleccionados por Q1. La coherencia con el resultado mostrado, el escape correcto de campos y la autorización son obligatorios.
 
@@ -50,7 +50,7 @@ Crear el módulo `SolarUY.Application.Reportes` con `IReporteHistoricoService`/`
 
 Operaciones asíncronas con `CancellationToken`:
 
-- `ListarOpcionesAsync`: delegar en el histórico y entregar únicamente parques y nodos para los filtros del reporte.
+- `ListarOpcionesAsync`: delegar en el histórico y entregar parques, nodos y paneles para los filtros del reporte.
 - `ConsultarAsync`: validar el filtro y devolver un resultado coherente con su parque, nodo y período efectivo.
 - `ExportarCsvAsync`: autorizar nuevamente y serializar el resultado de reporte previamente obtenido en el servidor, conforme a Q2, sin volver a consultar lecturas que puedan haber cambiado desde su visualización.
 
@@ -58,9 +58,9 @@ Definir únicamente estos contratos de Application, sin referencias a Radzen, EF
 
 | Contrato | Contenido y responsabilidad |
 | --- | --- |
-| `FiltroReporteDto` | `ParqueId`, `NodoId` opcional, `PeriodoHistorico`, inicio local y fin local opcional según el período. |
+| `FiltroReporteDto` | `ParqueId`, `NodoId` y `PanelId` opcionales, `PeriodoHistorico`, inicio local y fin local opcional según el período. |
 | `ResultadoReporteDto` | Filtro e identificación del objetivo, `ResultadoHistoricoDto` de generación y colección de mantenimientos realizados. Conserva el resultado que alimenta los gráficos y la exportación. |
-| `ConsultaMantenimientosReporteDto` | Parque, nodo opcional y límites UTC efectivos obtenidos del resultado histórico. No recibe límites recalculados por Blazor. |
+| `ConsultaMantenimientosReporteDto` | Parque, nodo y panel opcionales y límites UTC efectivos obtenidos del resultado histórico. No recibe límites recalculados por Blazor. |
 | `MantenimientoRealizadoReporteDto` | Proyección de los campos existentes acordados en Q1, sin indicadores ni comandos para editar, asignar o cambiar estados. |
 | `ArchivoReporteCsvDto` | Nombre de archivo, tipo de contenido CSV y contenido codificado según Q2. No expone detalles del navegador. |
 
@@ -70,9 +70,9 @@ Los campos de mantenimiento y el esquema del CSV son los definidos en Q1 y Q2, c
 
 Validar con `IUsuarioActual` una identidad autenticada con identificador no vacío y al menos uno de los roles `Administrador`, `Tecnico` o `Consulta`. Aplicar la política en opciones, consulta y exportación, también al invocar directamente el servicio. Los tres roles leen todos los parques y los mantenimientos incluidos en el reporte.
 
-Validar parque existente, nodo existente y pertenencia del nodo al parque, identificadores no vacíos y período admitido. Resolver la relación mediante las opciones del histórico, sin usar el servicio administrativo de parques ni el listado restringido de mantenimiento. Rechazar un nodo de otro parque incluso si el identificador es válido.
+Validar parque, nodo y panel existentes, pertenencia del nodo al parque y del panel al parque/nodo seleccionado, identificadores no vacíos y período admitido. Resolver la relación mediante las opciones del histórico, sin usar el servicio administrativo de parques ni el listado restringido de mantenimiento. Rechazar un nodo de otro parque incluso si el identificador es válido.
 
-Convertir el filtro a `FiltroHistoricoDto` de tipo Parque o Nodo y delegar la validación temporal en `IHistoricoGeneracionService`. Mantener sus errores diferenciados de entrada, acceso y objetivo inexistente. No copiar en el nuevo servicio los métodos privados de conversión de fechas del histórico.
+Convertir el filtro a `FiltroHistoricoDto` de tipo Parque, Nodo o Panel y delegar la validación temporal en `IHistoricoGeneracionService`. Mantener sus errores diferenciados de entrada, acceso y objetivo inexistente. No copiar en el nuevo servicio los métodos privados de conversión de fechas del histórico.
 
 ### A3. Generación y mantenimiento del mismo período
 
@@ -82,7 +82,7 @@ Los valores `null` permanecen sin datos; el cero representa una medición igual 
 
 Ampliar `ITareaMantenimientoRepository` con `ListarRealizadosParaReporteAsync(ConsultaMantenimientosReporteDto, CancellationToken)`, que devuelve las proyecciones de Q1. La operación se usa desde el servicio autorizado de reportes y no sustituye `ITareaMantenimientoService.ListarAsync`.
 
-Pasar a esta consulta los límites de `ResultadoHistoricoDto.Consulta` y el mismo parque/nodo validado. No exigir que existan lecturas para consultar los mantenimientos: puede haber mantenimiento en un período sin generación registrada. No deducir tareas desde lecturas, estados del simulador o fechas de programación si Q1 no lo autoriza.
+Pasar a esta consulta los límites de `ResultadoHistoricoDto.Consulta` y el mismo parque/nodo/panel validado. No exigir que existan lecturas para consultar los mantenimientos: puede haber mantenimiento en un período sin generación registrada. No deducir tareas desde lecturas, estados del simulador o fechas de programación si Q1 no lo autoriza.
 
 ### A4. Coherencia y exportación
 
@@ -98,7 +98,7 @@ Aplicar el contrato acordado en Q2, escape del separador, comillas, saltos de l�
 
 Implementar la nueva operación en `TareaMantenimientoRepository`, reutilizando `IDbContextFactory<ApplicationDbContext>` y las relaciones `TareaMantenimiento.Panel.Nodo.Parque`. Usar un contexto por operación, lectura sin seguimiento y cancelación.
 
-Aplicar en MariaDB los filtros por parque, nodo opcional, estado y fecha acordados en Q1. Proyectar únicamente los campos del resumen y ordenar de forma estable por fecha de realización e identificador. No cargar todo el historial de mantenimiento para filtrarlo en Application y no realizar una consulta por panel o tarea.
+Aplicar en MariaDB los filtros por parque, nodo y panel opcionales, estado y fecha acordados en Q1. Proyectar únicamente los campos del resumen y ordenar de forma estable por fecha de realización e identificador. No cargar todo el historial de mantenimiento para filtrarlo en Application y no realizar una consulta por panel o tarea.
 
 Esta lectura tiene el alcance global autorizado por A2. Mantener sin cambios las restricciones por responsable y las validaciones de las operaciones de gestión existentes. No añadir escrituras, consultas al directorio de Keycloak para completar campos no acordados ni tablas auxiliares.
 
@@ -112,7 +112,9 @@ Reutilizar `HistoricoGeneracionRepository` a través de su servicio existente, s
 
 Crear `ReportesHistorico.razor` en `/reportes`, protegida para `Administrador,Tecnico,Consulta`, e incorporar el acceso al menú existente. Registrar `IReporteHistoricoService` en `Program.cs` con el patrón de ámbito e identidad del circuito utilizado por el histórico. No acceder desde la página a Infrastructure, repositorios ni `DbContext`.
 
-Permitir seleccionar parque, nodo opcional del parque, período Diario/Mensual/Anual/Rango y fechas correspondientes. Cargar opciones desde el servicio de reportes. Al cambiar de parque, limpiar un nodo que ya no pertenezca a él; conservar siempre una selección válida.
+Permitir seleccionar parque, nodo y panel opcionales, período Diario/Mensual/Anual/Rango y fechas correspondientes, con comparación opcional de otro período. Cargar opciones desde el servicio de reportes. Al cambiar de parque, limpiar un nodo que ya no pertenezca a él; conservar siempre una selección válida.
+
+Mostrar `ResultadoHistorico` con tabla, energía, cobertura, extremos, zona horaria y avisos en la misma página de Reportes. Ante comparación, renderizar resultados y gráficos de ambos períodos y ofrecer CSV individual. Capturar filtros antes de consultar y publicar ambos resultados juntos para descartar respuestas de selecciones anteriores.
 
 ### P2. Gráficos Radzen y disponibilidad
 

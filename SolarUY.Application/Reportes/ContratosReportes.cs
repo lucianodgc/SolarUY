@@ -4,7 +4,7 @@ using SolarUY.Domain.Enums;
 
 namespace SolarUY.Application.Reportes;
 
-public sealed record ConsultaMantenimientosReporteDto(Guid ParqueId, Guid? NodoId, DateTime InicioUtc, DateTime FinUtc);
+public sealed record ConsultaMantenimientosReporteDto(Guid ParqueId, Guid? NodoId, DateTime InicioUtc, DateTime FinUtc, Guid? PanelId = null);
 
 public sealed record MantenimientoRealizadoReporteDto(Guid Id, Guid PanelId, string NumeroSerie, string Tipo,
     string Descripcion, string ResponsableId, EstadoTareaMantenimiento Estado,
@@ -19,16 +19,18 @@ public sealed class ResultadoReporteDto
     public FiltroReporteDto Filtro { get; }
     public string Parque { get; }
     public string? Nodo { get; }
+    public string? Panel { get; }
     public ResultadoHistoricoDto Generacion { get; }
     public IReadOnlyList<MantenimientoRealizadoReporteDto> Mantenimientos { get; }
     public GraficoReporteDto Grafico { get; }
 
     internal ResultadoReporteDto(FiltroReporteDto filtro, string parque, string? nodo,
-        ResultadoHistoricoDto generacion, IReadOnlyList<MantenimientoRealizadoReporteDto> mantenimientos)
+        ResultadoHistoricoDto generacion, IReadOnlyList<MantenimientoRealizadoReporteDto> mantenimientos, string? panel = null)
     {
         Filtro = filtro;
         Parque = parque;
         Nodo = nodo;
+        Panel = panel;
         Generacion = generacion with { Serie = Array.AsReadOnly(generacion.Serie.ToArray()) };
         Mantenimientos = Array.AsReadOnly(mantenimientos.ToArray());
         Grafico = GraficoReporteDto.DesdeHistorico(Generacion);

@@ -109,4 +109,10 @@ Fuente única de alcance técnico: [specs.md](specs.md). Las referencias entre p
 
 ## Cierre / Documentación
 
+- [x] Permitir Ollama remoto con habilitación explícita, URL base HTTP/HTTPS validada, parámetro OllamaRemoto para ambos modos y opciones persistentes de Compose.
+- [ ] Verificar con dos PCs reales y, si corresponde, con VPN; comprobar conectividad desde los contenedores.
+
+- [x] Actualizar la pregunta con el evento de entrada y el estado del botón mientras se escribe, conservando el bloqueo durante la consulta.
+- [ ] Comprobar visualmente escritura, borrado y pegado sin perder el foco en el chat.
+
 - [x] 13. Crear o actualizar implementations.md en la misma carpeta con el detalle de los cambios realizados, los archivos tocados y el resultado de las pruebas. Crear o actualizar tambien resumen.md en esa carpeta con una sintesis breve y facil de leer de lo realizado para el requerimiento. Incluir las decisiones resueltas, configuración externa de IA/MCP, catálogo de herramientas, limitaciones y verificaciones pendientes, y marcar solo tareas efectivamente completadas. (C2)

@@ -29,7 +29,7 @@
     </div>
     <div class="mb-3">
         <RadzenLabel Text="Capacidad estimada (MW, opcional)" Component="Capacidad" />
-        <RadzenNumeric TValue="decimal?" Name="Capacidad" @bind-Value="_modelo.CapacidadEstimadaMW" Style="width:100%" Disabled="_guardando" />
+        <RadzenNumeric Format="0.############################" TValue="decimal?" Name="Capacidad" @bind-Value="_modelo.CapacidadEstimadaMW" Style="width:100%" Disabled="_guardando" />
     </div>
     <RadzenButton ButtonType="ButtonType.Submit" Text="Registrar parque" IsBusy="_guardando" Disabled="_guardando" />
     <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="Cancelar" Disabled="_guardando" />

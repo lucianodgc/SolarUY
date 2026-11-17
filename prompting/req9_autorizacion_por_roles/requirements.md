@@ -9,7 +9,8 @@ Como usuario de SolarUY (Administrador, Técnico o Consulta), quiero que las ope
 ### Administrador
 
 - Puede crear, consultar, editar y eliminar parques, nodos y paneles (ABM).
-- Puede emitir órdenes al inversor.
+- Puede emitir órdenes al inversor desde Simulador; Monitoreo es de solo lectura.
+- En mantenimiento crea, asigna, edita y cancela. Solo el técnico asignado puede iniciar y completar tareas.
 
 ### Técnico
 
@@ -23,6 +24,8 @@ Como usuario de SolarUY (Administrador, Técnico o Consulta), quiero que las ope
 - No puede crear, editar ni eliminar parques, nodos o paneles, realizar mantenimiento ni emitir órdenes al inversor.
 
 ## Reglas de autorización
+
+- Inicio ofrece accesos a todos los módulos autorizados: parques, paneles, monitoreo, reportes, asistente, simulador y cuenta; mantenimiento solo para Administrador/Tecnico. Los enlaces de alta solo se muestran a Administrador.
 
 - Aplicar autorización por rol en la interfaz y en los endpoints o componentes de presentación que expongan las operaciones.
 - Los casos de uso y servicios de Application deben verificar el rol y denegar las operaciones no permitidas; ocultar controles de interfaz no constituye autorización suficiente.

@@ -53,7 +53,7 @@ Dependencias: entidad de la etapa 2, puerto de 3.2 y aclaraciones Q1–Q6. (I1, 
 
 Dependencias: servicio y repositorio de etapas 3–4 y política de Q6. (P1, P2)
 
-- [x] 5.1 Registrar `IHistoricoGeneracionService` en la composición existente del host y crear `HistoricoGeneracion.razor` en `/historico-generacion`, con página y menú protegidos según Q6. (P1)
+- [x] 5.1 Registrar `IHistoricoGeneracionService` en la composición existente del host y integrar el histórico en `ReportesHistorico.razor` (/reportes), con alias /historico-generacion y un único acceso protegido según Q6. (P1)
 - [x] 5.2 Implementar selección de parque/nodo/panel mediante `ListarOpcionesAsync`, controles diarios/mensuales/anuales y rangos de consulta/comparación según Q3. (P1)
 - [x] 5.3 Mostrar total de energía, serie en tabla Radzen, períodos comparados y extremos con sus unidades, referencias temporales, límites y zona horaria, usando los DTO ya calculados. (P2)
 - [x] 5.4 Mostrar disponibilidad según Q5 y estados de carga, validación, acceso denegado, inexistencia y error; impedir consultas repetidas mientras haya una operación en curso. Mantener los cálculos y las decisiones de negocio en Application/Infrastructure. (P2)
@@ -89,3 +89,8 @@ Dependencias: implementación de etapas 2–5; Q1–Q6 para fijar resultados, Q7
 ## 8. Cierre y documentación
 
 - [x] 8. Actualizar implementations.md en la misma carpeta detallando los cambios realizados, archivos tocados y resultado de las pruebas, incluida la recolección periódica. (C1, R1)
+
+## Ajuste de interfaz — 17/11/2026
+
+- [x] Conservar detalle por panel y comparación en la pantalla unificada Reportes.
+- [ ] Repetir el recorrido visual de esta interfaz con los cambios vigentes.

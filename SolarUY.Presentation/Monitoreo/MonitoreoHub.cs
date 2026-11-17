@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.SignalR;
 using SolarUY.Application.Monitoreo;
 using SolarUY.Application.Inversores;
+using System.Collections.Concurrent;
+using Microsoft.Extensions.Options;
 
 namespace SolarUY.Presentation.Monitoreo;
 
@@ -11,8 +13,10 @@ namespace SolarUY.Presentation.Monitoreo;
 public sealed class MonitoreoHub : Hub
 {
     private readonly AccesoMonitoreoService _acceso;
+    private readonly NotificadorTelemetriaEnVivo? _telemetria;
 
-    public MonitoreoHub(AccesoMonitoreoService acceso) => _acceso = acceso;
+    public MonitoreoHub(AccesoMonitoreoService acceso, NotificadorTelemetriaEnVivo? telemetria = null)
+    { _acceso = acceso; _telemetria = telemetria; }
 
     public async Task SuscribirParque(Guid parqueId)
     {
@@ -27,6 +31,8 @@ public sealed class MonitoreoHub : Hub
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, Grupo(id), Context.ConnectionAborted);
         await Groups.AddToGroupAsync(Context.ConnectionId, Grupo(parqueId), Context.ConnectionAborted);
         Context.Items["Parque"] = parqueId;
+        if (_telemetria is not null)
+            await _telemetria.EnviarUltimaAsync(parqueId, Clients.Caller, Context.ConnectionAborted);
     }
 
     public async Task DesuscribirParque()
@@ -41,11 +47,31 @@ public sealed class MonitoreoHub : Hub
 public sealed class NotificadorTelemetriaEnVivo
 {
     private readonly IHubContext<MonitoreoHub> _hub;
-    public NotificadorTelemetriaEnVivo(IHubContext<MonitoreoHub> hub) => _hub = hub;
+    private readonly TimeProvider _reloj;
+    private readonly TimeSpan _vigencia;
+    private readonly ConcurrentDictionary<Guid, IReadOnlyList<TelemetriaNodoDto>> _ultimas = new();
+    public NotificadorTelemetriaEnVivo(IHubContext<MonitoreoHub> hub, TimeProvider? reloj = null,
+        IOptions<TelemetriaEnVivoOptions>? opciones = null)
+    {
+        _hub = hub; _reloj = reloj ?? TimeProvider.System;
+        _vigencia = TimeSpan.FromSeconds(3 * (opciones?.Value.IntervaloSegundos ?? 2));
+    }
 
     public Task NotificarAsync(Guid parqueId, IReadOnlyList<TelemetriaNodoDto> nodos, CancellationToken cancellationToken)
-        => _hub.Clients.Group(MonitoreoHub.Grupo(parqueId))
+    {
+        _ultimas[parqueId] = nodos.ToArray();
+        return _hub.Clients.Group(MonitoreoHub.Grupo(parqueId))
             .SendAsync("TelemetriaActualizada", nodos, cancellationToken);
+    }
+
+    public Task EnviarUltimaAsync(Guid parqueId, IClientProxy cliente, CancellationToken cancellationToken)
+    {
+        var ahora = _reloj.GetUtcNow().UtcDateTime;
+        if (!_ultimas.TryGetValue(parqueId, out var nodos) || nodos.Count == 0
+            || nodos.Any(n => n.ParqueId != parqueId || n.FechaConsultaUtc > ahora || ahora - n.FechaConsultaUtc > _vigencia))
+            return Task.CompletedTask;
+        return cliente.SendAsync("TelemetriaActualizada", nodos, cancellationToken);
+    }
 }
 
 // Avisa directamente a los usuarios de esta instancia después de guardar las lecturas.

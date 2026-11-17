@@ -10,12 +10,36 @@
             <p>Consultá la ubicación y capacidad de cada parque solar.</p>
             <div class="module-links"><a href="/parques-solares">Consultar parques →</a><AuthorizeView Roles="Administrador" Context="administrador"><a href="/parques-solares/alta">Registrar parque</a></AuthorizeView></div>
         </section>
+        <section class="module-card">
+            <span class="module-icon"><RadzenIcon Icon="grid_view" /></span>
+            <h2>Paneles solares</h2>
+            <p>Consultá el inventario de paneles y su ubicación por nodo y parque.</p>
+            <div class="module-links"><a href="/paneles">Consultar paneles →</a><AuthorizeView Roles="Administrador" Context="administradorPanel"><a href="/paneles/alta">Registrar panel</a></AuthorizeView></div>
+        </section>
+        <section class="module-card">
+            <span class="module-icon"><RadzenIcon Icon="monitor_heart" /></span>
+            <h2>Monitoreo en vivo</h2>
+            <p>Seguí la potencia, la salud de los equipos y las alertas del parque.</p>
+            <a href="/monitoreo">Ver monitoreo →</a>
+        </section>
+        <section class="module-card">
+            <span class="module-icon"><RadzenIcon Icon="bar_chart" /></span>
+            <h2>Reportes</h2>
+            <p>Consultá generación por parque, nodo o panel, compará períodos y exportá los datos en CSV.</p>
+            <a href="/reportes">Ver reportes →</a>
+        </section>
+        <section class="module-card">
+            <span class="module-icon"><RadzenIcon Icon="chat_bubble_outline" /></span>
+            <h2>Asistente</h2>
+            <p>Preguntá por tus parques con un chatbot de solo lectura.</p>
+            <a href="/chatbot">Abrir asistente →</a>
+        </section>
     </AuthorizeView>
     <AuthorizeView Roles="Administrador,Tecnico">
         <section class="module-card">
             <span class="module-icon module-icon-amber"><RadzenIcon Icon="build" /></span>
             <h2>Mantenimiento</h2>
-            <p>Consultá las tareas, filtrá las vencidas y registrá el avance de los trabajos asignados.</p>
+            <p>Consultá las tareas y filtrá las vencidas. El técnico asignado registra el inicio y la finalización.</p>
             <a href="/mantenimiento">Ver tareas →</a>
         </section>
     </AuthorizeView>
@@ -23,7 +47,7 @@
         <section class="module-card">
             <span class="module-icon module-icon-amber"><RadzenIcon Icon="bolt" /></span>
             <h2>Simulador de inversor</h2>
-            <p>Observá la potencia y el estado de los paneles en un entorno de simulación.</p>
+            <p>Consultá el inversor simulado. Solo el administrador puede operar paneles y volcado a red.</p>
             <a href="/simulador">Abrir simulador →</a>
         </section>
     </AuthorizeView>

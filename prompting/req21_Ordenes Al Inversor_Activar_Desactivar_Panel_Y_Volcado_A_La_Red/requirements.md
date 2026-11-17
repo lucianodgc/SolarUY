@@ -18,7 +18,7 @@ Esta funcionalidad corresponde a la Entrega 3 y debe integrarse con el inventari
 
 ### 2. Interfaz de monitoreo
 
-- Incorporar controles para las cuatro operaciones en la pantalla de monitoreo correspondiente.
+- Centralizar los controles de las cuatro operaciones en Simulador de inversor (/simulador). Monitoreo es de solo lectura y enlaza a esa pantalla.
 - Solicitar confirmación explícita antes de enviar cada orden, identificando la acción y su destino.
 - Informar al usuario si la orden fue ejecutada, rechazada o falló; no mostrar éxito sin confirmación del resultado de la operación.
 - Evitar envíos accidentales repetidos mientras una orden esté en curso, sin depender de este bloqueo visual como medida de seguridad.

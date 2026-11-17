@@ -4,9 +4,11 @@ Como usuario autenticado quiero consultar la generación de un parque, sus nodos
 
 ## Alcance aprobado
 
+- Monitoreo es de solo lectura: potencia, salud, alertas y evolución. Las órdenes de paneles y volcado se concentran en Simulador (req21), accesible mediante un enlace.
+
 - Este documento describe el transporte de monitoreo local. El despliegue vigente admite A/B detrás de Nginx según req15; la salud distribuida se define en req16.
 - Consultar el simulador cada 2 segundos y compartir la misma muestra con Monitoreo y Simulador mediante SignalR.
-- Guardar lecturas históricas en segundo plano cada 30 segundos; conservar Histórico y Reportes basados en MariaDB.
+- Guardar lecturas históricas en segundo plano cada 30 segundos; conservar Reportes unificados basados en MariaDB.
 - Retirar las tablas técnicas AvisosMonitoreo, CursoresMonitoreo y SecuenciaMonitoreo, y el proceso que las consulta, conservando los datos solares.
 
 ## Criterios de aceptación
@@ -15,6 +17,7 @@ Como usuario autenticado quiero consultar la generación de un parque, sus nodos
 - Actualizar valores y gráfico automáticamente; acotar los puntos y distinguir ausencia de datos de cero medido.
 - La actualización en vivo no debe esperar al guardado histórico ni consultar la base por cada muestra recibida.
 - Mantener carga inicial, reconexión, cambio de parque y liberación de suscripciones al salir.
+- Al entrar, entregar la última telemetría compartida vigente después de autorizar la suscripción; si aún no existe, distinguir espera inicial de ausencia confirmada de mediciones.
 - Administrador, Tecnico y Consulta pueden consultar. Autorizar también consultas y suscripciones en el servidor.
 - Monitoreo no permite modificar parques, nodos, paneles ni lecturas. El simulador conserva los permisos de operación existentes.
 - La migración elimina solo las tablas técnicas; las lecturas y el inventario permanecen intactos y se siguen guardando sin duplicados.

@@ -1,5 +1,9 @@
 # Implementación: Mantenimiento de paneles
 
+## Permisos vigentes — 17/11/2026
+
+Inicio y finalización exigen rol Tecnico y coincidencia exacta con ResponsableId en Application y en los indicadores del DTO. La actualización SQL vuelve a exigir el responsable para rechazar reasignaciones concurrentes. Administrador conserva creación, asignación, edición y cancelación. Se verificaron 9 escenarios MariaDB de permisos (incluido doble rol, responsable ajeno y llamadas directas), dentro de 40 integraciones aprobadas de mantenimiento/reportes. Arquitectura: 9 aprobadas. El recorrido visual anterior no acredita estos permisos nuevos; debe repetirse.
+
 ## Actualización de integración frontend
 
 Mantenimiento se integra en el inicio y menú por rol, con cabeceras compartidas, filtros, tabla con paginación/ordenación y acciones compactas. Creación presenta notificación de éxito. En navegador se comprobó la carga de tareas reales y de opciones de panel/técnico sin modificar las tareas existentes. Las transiciones conservan su implementación y verificación original. Detalle en [frontend_integracion.md](../Reportes%20de%20codex/frontend_integracion.md).
@@ -14,7 +18,7 @@ Se completaron el modelo, persistencia incremental, directorio de técnicos, per
 
 - Creación Pendiente con panel existente, Tipo texto, Descripcion y responsable obligatorios.
 - ResponsableId corresponde al sub de Keycloak; no hay una tabla de usuarios/técnicos.
-- Administrador crea, consulta, edita y reasigna tareas abiertas. Técnicos solo consultan y cambian estado de tareas propias.
+- Administrador crea, consulta, edita, reasigna y cancela tareas abiertas. Solo el técnico asignado puede iniciarlas y completarlas. Técnicos solo consultan y cambian estado de tareas propias.
 - Inicio, finalización con FechaRealizacion UTC y cancelación según las transiciones aprobadas.
 - Completadas y canceladas inmutables, sin reapertura ni cambios de panel.
 - Consultas por estado, vencimiento, técnico y panel; instantes UTC y vencimiento estrictamente anterior a la referencia.

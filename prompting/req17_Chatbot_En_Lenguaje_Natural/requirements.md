@@ -30,6 +30,10 @@ La conversación se mantiene dentro de SolarUY mediante Blazor y Radzen. Antigra
 
 ## Reglas de Negocio
 
+- Ollama puede ejecutarse en otra PC de una red local o VPN mediante un endpoint configurado por el operador y habilitación explícita de acceso remoto. La configuración funciona con web local o con ambas webs Docker; no modifica las herramientas ni los permisos del usuario.
+
+- Enviar pregunta se habilita mientras se escribe texto no vacío, sin exigir salir del campo; permanece deshabilitado para espacios o mientras se procesa una consulta.
+
 - El chatbot tiene permisos de **solo lectura**. No puede crear, modificar ni eliminar parques, nodos, paneles, lecturas o mantenimientos, ni activar o desactivar inversores o paneles.
 - Las herramientas publicadas por el servidor MCP y ofrecidas al modelo deben estar definidas explícitamente y limitadas a operaciones de consulta. El cliente solo admite el catálogo autorizado de SolarUY. No se deben exponer funciones administrativas ni mecanismos de ejecución libre de comandos o consultas a la base de datos.
 - La autorización no depende únicamente del texto generado por la IA: los servicios de `Application` deben validar los permisos del usuario antes de devolver información.

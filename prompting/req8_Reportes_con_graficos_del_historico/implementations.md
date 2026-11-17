@@ -1,5 +1,7 @@
 # Implementación: Reportes con gráficos del histórico y exportación
 
+Presentación — 17/11/2026: se separa el encabezado de cada período mediante la clase reporte-periodo y todos los selectores de fecha incluyen hora de 24 horas. Se aclara que Rango respeta horas y fin exclusivo, mientras Diario/Mensual/Anual conservan períodos completos. Se reutilizan los cálculos existentes. Compilación, arquitectura e integraciones de reportes aprobadas junto con la verificación de monitoreo; revisión visual pendiente.
+
 Actualización del 29/10/2026: histórico, gráficos y CSV respetan el nodo histórico guardado; las lecturas legadas de nodo desconocido permanecen por panel y generan un aviso, sin asignarlas al nodo/parque actual. Ver [informe de reparación y pruebas](../Reportes%20de%20codex/reparacion_migraciones_20261029.md). La evidencia del 22/10 siguiente corresponde a la implementación anterior.
 
 Fecha: 22/10/2026. La pantalla está disponible en `/reportes` para Administrador, Tecnico y Consulta. Reutiliza el histórico de req7, agrega el resumen de mantenimiento realizado y permite descargar ambos conjuntos de datos en un único CSV.
@@ -8,7 +10,7 @@ Fecha: 22/10/2026. La pantalla está disponible en `/reportes` para Administrado
 
 - Filtros por parque, nodo opcional, período diario/mensual/anual o rango y fechas de Uruguay. Los cambios consultan automáticamente; cambiar de parque limpia la selección de nodo. La pertenencia se valida también en Application.
 - Gráficos Radzen de barras y líneas sobre los valores del histórico, con unidad kWh, eje temporal de Uruguay y escala vertical legible para valores menores a 1 kWh. Cambiar la representación no consulta de nuevo.
-- Los puntos sin energía se conservan como ausencia de datos en el detalle y no se convierten en cero. Las líneas se separan en segmentos para no atravesar huecos; se conservan los ceros medidos y los avisos de cobertura parcial.
+- Los puntos sin energía se conservan como ausencia de datos en el CSV y no se convierten en cero. Las líneas se separan en segmentos para no atravesar huecos; se conservan los ceros medidos y los avisos de cobertura parcial.
 - Mantenimientos exclusivamente Completados cuya FechaRealizacion pertenece a `[inicio, fin)`. Se excluyen completados sin fecha; se muestran panel, tipo, descripción, responsable, estado y las dos fechas. Los campos proceden de los registros existentes, sin duplicarlos.
 - CSV con separador punto y coma, UTF-8 sin BOM, fechas ISO 8601 con desplazamiento de Uruguay y decimales invariantes sin redondeo adicional. `TipoRegistro` distingue Generacion/Mantenimiento; incluye todos los intervalos, incluso los que tienen energía vacía y cobertura SinDatos. Los encabezados y sus 24 columnas están registrados en Q2 de `specs.md`.
 - Exportación del mismo resultado generado en el servidor que alimenta la pantalla, con nueva comprobación de identidad y rol. No vuelve a consultar las lecturas al descargar: el archivo conserva los valores aunque el recolector haya guardado muestras nuevas.
@@ -111,7 +113,7 @@ Fecha de cierre: 12/11/2026. **Las 47 tareas de `tasks.md` están completas.** S
 
 ## Resultado funcional
 
-La pantalla `/reportes` presenta generación histórica en kWh mediante barras y líneas Radzen, filtros de parque/nodo/período/fechas, detalle de cobertura e intervalos, mantenimientos realizados y exportación CSV del resultado vigente.
+La pantalla `/reportes` integra generación histórica en kWh mediante barras y líneas Radzen, filtros de parque/nodo/panel/período/fechas, comparación, resumen de energía y cobertura, tabla y extremos, mantenimientos realizados y CSV por período. No existe una segunda pantalla de Histórico.
 
 Se conservan las vistas Diario/Mensual/Anual/Rango del histórico, la zona `America/Montevideo`, los límites `[inicio, fin)`, la precisión original y la distinción entre cero medido y ausencia de datos. Las lecturas sin nodo histórico conocido no se atribuyen a la topología actual; el diagnóstico conserva su alcance global al período.
 
@@ -233,3 +235,7 @@ Son idénticos byte a byte, con **9827 bytes** y SHA-256 `8B210AB7E396B48FE24A7E
 ## Cierre
 
 Se comprobaron `git diff --check`, UTF-8 sin BOM y coherencia entre requisitos, especificación y tareas. No quedan tareas de REQ020 pendientes. Las omisiones explícitas de la suite general se conservan documentadas y no se contabilizan como pruebas aprobadas.
+
+## Interfaz unificada — 17/11/2026
+
+Reportes integra toda la consulta histórica y comparación. Se amplían los filtros con PanelId validado, también aplicado al mantenimiento y exportación. Se conserva la lógica de cálculo de req7 sin migraciones. La navegación tiene una sola entrada; la URL antigua es un alias. Verificación: 32 integraciones de reportes y concurrencia aprobadas, incluida consulta por panel, CSV y rechazo de pertenencia inválida; 9 pruebas de arquitectura aprobadas. El recorrido visual de esta versión queda pendiente.

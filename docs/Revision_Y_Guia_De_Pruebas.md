@@ -18,15 +18,18 @@ Con Ollama y los secretos locales preparados: `.\SolarUY.Integration.Tests/Verif
 
 ## Recorrido manual
 
+Monitoreo recibe la última muestra vigente al suscribirse o muestra espera inicial. Salud y Reportes requieren lecturas guardadas: usa el arranque normal, sin `-SinGuardarHistorial`, y espera un ciclo de 30 segundos. Después actualiza el reporte. En las fechas puedes elegir hora; selecciona Rango para que la consulta respete esas horas, ya que Diario/Mensual/Anual abarcan períodos completos.
+
 Usa datos de prueba y registra usuario, resultado esperado/obtenido y evidencia:
 
 | Función | Qué comprobar |
 | --- | --- |
 | Login y permisos | Entrar/salir con los tres roles; revisar Mi cuenta y rechazos de operaciones no autorizadas. |
 | Inventario | Crear, editar, trasladar y dar de baja paneles; validar campos, capacidad y conservación del historial. |
-| Mantenimiento | Crear/asignar tarea, avanzar estados como técnico asignado y comprobar aislamiento e inmutabilidad de tareas terminales. |
-| Simulador y monitoreo | Observar potencia, activar/desactivar y probar volcado. Cancelar confirmación no envía órdenes. |
-| Histórico y reportes | Esperar muestras de 30 segundos; contrastar objetivos, períodos, energía, cobertura, gráficos y CSV. |
+| Inicio | Comprobar accesos según rol: mantenimiento solo para Administrador/Tecnico; altas solo para Administrador. |
+| Mantenimiento | Administrador crea/asigna/edita/cancela; solo el técnico asignado inicia/completa y puede cancelar sus tareas. Probar también llamadas directas, aislamiento e inmutabilidad terminal. |
+| Simulador y monitoreo | Operar paneles/volcado únicamente desde Simulador como Administrador; cancelar confirmación no envía órdenes. Monitoreo muestra potencia, salud y alertas, y enlaza al Simulador. |
+| Histórico y reportes | Esperar muestras de 30 segundos. Reportes integra detalle por parque/nodo/panel, comparación de períodos, gráficos, mantenimientos y CSV para cada período. Sin datos indica falta de mediciones, incluidas horas futuras. |
 | Salud | Configurar `InversorSimulador:PanelesConFalla` por serie/Guid en el simulador y reiniciarlo; comprobar alerta y recuperación al retirar la configuración. |
 | Chatbot | Probar resumen, histórico, seguimiento, falta de datos/error y aislamiento; contrastar respuestas y rechazar órdenes. |
 | Disponibilidad | Detener una web, verificar navegación y nuevas lecturas por la otra; restaurar y repetir. El circuito/chat puede reiniciarse. |

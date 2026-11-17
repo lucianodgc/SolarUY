@@ -1,5 +1,7 @@
 # Implementación: Histórico de generación (REQ7)
 
+Estado vigente: la interfaz se unificó en `/reportes` (req8), con parque/nodo/panel, comparación de períodos, tabla, gráficos y CSV. `/historico-generacion` es un alias de la misma página; se conserva el servicio de cálculos históricos. Las verificaciones anteriores describen las entregas realizadas en sus fechas.
+
 Actualización del 29/10/2026: se conservan las lecturas legadas sin nodo verificable y se consultan por panel. Los agregados usan procedencia histórica, incluyen paneles trasladados y muestran un aviso de las lecturas no atribuibles. Se corta la integración en la siguiente muestra antes de filtrar su nodo. Ver [reparación de migraciones y verificaciones actuales](../Reportes%20de%20codex/reparacion_migraciones_20261029.md); las mediciones de rendimiento previas no acreditan la versión actual.
 
 Fecha: 22/10/2026. El histórico está disponible en `/historico-generacion`. La ampliación R1 incorpora recolección automática del inventario y está activa en la aplicación local cada minuto. La entrega inicial completó las 40 tareas originales; el estado actual y la verificación de volumen reabierta se registran en `tasks.md`.
@@ -22,7 +24,7 @@ Fecha: 22/10/2026. El histórico está disponible en `/historico-generacion`. La
 | Application | `SolarUY.Application/HistoricoGeneracion/ContratosHistorico.cs`, `HistoricoGeneracionService.cs`: contratos, validación, calendario, autorización y orquestación. |
 | Infrastructure | `SolarUY.Infrastructure/Persistence/LecturaPanelConfiguration.cs`, `HistoricoGeneracionRepository.cs`, `ApplicationDbContext.cs` y `SolarUY.Infrastructure/DependencyInjection.cs`. |
 | Migración | `SolarUY.Infrastructure/Migrations/20261022130747_AddLecturaPanel.cs`, su `.Designer.cs` y `ApplicationDbContextModelSnapshot.cs`. No se alteraron las migraciones históricas. |
-| Presentation | `SolarUY.Presentation/Components/Pages/HistoricoGeneracion.razor`, `Components/Shared/ResultadoHistorico.razor`, `Components/Layout/NavMenu.razor` y `Program.cs`. |
+| Presentation | `SolarUY.Presentation/Components/Pages/ReportesHistorico.razor`, `Components/Shared/ResultadoHistorico.razor`, `Components/Layout/NavMenu.razor` y `Program.cs`. |
 | Integración | `SolarUY.Integration.Tests/HistoricoDatabase.cs`, `HistoricoGeneracionIntegrationTests.cs` y `README.md`: configuración aislada, preparación de datos, 26 casos de req7 y forma de ejecución. |
 | Documentación | `specs.md`, `tasks.md` y este `implementations.md`. |
 

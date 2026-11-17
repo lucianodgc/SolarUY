@@ -70,3 +70,8 @@ Fuente técnica: specs.md. Las casillas reflejan implementación y verificacione
 ## 7. Cierre y documentación
 
 - [x] 7. Crear el archivo implementations.md en la misma carpeta detallando los cambios realizados, archivos tocados y resultado de las pruebas. Incluir configuración operativa externa y resultado de verificaciones visuales, y retirar los recursos temporales. (V3)
+
+## Ajuste de permisos — 17/11/2026
+
+- [x] Reservar inicio y finalización al técnico asignado en Application y en las acciones del DTO, conservando cancelación por administrador o responsable y protección de concurrencia.
+- [ ] Repetir el recorrido OIDC con administrador y técnico para los permisos actualizados.

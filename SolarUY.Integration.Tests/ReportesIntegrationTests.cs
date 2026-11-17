@@ -69,7 +69,7 @@ public sealed class ReportesIntegrationTests(HistoricoDatabase database) : IClas
         Assert.Equal(esperado.Serie, reporte.Generacion.Serie);
         if (periodo == PeriodoHistorico.Diario) Assert.Equal(porNodo ? 0.48m : 0.78m, reporte.Generacion.EnergiaKWh);
         var opciones = await scope.ServiceProvider.GetRequiredService<IReporteHistoricoService>().ListarOpcionesAsync();
-        Assert.DoesNotContain(opciones, o => o.Tipo == TipoObjetivoHistorico.Panel);
+        Assert.Contains(opciones, o => o.Tipo == TipoObjetivoHistorico.Panel && o.Id == database.Panel.Id);
         Assert.Contains(opciones, o => o.Id == database.OtroParque.Id);
     }
 
@@ -342,6 +342,33 @@ public sealed class ReportesIntegrationTests(HistoricoDatabase database) : IClas
         }
         Assert.False(dentro);
         return filas;
+    }
+
+    [MariaDbHistoricoFact]
+    public async Task ReporteUnificadoPorPanelConservaEnergiaMantenimientoYCsv()
+    {
+        await database.ReiniciarAsync();
+        await using (var db = database.CrearContexto())
+        {
+            db.AttachRange(database.Panel, database.SegundoPanel);
+            db.AddRange(Completada(database.Panel, InicioUtc), Completada(database.SegundoPanel, InicioUtc));
+            await db.SaveChangesAsync();
+        }
+        await using var provider = CrearProvider();
+        await using var scope = provider.CreateAsyncScope();
+        var servicio = scope.ServiceProvider.GetRequiredService<IReporteHistoricoService>();
+        var filtro = Filtro() with { PanelId = database.Panel.Id };
+        var reporte = await servicio.ConsultarAsync(filtro);
+        var esperado = await scope.ServiceProvider.GetRequiredService<IHistoricoGeneracionService>().ConsultarAsync(
+            new(TipoObjetivoHistorico.Panel, database.Panel.Id, filtro.Periodo, filtro.InicioLocal, filtro.FinLocal));
+        Assert.Equal(esperado.EnergiaKWh, reporte.Generacion.EnergiaKWh);
+        Assert.Equal(esperado.Serie, reporte.Generacion.Serie);
+        Assert.Single(reporte.Mantenimientos);
+        Assert.Equal(database.Panel.Id, reporte.Mantenimientos[0].PanelId);
+        var csv = Encoding.UTF8.GetString((await servicio.ExportarCsvAsync(reporte)).Contenido);
+        Assert.Contains(database.Panel.Id.ToString("D"), csv);
+        Assert.DoesNotContain(database.SegundoPanel.Id.ToString("D"), csv);
+        await Assert.ThrowsAsync<ArgumentException>(() => servicio.ConsultarAsync(filtro with { PanelId = database.PanelAjeno.Id }));
     }
 
     private static ServiceProvider CrearProvider(string rol = "Administrador", IdentidadReporte? identidad = null)
