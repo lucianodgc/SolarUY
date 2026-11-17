@@ -1,0 +1,36 @@
+@page "/paneles/{PanelId:guid}/editar"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+@inject SolarUY.Application.Paneles.IPanelService Service
+@inject NavigationManager Navigation
+
+<PageTitle>Editar panel</PageTitle>
+<PageHeader Title="Editar panel" Section="Gestión del parque" Description="Podés modificar sus datos o trasladarlo a un nodo con capacidad disponible."></PageHeader>
+@if (_error is not null) { <p role="alert" class="alert alert-danger">@_error</p> }
+else if (_modelo is null) { <p class="loading-state">Cargando panel…</p> }
+else { <RadzenTemplateForm TItem="SolarUY.Application.Paneles.ActualizarPanelDto" Data="_modelo" Submit="GuardarAsync"><div class="surface"><RadzenTextBox @bind-Value="_nodoId" Placeholder="Id del nodo" Style="width:100%" /><RadzenTextBox @bind-Value="_modelo.NumeroSerie" Placeholder="Número de serie" Style="width:100%" /><RadzenTextBox @bind-Value="_modelo.Marca" Placeholder="Marca" Style="width:100%" /><RadzenTextBox @bind-Value="_modelo.Modelo" Placeholder="Modelo" Style="width:100%" /><RadzenNumeric @bind-Value="_modelo.PotenciaNominalW" Placeholder="Potencia nominal (W)" Style="width:100%" /><RadzenDatePicker @bind-Value="_modelo.FechaInstalacion" DateFormat="yyyy-MM-dd" Style="width:100%" /><RadzenDropDown @bind-Value="_modelo.Estado" Data="_estados" Style="width:100%" /><RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" IsBusy="_ocupado" Disabled="_ocupado" /> <a class="btn btn-light" href="/paneles">Cancelar</a></div></RadzenTemplateForm> }
+
+@code {
+    [Parameter] public Guid PanelId { get; set; }
+    private SolarUY.Application.Paneles.ActualizarPanelDto? _modelo;
+    private readonly EstadoPanel[] _estados = [EstadoPanel.Activo, EstadoPanel.Inactivo, EstadoPanel.Falla];
+    private string _nodoId = string.Empty;
+    private string? _error;
+    private bool _ocupado;
+    protected override async Task OnParametersSetAsync()
+    {
+        var panel = await Service.ObtenerAsync(PanelId);
+        if (panel is null) { _error = "El panel no existe o está dado de baja."; return; }
+        _nodoId = panel.NodoId.ToString();
+        _modelo = new() { NodoId = panel.NodoId, NumeroSerie = panel.NumeroSerie, Marca = panel.Marca, Modelo = panel.Modelo, PotenciaNominalW = panel.PotenciaNominalW, FechaInstalacion = panel.FechaInstalacion, Estado = panel.Estado };
+    }
+    private async Task GuardarAsync(SolarUY.Application.Paneles.ActualizarPanelDto modelo)
+    {
+        if (_ocupado) return;
+        if (!Guid.TryParse(_nodoId, out var nodoId)) { _error = "El identificador del nodo no es válido."; return; }
+        _ocupado = true; _error = null; modelo.NodoId = nodoId; modelo.FechaInstalacion = DateTime.SpecifyKind(modelo.FechaInstalacion, DateTimeKind.Utc);
+        try { await Service.ActualizarAsync(PanelId, modelo); Navigation.NavigateTo("/paneles"); }
+        catch (Exception exception) { _error = exception.Message; }
+        finally { _ocupado = false; }
+    }
+}

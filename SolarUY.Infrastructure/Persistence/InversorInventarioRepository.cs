@@ -18,7 +18,8 @@ public sealed class InversorInventarioRepository : IInversorInventarioRepository
             .OrderBy(nodo => nodo.Parque.Nombre)
             .ThenBy(nodo => nodo.Nombre)
             .ToArrayAsync(cancellationToken);
-        var paneles = await context.Paneles.AsNoTracking().OrderBy(panel => panel.NumeroSerie).ToArrayAsync(cancellationToken);
+        var paneles = await context.Paneles.AsNoTracking().Where(panel => !panel.EstaDadoDeBaja)
+            .OrderBy(panel => panel.NumeroSerie).ToArrayAsync(cancellationToken);
         var panelesPorNodo = paneles.GroupBy(panel => panel.NodoId).ToDictionary(grupo => grupo.Key, grupo => grupo.ToArray());
 
         return nodos.Select(nodo => new InventarioNodoInversorDto(
