@@ -1,29 +1,18 @@
 map $http_upgrade $conexion_upgrade { default upgrade; '' close; }
-split_clients $request_id $destino_inicial { 50% a; * b; }
-map $cookie_SolarUYInstancia $destino { a a; b b; default $destino_inicial; }
-map $destino $backend { a solaruy_a; b solaruy_b; }
-map $upstream_http_x_solaruy_instancia $destino_confirmado {
-    "${SOLARUY_ID_A}" a;
-    "${SOLARUY_ID_B}" b;
-    default $destino;
-}
-map $scheme $cookie_segura { https "; Secure"; default ""; }
 
 upstream solaruy_a {
     zone solaruy_a 64k;
+    ip_hash;
     server ${SOLARUY_INSTANCIA_A} max_fails=1 fail_timeout=5s;
-    server ${SOLARUY_INSTANCIA_B} backup;
-}
-upstream solaruy_b {
-    zone solaruy_b 64k;
     server ${SOLARUY_INSTANCIA_B} max_fails=1 fail_timeout=5s;
-    server ${SOLARUY_INSTANCIA_A} backup;
 }
 server {
     listen 8080;
     server_name _;
+    client_header_buffer_size 16k;
+    large_client_header_buffers 4 32k;
     location / {
-        proxy_pass http://$backend;
+        proxy_pass http://solaruy_a;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $conexion_upgrade;
@@ -33,8 +22,10 @@ server {
         proxy_read_timeout 120s;
         proxy_send_timeout 120s;
         proxy_connect_timeout 3s;
+        proxy_buffer_size 16k;
+        proxy_buffers 8 16k;
+        proxy_busy_buffers_size 32k;
         proxy_buffering off;
-        proxy_next_upstream error timeout;
-        add_header Set-Cookie "SolarUYInstancia=$destino_confirmado; Path=/; HttpOnly; SameSite=Lax$cookie_segura" always;
+        proxy_next_upstream error timeout http_502 http_503 http_504;
     }
 }

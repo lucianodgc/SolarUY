@@ -33,14 +33,18 @@
       "serviceAccountsEnabled": false,
       "redirectUris": [
         "http://localhost:5219/signin-oidc",
-        "https://localhost:7271/signin-oidc"
+        "https://localhost:7271/signin-oidc",
+        "http://localhost:18088/signin-oidc",
+        "http://127.0.0.1:18088/signin-oidc"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:5219/*##https://localhost:7271/*"
+        "post.logout.redirect.uris": "http://localhost:5219/*##https://localhost:7271/*##http://localhost:18088/*##http://127.0.0.1:18088/*"
       },
       "webOrigins": [
         "http://localhost:5219",
-        "https://localhost:7271"
+        "https://localhost:7271",
+        "http://localhost:18088",
+        "http://127.0.0.1:18088"
       ],
       "protocolMappers": [
         {

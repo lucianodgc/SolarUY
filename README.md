@@ -24,9 +24,17 @@ Modelo de datos: los responsables se identifican mediante su usuario de Keycloak
 
 <img width="988" height="737" alt="MER" src="https://github.com/user-attachments/assets/1869ff6a-645e-4b18-9eb6-f18ba0fb95f5" />
 
-Arquitectura propuesta en la primera entrega. Actualmente se usa una instancia; el balanceo y el chat con IA quedan pendientes.
+Arquitectura de la aplicación. La Entrega 3 añade dos instancias detrás de Nginx; el chat con IA queda pendiente.
 
 <img width="1204" height="804" alt="Arquitectura" src="https://github.com/user-attachments/assets/27bb301c-7e24-4ad8-b4e8-98c013fe0d0a" />
+
+### Flujo de SignalR
+
+![Flujo de SignalR en SolarUY](docs/diagramas/signalr.svg)
+
+[Editar el diagrama en draw.io](docs/diagramas/signalr.drawio).
+
+El servidor consulta la telemetría cada 2 segundos y la publica en `/hubs/monitoreo` para los usuarios suscritos al parque. El cliente JavaScript recibe los eventos y los pasa a los componentes del servidor; Blazor actualiza la interfaz mediante su circuito SignalR `/_blazor`. En paralelo, el recolector guarda lecturas cada 30 segundos y emite `LecturasConfirmadas` después del guardado. Los intervalos son configurables.
 
 ## Desarrollo con IA y SonarQube
 
@@ -79,6 +87,16 @@ dotnet run --project SolarUY.Presentation/SolarUY.Presentation.csproj --launch-p
 ```
 
 Web: http://localhost:5219 · Keycloak: http://localhost:8080 · phpMyAdmin: http://localhost:8081.
+
+## Entrega 3: alta disponibilidad
+
+La pila Docker incluye dos instancias de la web y Nginx. Configura en `.env` los secretos de `solaruy-web` y `solaruy-tecnico-directory` (ver `.env.example`) y levántala:
+
+```powershell
+docker compose up -d --build
+```
+
+Web balanceada: http://localhost:18088. La guía de caída y actualización por instancia está en [req15 implementations](prompting/req15_alta_disponibilidad/implementations.md).
 
 Como alternativa al último comando, elige un modo del script. **Solo inicia la web; Docker y el simulador se ejecutan aparte.**
 

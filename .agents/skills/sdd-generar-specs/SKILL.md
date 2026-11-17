@@ -16,8 +16,8 @@ Cuando el usuario invoque esta skill, debes ejecutar el siguiente flujo de traba
 5. **Generar Tareas:** Después de generar `specs.md`, crea `tasks.md` en la misma carpeta usando `specs.md` como única fuente de alcance técnico. Descompón la implementación en tareas pequeñas, ordenadas según las dependencias entre capas y pasos de entrega.
 6. **Trazabilidad y consistencia:** Cada tarea de `tasks.md` debe corresponder a una decisión o requisito especificado en `specs.md`. No agregues funcionalidades, tecnologías, pruebas o cambios de infraestructura que no estén indicados allí. Si falta un dato necesario, registra la duda como una tarea de clarificación en lugar de inventar una solución.
 7. **Formato de `tasks.md`:** Usa Markdown con una lista de tareas verificables con casillas (`- [ ]`), agrupadas por capa o etapa. Numera las tareas y subtareas de manera jerárquica (por ejemplo, `1.`, `1.1`). Describe cada tarea con un resultado concreto y evita tareas vagas como “implementar todo”. Incluye una etapa de verificación solo cuando las verificaciones estén contempladas en `specs.md`.
-   **Etapa Final Obligatoria:** La última tarea de `tasks.md` SIEMPRE debe ser una etapa de Cierre/Documentación que incluya lo siguiente:
-    `- [ ] N. Crear el archivo implementations.md en la misma carpeta detallando los cambios realizados, archivos tocados y resultado de las pruebas.`
+    **Etapa Final Obligatoria:** La última tarea de `tasks.md` SIEMPRE debe ser una etapa de Cierre/Documentación que incluya lo siguiente:
+    `- [ ] N. Crear o actualizar implementations.md en la misma carpeta con el detalle de los cambios realizados, los archivos tocados y el resultado de las pruebas. Crear o actualizar tambien resumen.md en esa carpeta con una sintesis breve y facil de leer de lo realizado para el requerimiento.`
 
 ## Generación de `tasks.md` a partir de `specs.md`
 

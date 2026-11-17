@@ -158,6 +158,15 @@ builder.Services
             NameClaimType = "preferred_username",
             RoleClaimType = ClaimTypes.Role
         };
+        options.Events.OnRemoteFailure = context =>
+        {
+            context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("SolarUY.Authentication")
+                .LogWarning(context.Failure, "No se pudo completar el inicio de sesión con Keycloak.");
+            context.HandleResponse();
+            context.Response.Redirect("/inicio-sesion-incompleto");
+            return Task.CompletedTask;
+        };
         options.Events.OnTokenValidated = context =>
         {
             var realmAccess = context.Principal?.FindFirst("realm_access")?.Value;
@@ -202,6 +211,9 @@ app.Use(async (context, siguiente) =>
         ?? app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<SaludDistribucionOptions>>().Value.InstanciaId;
     await siguiente();
 });
+
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }))
+    .AllowAnonymous();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
