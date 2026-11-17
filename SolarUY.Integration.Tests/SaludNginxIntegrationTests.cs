@@ -188,7 +188,7 @@ public sealed class SaludNginxIntegrationTests(HistoricoDatabase database) : ICl
         if (!proceso.HasExited) { proceso.Kill(entireProcessTree: true); await proceso.WaitForExitAsync(); }
         proceso.Dispose();
     }
-    private sealed class SimuladorTemporal(HistoricoDatabase database) : IAsyncDisposable
+    internal sealed class SimuladorTemporal(HistoricoDatabase database) : IAsyncDisposable
     {
         private CancellationTokenSource? _fin;
         private Task? _ejecucion;

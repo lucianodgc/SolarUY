@@ -161,14 +161,14 @@ public sealed class MonitoreoNginxIntegrationTests(HistoricoDatabase database) :
         proceso.Start(); proceso.BeginOutputReadLine(); proceso.BeginErrorReadLine(); return proceso;
     }
 
-    internal static string CrearCookie(string claves)
+    internal static string CrearCookie(string claves, string rol = "Consulta")
     {
         var servicios = new ServiceCollection(); servicios.AddLogging();
         servicios.AddDataProtection().SetApplicationName("SolarUY").PersistKeysToFileSystem(new DirectoryInfo(claves));
         servicios.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
         using var emisor = servicios.BuildServiceProvider();
         var opciones = emisor.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>().Get(CookieAuthenticationDefaults.AuthenticationScheme);
-        var identidad = new ClaimsIdentity([new Claim("sub", "prueba-nginx"), new Claim(ClaimTypes.Role, "Consulta")], CookieAuthenticationDefaults.AuthenticationScheme);
+        var identidad = new ClaimsIdentity([new Claim("sub", "prueba-nginx"), new Claim(ClaimTypes.Role, rol)], CookieAuthenticationDefaults.AuthenticationScheme);
         return opciones.TicketDataFormat.Protect(new AuthenticationTicket(new ClaimsPrincipal(identidad),
             new AuthenticationProperties { ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5) }, CookieAuthenticationDefaults.AuthenticationScheme));
     }

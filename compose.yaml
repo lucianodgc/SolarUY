@@ -77,6 +77,9 @@ services:
       Keycloak__Directory__ClientSecret: ${SOLARUY_DIRECTORY_CLIENT_SECRET:-}
       InversorTcp__Host: host.docker.internal
       RecoleccionLecturas__Habilitada: "true"
+      SaludPanel__Habilitada: "true"
+      SaludDistribucion__Habilitada: "true"
+      SaludDistribucion__InstanciaId: solaruy-a
       Instancia__Id: solaruy-a
       DataProtection__RutaClaves: /var/dpkeys
     extra_hosts:
@@ -103,7 +106,8 @@ services:
     pull_policy: never
     environment:
       <<: *solaruy-environment
-      RecoleccionLecturas__Habilitada: "false"
+      RecoleccionLecturas__Habilitada: "true"
+      SaludDistribucion__InstanciaId: solaruy-b
       Instancia__Id: solaruy-b
     extra_hosts:
       - host.docker.internal:host-gateway
@@ -113,8 +117,10 @@ services:
       solaruy_ha:
         ipv4_address: 172.29.0.12
     depends_on:
-      solaruy-a:
+      mariadb:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
       interval: 10s

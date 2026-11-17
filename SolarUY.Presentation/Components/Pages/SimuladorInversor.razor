@@ -5,12 +5,16 @@
 @inject SolarUY.Application.Monitoreo.IMonitoreoService Monitoreo
 @inject ILogger<SimuladorInversor> Logger
 @inject IJSRuntime Js
+@inject SolarUY.Application.Inversores.IOrdenInversorService Ordenes
+@inject DialogService Dialogos
+@using SolarUY.Domain.Entities
+@using SolarUY.Presentation.Monitoreo
 @using SolarUY.Application.Inversores
 @using SolarUY.Application.Abstractions
 
 <PageTitle>Simulador de inversor | SolarUY</PageTitle>
 <PageHeader Title="Simulador de inversor" Section="Operación" Description="Consultá el estado de los paneles y la potencia generada en la simulación." />
-<p class="note">Los nodos y paneles se leen del inventario de la base de datos. La potencia es simulada y aleatoria; los controles afectan solo la simulación y no modifican los registros guardados. El volcado a red solo representa ese estado: no hay conexión eléctrica real.</p>
+<p class="note">Los nodos y paneles se leen del inventario. Las órdenes quedan auditadas y afectan el simulador compartido; la siguiente adquisición conserva su efecto. El volcado es global al inversor configurado y no representa una conexión eléctrica real.</p>
 <div class="surface filter-toolbar">
     <RadzenLabel Text="Parque solar" Component="ParqueSimulado" />
     <RadzenDropDown TValue="Guid" Name="ParqueSimulado" Data="_parques" TextProperty="Nombre" ValueProperty="Id" @bind-Value="_parqueId" Change="SeleccionarParqueAsync" Disabled="_ocupado" Style="min-width:220px" />
@@ -23,6 +27,7 @@
 {
     <p class="alert alert-danger" role="alert">@_error</p>
 }
+@if (_resultadoOrden is not null) { <p role="status">@_resultadoOrden</p> }
 @if (_estado is not null)
 {
     <div class="metric-grid">
@@ -41,7 +46,7 @@
                                   ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Disabled="_ocupado"
                                   Click="@(() => CambiarInversorAsync(!_estado.InversorEncendido))" />
                     <RadzenButton Text="@(_estado.VolcadoRedActivo ? "Desactivar volcado a red" : "Activar volcado a red")"
-                                  ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Secondary" Disabled="_ocupado"
+                                  ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Secondary" Disabled="@(_ocupado || !_interactivo)"
                                   Click="@(() => CambiarVolcadoAsync(!_estado.VolcadoRedActivo))" />
                 </div>
             }
@@ -64,7 +69,7 @@
                             @if (_estado.PuedeOperar)
                             {
                                 <td><RadzenButton Text="@(panel.EstaActivo ? "Desactivar" : "Activar")" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light"
-                                                  Disabled="_ocupado" Click="@(() => CambiarPanelAsync(panel))" /></td>
+                                                  Disabled="@(_ocupado || !_interactivo)" Click="@(() => CambiarPanelAsync(panel))" /></td>
                             }
                         </tr>
                     }
@@ -91,7 +96,9 @@ else if (_error is null)
     private string? _nodoId;
     private EstadoInversorDto? _estado;
     private bool _ocupado;
+    private bool _interactivo;
     private string? _error;
+    private string? _resultadoOrden;
     private IJSObjectReference? _modulo;
     private IJSObjectReference? _puente;
     private DotNetObjectReference<SimuladorInversor>? _referencia;
@@ -104,9 +111,11 @@ else if (_error is null)
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
+        _interactivo = true;
+        StateHasChanged();
         try
         {
-            _modulo = await Js.InvokeAsync<IJSObjectReference>("import", "./js/monitoreo.js?v=telemetria-2");
+            _modulo = await Js.InvokeAsync<IJSObjectReference>("import", "./js/monitoreo.js?v=ordenes-1");
             _referencia = DotNetObjectReference.Create(this);
             _puente = await _modulo.InvokeAsync<IJSObjectReference>("crear", _referencia);
             await SuscribirParqueAsync();
@@ -134,6 +143,7 @@ else if (_error is null)
 
     private Task SeleccionarParqueAsync(object? valor) => EjecutarAsync(async () =>
     {
+        _resultadoOrden = null;
         _estado = null;
         _nodoId = null;
         ActualizarNodosVisibles();
@@ -141,16 +151,27 @@ else if (_error is null)
     });
 
     private Task CambiarPanelAsync(PanelInversorEstadoDto panel)
-        => EjecutarAsync(() => Inversor.EstablecerPanelActivoAsync(panel.NodoId, panel.PanelId, !panel.EstaActivo));
+        => ConfirmarOrdenAsync(panel.EstaActivo ? AccionOrdenInversor.DesactivarPanel : AccionOrdenInversor.ActivarPanel,
+            panel.NodoId, panel.PanelId, $"{panel.NodoId} / {panel.NumeroSerie} ({panel.PanelId})");
 
     private Task CambiarVolcadoAsync(bool activo)
-        => EjecutarAsync(() => Inversor.EstablecerVolcadoRedAsync(activo));
+        => ConfirmarOrdenAsync(activo ? AccionOrdenInversor.ActivarVolcadoRed : AccionOrdenInversor.DesactivarVolcadoRed,
+            null, null, "Inversor configurado — alcance global");
+
+    private Task ConfirmarOrdenAsync(AccionOrdenInversor accion, string? nodo, string? panel, string destino)
+        => EjecutarAsync(async () =>
+        {
+            if (await Dialogos.Confirm($"{accion}: {destino}. ¿Confirmás el envío?", "Confirmar orden",
+                new ConfirmOptions { OkButtonText = "Confirmar", CancelButtonText = "Cancelar" }) != true) return;
+            _resultadoOrden = MensajeResultadoOrden.Formatear(await Ordenes.EjecutarAsync(new(Guid.NewGuid(), accion, nodo, panel)));
+        });
 
     private Task CambiarInversorAsync(bool encendido)
         => EjecutarAsync(() => Inversor.EstablecerInversorEncendidoAsync(encendido));
 
     private Task SeleccionarNodoAsync(object? valor) => EjecutarAsync(async () =>
     {
+        _resultadoOrden = null;
         _estado = null;
         await SuscribirParqueAsync();
     });

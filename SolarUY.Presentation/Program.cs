@@ -63,6 +63,13 @@ builder.Services.AddScoped<INodoService, NodoService>();
 builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
 builder.Services.AddScoped<ITareaMantenimientoService, TareaMantenimientoService>();
 builder.Services.AddScoped<IInversorService, InversorService>();
+builder.Services.AddScoped<IOrdenInversorService, OrdenInversorService>();
+builder.Services.AddOptions<OrdenInversorOptions>()
+    .Bind(builder.Configuration.GetSection("OrdenInversor"))
+    .Validate(o => o.CierreAuditoriaSegundos is >= 1 and <= 30 && o.IntentosPersistencia is >= 1 and <= 2,
+        "OrdenInversor requiere cierre de 1–30 segundos y 1–2 intentos de persistencia.")
+    .ValidateOnStart();
+builder.Services.AddSingleton(p => p.GetRequiredService<Microsoft.Extensions.Options.IOptions<OrdenInversorOptions>>().Value);
 builder.Services.AddScoped<IHistoricoGeneracionService, HistoricoGeneracionService>();
 builder.Services.AddScoped<IReporteHistoricoService, ReporteHistoricoService>();
 builder.Services.AddScoped<IRecoleccionLecturasService, RecoleccionLecturasService>();
@@ -150,6 +157,7 @@ builder.Services
             ?? throw new InvalidOperationException("Falta Authentication:OpenIdConnect:ClientId.");
         options.ClientSecret = openIdConnect["ClientSecret"];
         options.ResponseType = "code";
+        options.MapInboundClaims = false;
         options.SaveTokens = true;
         options.GetClaimsFromUserInfoEndpoint = true;
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
