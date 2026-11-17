@@ -41,6 +41,8 @@ public static class DependencyInjection
         services.AddScoped<IHistoricoGeneracionRepository, HistoricoGeneracionRepository>();
         services.AddScoped<IRecoleccionLecturasRepository, RecoleccionLecturasRepository>();
         services.AddScoped<IMonitoreoRepository, MonitoreoRepository>();
+        services.AddScoped<SolarUY.Application.Salud.ISaludPanelRepository, SaludPanelRepository>();
+        services.AddScoped<SolarUY.Application.Salud.IObservacionSaludRepository, ObservacionSaludRepository>();
         services.AddScoped<ITareaMantenimientoRepository, TareaMantenimientoRepository>();
         services.AddScoped<INodoRepository, NodoRepository>();
 

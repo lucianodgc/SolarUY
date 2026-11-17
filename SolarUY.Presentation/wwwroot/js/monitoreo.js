@@ -28,6 +28,9 @@ export async function crear(destino) {
     conexion.on('LecturasConfirmadas', id => {
         if (id.toLowerCase() === parque?.toLowerCase()) void avisar('NuevaLectura', id);
     });
+    conexion.on('SaludActualizada', id => {
+        if (id.toLowerCase() === parque?.toLowerCase()) void avisar('SaludActualizada', id);
+    });
     conexion.on('TelemetriaActualizada', nodos => {
         if (nodos?.length && nodos[0].parqueId?.toLowerCase() === parque?.toLowerCase())
             void avisar('TelemetriaActualizada', nodos);
@@ -77,6 +80,7 @@ export async function crear(destino) {
             window.removeEventListener('solaruy:circuito-abajo', circuitoAbajo);
             window.removeEventListener('solaruy:circuito-arriba', circuitoArriba);
             conexion.off('LecturasConfirmadas');
+            conexion.off('SaludActualizada');
             conexion.off('TelemetriaActualizada');
             await conexion.stop();
         }

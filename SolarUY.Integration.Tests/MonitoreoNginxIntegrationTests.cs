@@ -134,7 +134,8 @@ public sealed class MonitoreoNginxIntegrationTests(HistoricoDatabase database) :
         }
     }
 
-    private static Process Iniciar(string id, int puerto, bool recolectar, string claves, ConcurrentQueue<string> salida)
+    internal static Process Iniciar(string id, int puerto, bool recolectar, string claves, ConcurrentQueue<string> salida,
+        IReadOnlyDictionary<string, string>? adicionales = null)
     {
         var inicio = new ProcessStartInfo("dotnet") { UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true,
@@ -146,18 +147,21 @@ public sealed class MonitoreoNginxIntegrationTests(HistoricoDatabase database) :
         inicio.Environment["RecoleccionLecturas__Habilitada"] = recolectar.ToString();
         inicio.Environment["RecoleccionLecturas__IntervaloSegundos"] = "2";
         inicio.Environment["Instancia__Id"] = id;
+        inicio.Environment["SaludDistribucion__InstanciaId"] = id;
         inicio.Environment["DataProtection__RutaClaves"] = claves;
         inicio.Environment["Logging__EventLog__LogLevel__Default"] = "None";
         inicio.Environment["Logging__LogLevel__Default"] = "Warning";
         inicio.Environment["Monitoreo__MaximoPuntosGrafico"] = "3";
         inicio.Environment["Monitoreo__ReevaluacionSegundos"] = "1";
+        if (adicionales is not null)
+            foreach (var parametro in adicionales) inicio.Environment[parametro.Key] = parametro.Value;
         var proceso = new Process { StartInfo = inicio };
         proceso.OutputDataReceived += (_, e) => { if (e.Data is not null) salida.Enqueue(e.Data); };
         proceso.ErrorDataReceived += (_, e) => { if (e.Data is not null) salida.Enqueue(e.Data); };
         proceso.Start(); proceso.BeginOutputReadLine(); proceso.BeginErrorReadLine(); return proceso;
     }
 
-    private static string CrearCookie(string claves)
+    internal static string CrearCookie(string claves)
     {
         var servicios = new ServiceCollection(); servicios.AddLogging();
         servicios.AddDataProtection().SetApplicationName("SolarUY").PersistKeysToFileSystem(new DirectoryInfo(claves));
@@ -169,7 +173,7 @@ public sealed class MonitoreoNginxIntegrationTests(HistoricoDatabase database) :
             new AuthenticationProperties { ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5) }, CookieAuthenticationDefaults.AuthenticationScheme));
     }
 
-    private static async Task EsperarAsync(int puerto, string id, ConcurrentQueue<string> salida)
+    internal static async Task EsperarAsync(int puerto, string id, ConcurrentQueue<string> salida)
     {
         using var cliente = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
         var fin = DateTime.UtcNow.AddSeconds(25);
@@ -187,21 +191,21 @@ public sealed class MonitoreoNginxIntegrationTests(HistoricoDatabase database) :
         Assert.Fail(string.Join(Environment.NewLine, salida.TakeLast(20)));
     }
 
-    private static HttpClient Cliente(Uri proxy, string ticket, string instancia, out CookieContainer cookies)
+    internal static HttpClient Cliente(Uri proxy, string ticket, string instancia, out CookieContainer cookies)
     {
         cookies = new(); cookies.Add(proxy, new Cookie(".AspNetCore.Cookies", ticket, "/"));
         cookies.Add(proxy, new Cookie("SolarUYInstancia", instancia, "/"));
         return new HttpClient(new HttpClientHandler { CookieContainer = cookies, AllowAutoRedirect = false }) { BaseAddress = proxy };
     }
 
-    private static async Task<string> InstanciaAsync(HttpClient cliente, string ruta)
+    internal static async Task<string> InstanciaAsync(HttpClient cliente, string ruta)
     {
         using var respuesta = await cliente.GetAsync(ruta);
         Assert.True(respuesta.IsSuccessStatusCode, $"HTTP {(int)respuesta.StatusCode}: {await respuesta.Content.ReadAsStringAsync()}");
         return respuesta.Headers.GetValues("X-SolarUY-Instancia").Single();
     }
 
-    private static async Task<ClientWebSocket> ConectarAsync(Uri proxy, CookieContainer cookies, Guid parque)
+    internal static async Task<ClientWebSocket> ConectarAsync(Uri proxy, CookieContainer cookies, Guid parque)
     {
         var socket = new ClientWebSocket(); socket.Options.Cookies = cookies;
         using var limite = new CancellationTokenSource(TimeSpan.FromSeconds(15));
@@ -221,7 +225,7 @@ public sealed class MonitoreoNginxIntegrationTests(HistoricoDatabase database) :
 
     private static readonly ConditionalWeakTable<ClientWebSocket, Queue<JsonElement>> MensajesPendientes = new();
 
-    private static async Task<JsonElement> RecibirAsync(ClientWebSocket socket)
+    internal static async Task<JsonElement> RecibirAsync(ClientWebSocket socket)
     {
         var pendientes = MensajesPendientes.GetOrCreateValue(socket);
         if (pendientes.Count > 0) return pendientes.Dequeue();

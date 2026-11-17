@@ -1,0 +1,11 @@
+.salud-indicador { color: #6b7280; }
+.salud-indicador[data-vigente="si"][data-estado="Normal"] { color: #15803d; }
+.salud-indicador[data-vigente="si"][data-estado="Degradado"] { color: #b45309; }
+.salud-indicador[data-vigente="si"][data-estado="Falla"] { color: #b91c1c; }
+.salud-indicador[data-vigente="si"][data-estado="Desconectado"] { color: #6d28d9; }
+::deep .rz-grid-table td,
+::deep .rz-grid-table td .rz-cell-data {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+}

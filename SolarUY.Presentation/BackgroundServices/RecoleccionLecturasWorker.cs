@@ -81,6 +81,20 @@ public sealed class RecoleccionLecturasWorker : BackgroundService
 
     private async Task NotificarConfirmadasAsync(ResultadoRecoleccionDto resultado, CancellationToken cancellationToken)
     {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var salud = scope.ServiceProvider.GetService<SolarUY.Application.Salud.ISaludPanelService>();
+            var notificador = scope.ServiceProvider.GetService<SolarUY.Application.Salud.INotificadorSaludConfirmada>();
+            var habilitada = scope.ServiceProvider.GetService<IOptions<SolarUY.Presentation.Monitoreo.SaludPanelOptions>>()?.Value.Habilitada ?? true;
+            if (salud is not null && habilitada)
+            {
+                var avisos = await salud.EvaluarAsync(cancellationToken);
+                if (notificador is not null) await notificador.NotificarAsync(avisos, cancellationToken);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        { _logger.LogError(ex, "Las lecturas se guardaron; la evaluación o el aviso de salud se recuperará en el ciclo de salud."); }
         if (_notificador is null || resultado.LecturasConfirmadas is not { Count: > 0 } lecturas) return;
         try { await _notificador.NotificarAsync(lecturas, cancellationToken); }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
