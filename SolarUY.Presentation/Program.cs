@@ -181,6 +181,9 @@ app.Use(async (context, siguiente) =>
     await siguiente();
 });
 
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }))
+    .AllowAnonymous();
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
