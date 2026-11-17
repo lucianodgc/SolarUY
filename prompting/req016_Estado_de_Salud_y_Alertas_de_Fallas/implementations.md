@@ -2,7 +2,7 @@
 
 ## Estado y autorización
 
-El usuario confirmó D1–D5. Para D6 primero pidió solo propuesta y después solicitó completar los pendientes y respondió «hazlo lo mejor posible», autorizando avanzar con MariaDB compartida. Se implementaron y verificaron los pendientes técnicos, incluido el observador y V8. No se efectuó coordinación externa ni se acredita una aprobación de otro integrante; esa parte de 1.7 permanece abierta.
+El usuario confirmó D1–D5. Para D6 primero pidió solo propuesta y después solicitó completar los pendientes y respondió «hazlo lo mejor posible», autorizando avanzar con MariaDB compartida. Se implementaron y verificaron los pendientes técnicos, incluido el observador y V8. La coordinación de 1.7 se cerró el 17/11/2026 mediante la validación y delegación de Luciano comunicadas por el usuario; ver `coordinacion_despliegue.md`.
 
 ## Reglas implementadas
 
@@ -65,7 +65,7 @@ Prueba de navegador: desde SolarUY.Browser.Tests, con la misma variable de conex
 
 Se inspeccionó la captura final: indicadores de nodo/panel coloreados, motivos completos y UTC legible sin recorte. La suite general de integración no se ejecutó completa: se seleccionaron los 57 casos relacionados con salud y sus integraciones.
 
-Pendiente externo: registrar la coordinación de 1.7.2 con el responsable del entorno real; la autorización técnica del usuario y las verificaciones no se presentan como aprobación de otra persona. No se ejecutó un despliegue productivo, TLS real o un reemplazo de servicios del usuario, ni se alteraron reglas/habilidades protegidas.
+Coordinación cerrada el 17/11/2026 mediante la validación y delegación de Luciano comunicadas por el usuario. La elección final y su evidencia están en [coordinacion_despliegue.md](coordinacion_despliegue.md): A/B habilitadas como candidatas a recolectar con exclusión MariaDB, evaluación/observación activas e identificadores distintos; B no depende de la salud de A. La fecha original de aprobación no fue informada y no se inventa. No se ejecutó un despliegue productivo, TLS real ni un reemplazo de los servicios habituales; esas operaciones siguen a cargo del operador.
 
 ## D6: observación compartida y alta disponibilidad verificadas
 
@@ -82,3 +82,14 @@ El caso playwright.salud-distribuida.config.mjs pasó con dos contextos de Chrom
 Para repetir, configurar el Nginx de deploy/nginx para host.docker.internal:5051/5052 e IDs req16-a/req16-b; definir SOLARUY_MONITOREO_PROXY_URL y SOLARUY_HISTORICO_TEST_CONNECTION hacia una base de prueba solaruy_req007_test.... Ejecutar dotnet test filtrando SaludCompartida_Llega para el caso nativo. Desde SolarUY.Browser.Tests ejecutar npm test -- --config=playwright.salud-distribuida.config.mjs para navegador. Ejecutar estos escenarios secuencialmente: ambos reservan puertos 5051/5052. La configuración local de un solo host sigue en playwright.salud.config.mjs.
 
 La guía deploy/nginx/README.md se actualizó para SaludDistribucion, claves y política compartidas, compatibilidad y reemplazo de una instancia por vez. D6 no requiere nueva migración; se necesita el esquema AddEstadoSaludAlertas ya probado. Se aplicó el procedimiento sobre las bases aisladas y los procesos temporales, sin cambiar la base habitual.
+
+
+## Cierre delegado de coordinación — 17/11/2026
+
+El usuario informó la validación de Luciano y la delegación de la elección técnica. Se actualizó `compose.yaml`: adquisición, evaluación y observación activas en A/B; IDs de observadores distintos; B depende de MariaDB y Keycloak, sin depender de la salud de A. La exclusión por sesión y la consulta de paneles pendientes por intervalo UTC mantienen un único propietario de adquisición; la candidata restante puede continuar sin promoción manual. No hay primaria fija, garantía de relevo instantáneo ante partición ni reconstrucción automática de intervalos perdidos.
+
+Se actualizaron `coordinacion_despliegue.md`, `propuesta_decisiones.md`, `specs.md`, `tasks.md` y `deploy/nginx/README.md`. Quedan cerradas 1.7.2, 1.7 y 1, registrando el testimonio del usuario sin inventar fecha original de aprobación, contacto directo ni despliegue real.
+
+Verificación de este cambio: `docker compose config --quiet` y comprobación de configuración efectiva correctas (sin imprimir secretos); 9 CodeQuality aprobadas; 4 integraciones aprobadas con MariaDB temporal y TCP compartido: `DosProcesos_RecolectanSinDuplicarYContinuanTrasTerminarElPrimero`, `ConexionPerdida_NoPermiteGuardarYOtraSesionPuedeRetomar`, `DosRecolectores_SoloElPropietarioDelBloqueoLeeYGuarda` y `Workers_DosHostsRecolectanPeriodicamenteSinDuplicarYSeDetienen`. Las cuatro tardaron 6 segundos, sin omisiones. Se usaron los binarios existentes de Integration/CodeQuality (`--no-build`); no cambió C#. El simulador separado se compiló sin errores ni advertencias. La primera pasada del caso de procesos falló por falta del endpoint TCP de prueba; tras levantar el simulador real aislado, la repetición completa pasó sin modificar los tests. No se repitieron navegador ni todas las suites de la solución por este ajuste de configuración.
+
+Entorno temporal: MariaDB `solaruy_req007_test_relevo` en 33329, contenedor `solaruy-req016-relevo` y simulador TCP en 15017. Se detienen y eliminan al finalizar. No se recrearon las aplicaciones habituales ni se migró su base. `git diff --check` sin errores.

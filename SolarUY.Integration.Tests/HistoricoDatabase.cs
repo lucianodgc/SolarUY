@@ -72,6 +72,7 @@ public sealed class HistoricoDatabase : IAsyncLifetime
     public async Task ReiniciarAsync()
     {
         await using var context = CrearContexto();
+        await context.Set<IntentoOrdenInversor>().ExecuteDeleteAsync();
         await context.Set<SolarUY.Domain.Salud.AlertaPanel>().ExecuteDeleteAsync();
         await context.Set<SolarUY.Domain.Salud.CambioEstadoSaludPanel>().ExecuteDeleteAsync();
         await context.Set<SolarUY.Domain.Salud.SaludPanel>().ExecuteDeleteAsync();

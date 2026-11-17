@@ -22,6 +22,76 @@ namespace SolarUY.Infrastructure.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("SolarUY.Domain.Entities.IntentoOrdenInversor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Accion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("ActorSub")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .UseCollation("utf8mb4_bin");
+
+                    b.Property<bool>("Administrador")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("Autenticado")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<Guid>("Correlacion")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("DestinoNombre")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("varchar(300)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("NodoSolicitado")
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<Guid?>("NodoValidado")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("PanelSolicitado")
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<Guid?>("PanelValidado")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("ResultadoUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("SolicitadaUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorSub", "Correlacion")
+                        .IsUnique();
+
+                    b.HasIndex("Estado", "SolicitadaUtc");
+
+                    b.ToTable("IntentosOrdenInversor", (string)null);
+                });
+
             modelBuilder.Entity("SolarUY.Domain.Entities.Inversor", b =>
                 {
                     b.Property<Guid>("Id")

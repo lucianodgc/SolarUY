@@ -31,6 +31,9 @@ public sealed class UsuarioActualService : IUsuarioActual
             .Distinct(StringComparer.Ordinal)
             .ToArray();
 
-        return new UsuarioActualDto(true, id, roles);
+        var sujetos = usuario.Identities.Where(identidad => identidad.IsAuthenticated)
+            .SelectMany(identidad => identidad.FindAll("sub")).Select(claim => claim.Value)
+            .Distinct(StringComparer.Ordinal).ToArray();
+        return new UsuarioActualDto(true, id, roles, sujetos.Length == 1 ? sujetos[0] : null);
     }
 }

@@ -4,7 +4,7 @@
 
 Fuente funcional: `requirements.md` de esta carpeta. Entrega 3. Incorporar en el monitoreo las órdenes de activar/desactivar panel y activar/desactivar volcado, con confirmación visual, autorización efectiva de Administrador y auditoría persistente. Conservar .NET 8, EF Core 8, Pomelo 8.0.3, MariaDB 11.8, Blazor Server/Radzen y Keycloak. No agregar un proveedor, bus, ORM ni mecanismo de comunicación distinto del vigente.
 
-Referencias reales del repositorio:
+Referencias de la base revisada antes de implementar req017 (resultado final en `implementations.md`):
 
 - `IInversorClient` ofrece `ActivarPanelAsync(string nodoId, string panelId, CancellationToken)` y `DesactivarPanelAsync(...)`. Volcado usa `ActivarVolcadoRedAsync(CancellationToken)` y `DesactivarVolcadoRedAsync(CancellationToken)`, sin identificador de nodo/parque. La lectura correspondiente es `ObtenerEstadoVolcadoRedAsync`.
 - `InversorTcpClient` implementa ese puerto y utiliza `InversorTcpProtocol`/`InversorTcpServer`. Las órdenes devuelven `Task`, aunque el protocolo devuelve un resultado booleano. Actualmente `EjecutarOrdenAsync` descarta ese booleano; un resultado falso no debe transformarse en éxito de req017.
@@ -16,16 +16,16 @@ Referencias reales del repositorio:
 
 Quedan fuera de alcance nuevas órdenes de encendido del inversor, gestión de inventario, usuarios, mantenimientos, exportaciones, pantalla de búsqueda de auditoría y notificaciones externas. La operación de encendido ya existente no se amplía por req017.
 
-## 2. Decisiones que deben cerrarse antes de implementar
+## 2. Decisiones acordadas D1–D4
 
-| Id | Decisión | Evidencia y cierre requerido |
+| Id | Decisión confirmada | Regla final |
 |---|---|---|
-| D1 | Alcance del volcado y destino de auditoría | El contrato vigente y el simulador tienen alcance global al endpoint configurado, no por parque/nodo. Confirmar ese alcance en la presentación y cómo identificar establemente el destino lógico global en auditoría. Si se necesitan destinos independientes, acordar antes el cambio de contrato; no fingirlo filtrando la UI. |
-| D2 | Confirmación, resultado incierto, duplicados y concurrencia | Acordar significado del ACK y del resultado falso, estados ya alcanzados, clasificación de rechazos y errores, política de reintentos y tratamiento de una interrupción después de enviar. Definir correlación de solicitudes repetidas y coordinación de órdenes opuestas desde dos instancias. No prometer exactamente una vez con el protocolo actual. |
-| D3 | Persistencia de auditoría y recuperación | Cerrar campos/estados del modelo, auditoría de intentos no autorizados o destinos inexistentes, representación de actor sin sub, persistencia anterior al envío, tratamiento de fallos del guardado inicial/final y recuperación de intentos incompletos tras caída. Acordar los límites cuando MariaDB no está disponible, sin prometer guardar allí un intento durante su indisponibilidad. |
-| D4 | Desactivación voluntaria y salud | Acordar la evidencia operacional que distingue desactivación de falla, su vigencia y compatibilidad con req016. Se conserva `Panel.Estado` administrativo y `LecturaPanel.EstadoSalud`; 0 W no implica Falla y una falla explícita real no se oculta por una orden de desactivación. No inferir el estado operacional únicamente de la última orden auditada. |
+| D1 | Destino global | Volcado al único endpoint configurado; identificar «Inversor configurado — alcance global». No atribuir el flag global a cada inversor del inventario. |
+| D2 | Evidencia y coordinación | Solo Exito=true/resultado=true confirma. Resultado falso o rechazo explícito: Rechazada; comunicación incierta después de posible envío: Indeterminada. Sin reenvío automático; correlación por sub y bloqueo de sesión MariaDB por endpoint, sin transacción durante TCP. |
+| D3 | Auditoría y recuperación | Actor sub real o nulo, solicitud/destino/UTC/resultado/código acotado. Guardar antes del envío; fallar ese guardado impide enviar. Cierre independiente de 5 segundos y hasta dos guardados; pendientes abandonados se recuperan bajo bloqueo sin reenviar. |
+| D4 | Operación y salud | Evidencia operacional consultada o telemetría fechada; desactivar no cambia Panel.Estado, genera 0 W/Sano salvo falla explícita. Conservar precisión histórica y reglas de salud aprobadas. |
 
-Actualizar esta especificación y sus tareas con los acuerdos antes de cerrar los contratos dependientes y la migración. Los hechos del contrato comprobados arriba no equivalen a una aprobación de decisiones de negocio o del responsable del entorno real.
+D1–D4 fueron confirmadas explícitamente por el usuario el 16/11/2026. El acuerdo completo está en `propuesta_decisiones.md`: volcado global; solo ACK verdadero confirma; estados Pendiente/Confirmada/Rechazada/Fallida/Indeterminada; sin reenvío automático; correlación por sub; bloqueo de sesión MariaDB por endpoint; auditoría anterior al envío y cierre independiente configurable de 5 segundos y hasta dos guardados; recuperación de pendientes bajo bloqueo antes de otra orden, sin reenviar. La evidencia operacional es la consulta/telemetría fechada, vigente durante tres intervalos de telemetría; desactivar implica 0 W/Sano salvo falla explícita. Se conserva el estado administrativo y la clasificación por potencia baja continúa deshabilitada.
 
 ## 3. Domain
 

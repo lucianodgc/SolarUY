@@ -1,6 +1,6 @@
 # Decisiones de req016 — D1–D5 confirmadas; D6 autorizada e implementada
 
-El usuario confirmó D1–D5. Inicialmente solicitó solo preparar D6; posteriormente pidió completar los pendientes y respondió «hazlo lo mejor posible», autorizando avanzar con la solución propuesta. D6 está implementada y verificada técnicamente; no se efectuó coordinación externa ni se acredita aprobación de otro integrante.
+El usuario confirmó D1–D5. Inicialmente solicitó solo preparar D6; posteriormente pidió completar los pendientes y respondió «hazlo lo mejor posible», autorizando avanzar con la solución propuesta. D6 está implementada y verificada técnicamente; la coordinación se cerró el 17/11/2026 mediante la validación y delegación de Luciano comunicadas por el usuario; ver `coordinacion_despliegue.md`.
 
 ## D1. Potencia esperada
 
@@ -32,7 +32,7 @@ Una única alerta activa por panel, correspondiente a su condición prioritaria 
 
 ## D6. Dos instancias — autorizada e implementada
 
-El usuario autorizó avanzar con MariaDB existente después de solicitar completar los pendientes y responder «hazlo lo mejor posible». Se implementó y verificó la solución técnica descrita aquí; no se efectuó coordinación externa ni se acredita la aprobación de otro integrante.
+El usuario autorizó avanzar con MariaDB existente después de solicitar completar los pendientes y responder «hazlo lo mejor posible». Se implementó y verificó la solución técnica descrita aquí; la coordinación se cerró el 17/11/2026 mediante la validación y delegación de Luciano comunicadas por el usuario; ver `coordinacion_despliegue.md`.
 
 1. Cada instancia ejecuta ObservacionSaludWorker con identificador y período configurables. IObservacionSaludRepository/ObservacionSaludRepository leen dos conjuntos dentro de una transacción RepeatableRead: parques, incluidos vacíos, y firmas de los paneles con su salud/topología actual. No consultan inversores ni escriben salud.
 2. El seguimiento en memoria es por panel: versión, instante de evaluación, nodo evaluado, suficiencia y pertenencia actual. No se usa MAX global ni cursor temporal. Una modificación invalida los grupos de parques anterior y actual; una retirada invalida el anterior y libera su entrada.
@@ -42,4 +42,4 @@ El usuario autorizó avanzar con MariaDB existente después de solicitar complet
 6. SaludPanel:Habilitada permite un proceso que solo observe salud. El proceso receptor se probó sin adquisición ni evaluación local; por tanto, su cliente no depende de volver a procesar las lecturas. La evaluación concurrente mantiene la serialización transaccional existente.
 7. V8 se ejecutó con dos procesos reales detrás del Nginx del proyecto, claves compartidas y clientes en instancias diferentes: fuente A o B, falla, recuperación, cierre de alertas, reemplazo y reconexión. La prueba de navegador también conservó el parque de la URL y mantuvo conectado al cliente de la instancia restante. Las pruebas de concurrencia de persistencia se mantuvieron separadas.
 
-La entrega converge al estado vigente. Si el equipo necesita reproducir individualmente cada aviso a cada cliente, deberá acordar ese alcance distinto; el historial actual ya conserva las transiciones. La coordinación del despliegue real y sus certificados queda sin acreditar; las instrucciones operativas están en deploy/nginx/README.md y los resultados completos en implementations.md.
+La entrega converge al estado vigente. Si el equipo necesita reproducir individualmente cada aviso a cada cliente, deberá acordar ese alcance distinto; el historial actual ya conserva las transiciones. La coordinación de la elección técnica quedó cerrada por delegación comunicada el 17/11/2026. La aplicación del despliegue real y la verificación de certificados siguen a cargo del operador y no se presentan como realizadas; ver `coordinacion_despliegue.md`, deploy/nginx/README.md e implementations.md.

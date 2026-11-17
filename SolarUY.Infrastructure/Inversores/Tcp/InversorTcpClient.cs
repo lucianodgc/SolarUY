@@ -61,7 +61,10 @@ public sealed class InversorTcpClient : IInversorClient
         => EjecutarOrdenAsync(new SolicitudInversorTcp(OperacionesInversorTcp.EstablecerEstadoEncendido, Activo: encendido), cancellationToken);
 
     private async Task EjecutarOrdenAsync(SolicitudInversorTcp solicitud, CancellationToken cancellationToken)
-        => _ = await EjecutarAsync<bool>(solicitud, cancellationToken);
+    {
+        if (!await EjecutarAsync<bool>(solicitud, cancellationToken))
+            throw new OrdenInversorRechazadaException();
+    }
 
     private async Task<T> EjecutarAsync<T>(SolicitudInversorTcp solicitud, CancellationToken cancellationToken)
     {
@@ -75,6 +78,11 @@ public sealed class InversorTcpClient : IInversorClient
             await using var stream = cliente.GetStream();
             await InversorTcpProtocol.EscribirLineaAsync(stream, solicitud, tiempoLimite.Token);
             var linea = await InversorTcpProtocol.LeerLineaAsync(stream, tiempoLimite.Token);
+            using var estructura = JsonDocument.Parse(linea);
+            if (estructura.RootElement.ValueKind != JsonValueKind.Object
+                || !estructura.RootElement.TryGetProperty("exito", out var exito)
+                || exito.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                throw new JsonException("La respuesta no contiene evidencia de éxito válida.");
             var respuesta = JsonSerializer.Deserialize<RespuestaInversorTcp>(linea, InversorTcpProtocol.OpcionesJson)
                 ?? throw new JsonException("La respuesta JSON está vacía.");
 
@@ -107,7 +115,7 @@ public sealed class InversorTcpClient : IInversorClient
             case "entrada-invalida":
                 throw new ArgumentException(respuesta.Mensaje ?? "La solicitud enviada al simulador no es válida.");
             default:
-                throw new ErrorComunicacionInversorException("El simulador rechazó la operación solicitada.");
+                throw new ErrorComunicacionInversorException("No se pudo confirmar la ejecución en el inversor.");
         }
     }
 }

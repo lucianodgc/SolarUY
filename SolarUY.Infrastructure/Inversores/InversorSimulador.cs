@@ -66,7 +66,7 @@ public sealed class InversorSimulador : IInversorClient
         if (panel.PotenciaNominalW < 0) throw new InvalidOperationException($"El panel {panel.Id} tiene una potencia nominal inválida.");
         var fallado = panel.Estado == EstadoPanel.Falla || _panelesConFalla.Contains(panel.NumeroSerie)
             || _panelesConFalla.Contains(panel.Id.ToString("D"));
-        var potenciaBase = _inversorEncendido && panel.Estado == EstadoPanel.Activo && !fallado
+        var potenciaBase = PuedeGenerar(panel.NodoId.ToString("D"), panel.Id.ToString("D"), panel.Estado, fallado)
             ? panel.PotenciaNominalW : 0m;
         var potencia = AplicarVariacionAleatoria(potenciaBase, 6);
         return new MedicionPanelDto(panel.Id, potencia, fallado ? EstadoSaludLectura.Fallado : EstadoSaludLectura.Sano);
@@ -177,13 +177,16 @@ public sealed class InversorSimulador : IInversorClient
 
     private decimal CalcularPotencia(string nodoId, InventarioPanelInversorDto panel)
     {
-        if (!_inversorEncendido || _panelesDesactivados.Contains((nodoId, panel.Id))
-            || panel.Estado != EstadoPanel.Activo || panel.Estado == EstadoPanel.Falla
-            || _panelesConFalla.Contains(panel.Id) || _panelesConFalla.Contains(panel.NumeroSerie))
+        var fallado = _panelesConFalla.Contains(panel.Id) || _panelesConFalla.Contains(panel.NumeroSerie);
+        if (!PuedeGenerar(nodoId, panel.Id, panel.Estado, fallado))
             return 0m;
 
         return AplicarVariacionAleatoria(panel.PotenciaNominalW, 2);
     }
+
+    private bool PuedeGenerar(string nodoId, string panelId, EstadoPanel estado, bool fallado)
+        => _inversorEncendido && !_panelesDesactivados.Contains((nodoId, panelId))
+            && estado == EstadoPanel.Activo && !fallado;
 
     private static decimal AplicarVariacionAleatoria(decimal potenciaBase, int decimales)
     {

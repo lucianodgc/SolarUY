@@ -49,6 +49,9 @@ public sealed class SaludNavegadorIntegrationTests(HistoricoDatabase database) :
             o.Events.OnRedirectToAccessDenied = c => { c.Response.StatusCode = 403; return Task.CompletedTask; };
         });
         builder.Services.AddSignalR(); builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
+        builder.Services.AddScoped<SolarUY.Application.Inversores.IInversorService, SolarUY.Application.Inversores.InversorService>();
+        builder.Services.AddScoped<SolarUY.Application.Inversores.IOrdenInversorService, SolarUY.Application.Inversores.OrdenInversorService>();
+        builder.Services.AddSingleton(new SolarUY.Application.Inversores.OrdenInversorOptions());
         builder.Services.AddScoped<AccesoMonitoreoService>(); builder.Services.AddScoped<IMonitoreoService, MonitoreoService>();
         builder.Services.AddSingleton<GeneracionActualService>(); builder.Services.AddSingleton(new PoliticaMonitoreo(1, 2));
         builder.Services.AddSingleton<TelemetriaMonitoreoMapper>(); builder.Services.AddSingleton(new ConfiguracionRecoleccion(1));

@@ -72,6 +72,7 @@
                 }
             </section>
             <SaludMonitoreo ParqueId="_parqueId" @ref="_salud" />
+            <OrdenesInversor ParqueId="_parqueId" @ref="_ordenes" />
             <section class="surface" aria-label="Gráfico de potencia en vivo">
                 <h2>Evolución de potencia del parque</h2>
                 <p class="note">UTC · W · Hasta @Opciones.Value.MaximoPuntosGrafico puntos. Se inicia un tramo nuevo tras intervalos
@@ -127,6 +128,7 @@
     private DateTime _ultimaConsultaUtc;
     private DateTime _ultimaTelemetriaUtc;
     private SaludMonitoreo? _salud;
+    private OrdenesInversor? _ordenes;
 
     [JSInvokable]
     public Task SaludActualizada(string parqueId) => InvokeAsync(async () =>
@@ -151,7 +153,7 @@
         if (!firstRender) return;
         try
         {
-            _modulo = await Js.InvokeAsync<IJSObjectReference>("import", "./js/monitoreo.js?v=salud-1");
+            _modulo = await Js.InvokeAsync<IJSObjectReference>("import", "./js/monitoreo.js?v=ordenes-1");
             _referencia = DotNetObjectReference.Create(this);
             _puente = await _modulo.InvokeAsync<IJSObjectReference>("crear", _referencia);
             await CambiarParqueAsync();
@@ -187,10 +189,11 @@
     });
 
     [JSInvokable]
-    public Task TelemetriaActualizada(List<TelemetriaNodoDto> nodos) => InvokeAsync(() =>
+    public Task TelemetriaActualizada(List<TelemetriaNodoDto> nodos) => InvokeAsync(async () =>
     {
         Logger.LogDebug("Muestra de telemetría recibida: {Nodos} nodos.", nodos.Count);
         if (nodos.Count == 0 || nodos[0].ParqueId != _parqueId) return;
+        if (_ordenes is not null) await _ordenes.ActualizarTelemetriaAsync(nodos);
         var estado = MapeadorTelemetria.Mapear(_parqueId, nodos);
         _estado = estado;
         _puntos = Serie.Actualizar(estado);

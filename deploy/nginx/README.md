@@ -53,6 +53,10 @@ dotnet run --project SolarUY.Presentation/SolarUY.Presentation.csproj --no-launc
 
 Las dos pueden tener habilitada la recolección: el bloqueo compartido mantiene un único propietario por ciclo.
 
+El Compose raíz habilita ambas como candidatas, con evaluación y observación de salud activas e identificadores distintos. Solo quien obtiene el bloqueo MariaDB adquiere las lecturas pendientes del intervalo UTC compartido. Si cae esa instancia, la restante puede adquirirlo en un ciclo posterior sin promoción manual; al volver, ambas siguen compitiendo por la misma exclusión. No existe una primaria fija ni se reconstruyen automáticamente los intervalos perdidos. Un bloqueo de sesión se libera cuando MariaDB detecta el cierre de la conexión: no se promete relevo instantáneo ante una partición de red.
+
+B depende de MariaDB y Keycloak, no de que A esté sana. Ambas usan la imagen construida para `solaruy-a`; conservar esa imagen disponible al arrancar B por separado. La elección quedó registrada en [la coordinación de req016](../../prompting/req016_Estado_de_Salud_y_Alertas_de_Fallas/coordinacion_despliegue.md).
+
 ## Arranque mediante Docker Compose
 
 Para levantar todos los servicios, preparar primero `.env` desde `.env.example` y ejecutar desde la raíz:
