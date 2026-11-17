@@ -39,7 +39,7 @@ La baja requiere confirmación explícita y se ejecuta dentro de una transacció
 - `dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj`: correcto, 9 pruebas aprobadas.
 - `dotnet test SolarUY.Application.Tests/SolarUY.Application.Tests.csproj`: correcto, 8 pruebas aprobadas.
 
-## Corrección de borrado de inventario — 17/11/2026
+## Corrección de borrado de inventario
 
 Se corrigió el borrado de parques con inversores: las dependencias se eliminan en orden y la baja final no provoca conflictos con entidades ya seguidas por EF. El borrado físico de parques o nodos que tengan evaluación, cambios o alertas de salud se rechaza antes de eliminar dependencias, con un mensaje que indica usar la baja lógica de paneles.
 

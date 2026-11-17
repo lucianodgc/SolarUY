@@ -1,6 +1,6 @@
 # Implementación de req1: alta de parque solar
 
-## Presentación decimal — 17/11/2026
+## Presentación decimal
 
 Los formularios `AltaParqueSolar.razor` y `EditarParqueSolar.razor` usan un formato decimal con cifras opcionales: `0.003300…` se muestra como `0.0033`, conservando la precisión del valor y sin modificar persistencia ni validaciones. Compilación y 9 pruebas de `CodeQuality.Tests` aprobadas; revisión visual en navegador pendiente.
 
@@ -14,7 +14,7 @@ El informe de integración anterior y `tasks.md` registran el alta desde la inte
 
 Las comprobaciones siguientes corresponden a la entrega original. Sus pendientes de conexión, migración y autenticación describen ese momento y no sustituyen el estado actualizado anterior. El resultado de SonarQube también es histórico; esta consolidación documental no ejecuta nuevas verificaciones del producto.
 
-## Registro histórico de la entrega original (08/10/2026)
+## Registro histórico de la entrega original
 
 ### Decisiones autorizadas por el equipo
 
@@ -91,7 +91,7 @@ La configuración de SonarQube está fuera de SolarUY, en `../SonarQube/analizar
 
 Build final: 0 errores y 0 advertencias. Tests: 27 aprobados (10 Domain, 8 Application y 9 CodeQuality), sin fallos ni omisiones. Se generó también el script SQL de la migración sin conectarse a MariaDB; contiene las columnas previstas y el índice único. La migración no fue aplicada a una base real.
 
-Revisión final del 8 de octubre de 2026: no se encontraron errores funcionales que requirieran modificar el código. Application solo referencia Domain y FluentValidation, sin EF Core directo ni transitivo. Los componentes Presentation consumen Application; la referencia a Infrastructure se utiliza únicamente en el arranque para registrar dependencias, excepción expresamente permitida por las reglas. La entidad, la validación FluentValidation, la unicidad en servicio/base, las rutas y el listado mínimo coinciden con specs y las decisiones autorizadas. No hay login local ni migraciones al iniciar. Los guardarraíles mantienen las restricciones: solo admiten la ausencia de repositorios cuando el patrón no está utilizado y seleccionan los servicios por sus contratos para aplicar su convención de nombres.
+Revisión final: no se encontraron errores funcionales que requirieran modificar el código. Application solo referencia Domain y FluentValidation, sin EF Core directo ni transitivo. Los componentes Presentation consumen Application; la referencia a Infrastructure se utiliza únicamente en el arranque para registrar dependencias, excepción expresamente permitida por las reglas. La entidad, la validación FluentValidation, la unicidad en servicio/base, las rutas y el listado mínimo coinciden con specs y las decisiones autorizadas. No hay login local ni migraciones al iniciar. Los guardarraíles mantienen las restricciones: solo admiten la ausencia de repositorios cuando el patrón no está utilizado y seleccionan los servicios por sus contratos para aplicar su convención de nombres.
 
 SonarQube: análisis procesado correctamente, pero Quality Gate `ERROR` exclusivamente por `new_coverage = 0%` frente al mínimo de 80%. El script externo ejecuta build y análisis, sin ejecutar/importar un reporte de cobertura; este resultado no equivale a una medición real de cobertura de los tests. Las otras condiciones pasaron: seguridad y fiabilidad A, cero bloqueantes, cero hallazgos nuevos y cero duplicación nueva. Permanecen ocho code smells anteriores a req1: cuatro marcadores `AssemblyReference` vacíos, tres avisos de contraste del CSS de NavMenu y una recomendación de `RunAsync` sobre el `app.Run()` de la plantilla. El build instrumentado por el scanner produjo cinco advertencias C#; el build normal produjo cero. No se cambió código válido para silenciar esos avisos ni se alteró el Quality Gate desde SolarUY. La cobertura debe resolverse en el flujo externo de análisis.
 

@@ -1,10 +1,9 @@
 # Implementación de REQ017 — Chatbot de consultas
 
-Fecha: 16 de noviembre de 2026.
 
-Ollama remoto — 17/11/2026: se incorpora `PermitirRemoto` (false por defecto), validación de URL base HTTP/HTTPS y `Iniciar-Demo.ps1 -OllamaRemoto <URL>` para web local y ambas webs Docker. Compose admite variables externas persistentes documentadas en `.env.example` y `docs/Configuracion.md`. Se conservan el modelo, herramientas MCP, permisos, bloqueo de redirecciones y validación de certificados. Verificación: 17 pruebas de integración del proveedor y 9 de arquitectura aprobadas; parámetros locales/Docker y restauración del entorno comprobados con comandos sustituidos, sin iniciar servicios. Conexión entre dos PCs reales o mediante VPN pendiente.
+Ollama remoto: se incorpora `PermitirRemoto` (false por defecto), validación de URL base HTTP/HTTPS y `Iniciar-Demo.ps1 -OllamaRemoto <URL>` para web local y ambas webs Docker. Compose admite variables externas persistentes documentadas en `.env.example` y `docs/Configuracion.md`. Se conservan el modelo, herramientas MCP, permisos, bloqueo de redirecciones y validación de certificados. Verificación: 17 pruebas de integración del proveedor y 9 de arquitectura aprobadas; parámetros locales/Docker y restauración del entorno comprobados con comandos sustituidos, sin iniciar servicios. Conexión entre dos PCs reales o mediante VPN pendiente.
 
-Actualización del 17/11/2026: `Chatbot.razor` actualiza el texto en `oninput` y habilita Enviar pregunta mientras se escribe; se conserva el bloqueo para espacios y consultas en curso y se explicita el estilo primario. Compilación y 9 pruebas de arquitectura aprobadas. Pendiente comprobar escritura/borrado/pegado en navegador. No se cambiaron el modelo ni los parámetros de rendimiento ni se midió la latencia en el equipo.
+Actualización: `Chatbot.razor` actualiza el texto en `oninput` y habilita Enviar pregunta mientras se escribe; se conserva el bloqueo para espacios y consultas en curso y se explicita el estilo primario. Compilación y 9 pruebas de arquitectura aprobadas. Pendiente comprobar escritura/borrado/pegado en navegador. No se cambiaron el modelo ni los parámetros de rendimiento ni se midió la latencia en el equipo.
 
 ## Resultado y decisiones
 
@@ -171,7 +170,7 @@ Queda pendiente únicamente la inspección visual de 12.1; la etapa 12 conserva 
 
 ### Evidencia visual aportada por el usuario
 
-El 16/11/2026, después de sincronizar externamente el secreto de login con el cliente actual de Keycloak, el usuario aportó una captura de `/chatbot` con sesión de administrador, la pregunta «¿Cómo está funcionando todo hoy?» y una respuesta visible para sus dos parques. Esto acredita visualmente acceso, envío y presentación de una respuesta; no acredita espera, rechazo, recuperación ni aislamiento entre usuarios.
+Después de sincronizar externamente el secreto de login con el cliente actual de Keycloak, el usuario aportó una captura de `/chatbot` con sesión de administrador, la pregunta «¿Cómo está funcionando todo hoy?» y una respuesta visible para sus dos parques. Esto acredita visualmente acceso, envío y presentación de una respuesta; no acredita espera, rechazo, recuperación ni aislamiento entre usuarios.
 
 La respuesta diferencia estado/fallas no disponibles, generación diaria sin datos y ausencia de tareas pendientes. La comprobación TCP posterior no pudo conectar con el simulador configurado en `127.0.0.1:5055`, y no se encontró un proceso `SolarUY.InversorSimulador` con ese nombre. Esta evidencia es consistente con la indisponibilidad de la telemetría; no demuestra que toda ausencia de datos históricos tenga la misma causa. No se inició el simulador, no se generaron lecturas ni se alteraron datos para sustituir esa evidencia. La tarea 12.1 permanece parcialmente verificada y abierta.
 
@@ -220,7 +219,7 @@ Resultado: **1 correcta, 0 fallos, 0 omisiones**. Se reutilizaron los binarios q
 
 El simulador se cerró al finalizar la prueba. Después se solicitó la descarga del modelo y `/api/ps` confirmó **cero modelos cargados**. No se compiló, no se modificó código/configuración y no se repitieron otras pruebas. Esta consulta acredita recuperación con el espacio y servicios indicados; no garantiza capacidad bajo cualquier carga simultánea ni reemplaza la inspección visual pendiente. Se completó 12.6 y permanece abierta 12.1.
 
-### Saludos y cortesía sin exigir datos — 17/11/2026
+### Saludos y cortesía sin exigir datos
 
 El usuario mostró que «hola» recibía la advertencia de falta de evidencia. El control era correcto para afirmaciones operativas, pero también descartaba la cortesía del modelo cuando no había invocaciones a herramientas.
 
@@ -241,7 +240,7 @@ Se actualizaron `requirements.md`, A1 de `specs.md`, la tarea 5.7 y los document
 
 No se repitió la suite completa ni se invocaron proveedores de IA reales o se iniciaron servidores adicionales. La instancia abierta debe cargar el código actualizado para probar «hola» en el navegador; esa comprobación visual posterior no se declara realizada.
 
-### Variantes de ayuda y respuesta diferenciada — 17/11/2026
+### Variantes de ayuda y respuesta diferenciada
 
 La siguiente captura del usuario confirmó que «hola» y «como estas?» recibían la cortesía local, pero repetían la misma presentación y «hola que podemos hacer hoy?» seguía devolviendo falta de evidencia. Se ajustó `ResponderCortesia` en `ChatbotService.cs`: ahora «cómo estás», «qué tal» y expresiones equivalentes reciben una respuesta propia, y las preguntas de capacidades aceptan variantes acotadas con saludo inicial, voseo/tuteo, plural, «hoy» y «en SolarUY». El texto de ayuda propone consultas posibles sin afirmar estados ni cifras actuales.
 
@@ -249,7 +248,7 @@ La siguiente captura del usuario confirmó que «hola» y «como estas?» recib�
 
 Se amplió `ChatbotCortesiaIntegrationTests.cs` con la secuencia exacta de la captura, saludos con varias palabras, variantes de capacidades y preguntas que agregan generación de un parque. También se comprobó que una respuesta inventada del modelo en una consulta mixta sigue descartándose. El mismo filtro de integración de la sección anterior pasó con **40 correctas, 0 fallos, 0 omisiones**; arquitectura pasó con **9 correctas, 0 fallos, 0 omisiones** sobre el código final. Salida `bin/Req017Cortesia/`, comandos secuenciales con las mismas opciones y sin repetir la suite completa ni cargar Ollama. Se actualizaron A1, 5.7 y el resumen; la comprobación visual de esta ampliación sigue pendiente.
 
-### Conservar la conversación al navegar — 17/11/2026
+### Conservar la conversación al navegar
 
 El usuario reportó que cambiar de apartado y volver dejaba el chat vacío. `Chatbot.razor` llamaba a `ReiniciarAsync` tanto al inicializarse como al destruirse, y la lista visible solo existía en el componente. Las rutas interactivas ya comparten el circuito y su servicio scoped, por lo que no se agregó almacenamiento persistente ni se cambió la navegación global.
 
@@ -270,7 +269,7 @@ Verificaciones, ejecutadas secuencialmente con salida `bin/Req017Conversacion/`:
 
 No se repitieron la suite completa ni las llamadas de IA real y no se iniciaron hosts HTTP adicionales; el render integrado se ejecutó sin iniciar Kestrel. Solo se modificaron los tres archivos de producción indicados, la prueba del panel y los documentos del requerimiento. La conservación cubre navegación interna en el mismo circuito; una recarga completa, otro circuito o un reinicio del servidor empieza una conversación nueva. El recorrido manual posterior en navegador sigue pendiente y no se marca la etapa 12 como completa.
 
-### Continuidad y peticiones compuestas — 17/11/2026
+### Continuidad y peticiones compuestas
 
 Se reprodujo con Ollama real la secuencia de la captura en una base/simulador aislados: «¿Qué parques hay?», «agregale mas informacion» y «dime cuantos parques hay y detalla la informacion de cada uno?». El primer intento falló en la ampliación con `SinDatos`: el historial llegaba al modelo, pero no se invocaban herramientas del turno. Reforzar instrucciones y permitir un intento correctivo mejoró esa parte, pero la primera comprobación compuesta todavía detectó apartados omitidos. Esos fallos no se declararon aprobados.
 
@@ -307,7 +306,7 @@ powershell -NoProfile -File SolarUY.Integration.Tests/Verificar-Chatbot.ps1 -Oll
 
 El equipo tenía 12,12 GiB libres en C: antes de estas pruebas. No se detuvieron servicios de CI ni se ejecutó la suite completa. El simulador aislado terminó con el caso real y el modelo se descargó después; `/api/ps` confirmó cero modelos cargados. OpenAI no se invocó ni se consumieron sus créditos. El contexto de 16384 sigue siendo un límite: se verificó esta conversación y los escenarios indicados, no una conversación ilimitada o cualquier petición compleja. El recorrido visual posterior a estos cambios sigue pendiente en 12.1.
 
-## Configuración de Ollama en Docker — 17/11/2026
+## Configuración de Ollama en Docker
 
 Se corrigió el endpoint de Compose: 127.0.0.1 dentro de la web no alcanzaba Ollama del host. El permiso `Chatbot:Ollama:PermitirHostDocker` admite exactamente host.docker.internal, además de loopback, y conserva rechazo de servidores arbitrarios, credenciales y rutas no válidas. Ollama debe escuchar en una interfaz accesible desde Docker; el README explica la configuración.
 

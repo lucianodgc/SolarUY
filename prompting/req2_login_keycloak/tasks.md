@@ -34,7 +34,7 @@
 
 - [x] **5.1** Validar con cada usuario de prueba que el rol asignado desde `realm_access.roles` se reconoce en .NET y habilita o deniega las funcionalidades de interfaz correspondientes.
 - [x] **5.2** Verificar que `Authority`, `ClientId` y `ClientSecret` se pueden configurar mediante variables de entorno en producción.
-- [ ] **5.3** Registrar en Keycloak las URLs de redirección de producción cuando se defina la URL HTTPS pública de SolarUY.
+- [x] **5.3** Registrar en Keycloak las URLs de redirección de producción cuando se defina la URL HTTPS pública de SolarUY.
 
 ## 6. Cierre y documentación
 

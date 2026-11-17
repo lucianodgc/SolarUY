@@ -40,7 +40,7 @@ Fuente técnica exclusiva: `specs.md`. Las tareas quedan pendientes y no se debe
 - [x] 5.2 Crear los formularios Radzen de alta y edición con los campos finalmente aprobados, validaciones y errores controlados. (Presentation)
 - [x] 5.3 Implementar la confirmación de eliminación y la comunicación de los rechazos de negocio sin informar éxito. (Presentation)
 - [x] 5.4 Proteger rutas, acciones y navegación: escritura solo para Administrador y consulta para Administrador, Tecnico y Consulta. (Presentation)
-- [ ] 5.5 Verificar en interfaz los flujos administrativos, la consulta autorizada por los tres roles y los errores de validación/denegación cuando exista entorno disponible. (Verificación)
+- [x] 5.5 Verificar en interfaz los flujos administrativos, la consulta autorizada por los tres roles y los errores de validación/denegación cuando exista entorno disponible. (Verificación)
 
 ## 6. Verificación y cierre
 

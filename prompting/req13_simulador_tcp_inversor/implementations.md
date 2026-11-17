@@ -1,6 +1,6 @@
 # Implementación: Simulador TCP del inversor
 
-## Arranque local automático — 17/11/2026
+## Arranque local automático
 
 El modo local también propaga ambos secretos de Keycloak de Compose/.env y fija la autoridad local; así evita usar secretos antiguos del almacén user-secrets al intercambiar el código OIDC. Restaura todas las variables al terminar. Se verificó sin mostrar secretos que Keycloak acepta el cliente configurado en .env (un código de prueba inexistente devuelve invalid_grant, no unauthorized_client). Sigue pendiente el recorrido completo de login en navegador tras reiniciar.
 

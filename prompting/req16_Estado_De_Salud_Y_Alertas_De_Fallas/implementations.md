@@ -84,7 +84,7 @@ Para repetir, configurar el Nginx de deploy/nginx para host.docker.internal:5051
 La guía deploy/nginx/README.md se actualizó para SaludDistribucion, claves y política compartidas, compatibilidad y reemplazo de una instancia por vez. D6 no requiere nueva migración; se necesita el esquema AddEstadoSaludAlertas ya probado. Se aplicó el procedimiento sobre las bases aisladas y los procesos temporales, sin cambiar la base habitual.
 
 
-## Cierre delegado de coordinación — 17/11/2026
+## Cierre delegado de coordinación
 
 Se actualizó `compose.yaml`: adquisición, evaluación y observación activas en A/B; IDs de observadores distintos; B depende de MariaDB y Keycloak, sin depender de la salud de A. La exclusión por sesión y la consulta de paneles pendientes por intervalo UTC mantienen un único propietario de adquisición; la candidata restante puede continuar sin promoción manual. No hay primaria fija, garantía de relevo instantáneo ante partición ni reconstrucción automática de intervalos perdidos.
 
@@ -94,7 +94,7 @@ Verificación de este cambio: `docker compose config --quiet` y comprobación de
 
 Entorno temporal: MariaDB `solaruy_req007_test_relevo` en 33329, contenedor `solaruy-req016-relevo` y simulador TCP en 15017. Se detienen y eliminan al finalizar. No se recrearon las aplicaciones habituales ni se migró su base. `git diff --check` sin errores.
 
-## Corrección de borrado de inventario — 17/11/2026
+## Corrección de borrado de inventario
 
 Se corrigió el borrado de parques con inversores: las dependencias se eliminan en orden y la baja final no provoca conflictos con entidades ya seguidas por EF. El borrado físico de parques o nodos que tengan evaluación, cambios o alertas de salud se rechaza antes de eliminar dependencias, con un mensaje que indica usar la baja lógica de paneles.
 

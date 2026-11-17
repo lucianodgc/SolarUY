@@ -1,6 +1,6 @@
 # Implementación: Simulador del inversor
 
-## Selector de parque (05/11/2026)
+## Selector de parque
 
 En `SimuladorInversor.razor` se agregó un selector de parques y se filtraron los nodos por el parque elegido. Cambiar de parque limpia el estado anterior, selecciona su primer nodo y actualiza la suscripción SignalR; un parque vacío muestra un mensaje. Seleccionar un nodo consulta su estado y permisos. Se conservan el parque y el nodo visibles sobre los controles. Se actualizaron requirements, specs y tasks del requerimiento.
 

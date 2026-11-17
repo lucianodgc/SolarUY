@@ -6,5 +6,7 @@ RUN dotnet tool install --tool-path /opt/sonar dotnet-sonarscanner --version 12.
 ENV PATH="$PATH:/opt/sonar"
 ENV DOTNET_CLI_HOME=/home/app
 ENV NUGET_PACKAGES=/home/app/.nuget/packages
+COPY analizar.sh /opt/sonar/analizar.sh
+RUN sed -i 's/\r$//' /opt/sonar/analizar.sh
 USER app
 WORKDIR /analysis

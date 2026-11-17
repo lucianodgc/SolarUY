@@ -49,7 +49,7 @@ La configuración Nginx utilizada por la suite de req21 es una fixture de prueba
 
 ## Verificación y reproducción
 
-Resultados finales del 17/11/2026: **75 pruebas Domain, 16 Application, 9 CodeQuality y 59 de integración aprobadas**, sin omisiones en esas ejecuciones. **1 recorrido Playwright aprobado** en Chromium aislado, con dos procesos reales detrás de Nginx y endpoint TCP común (18,2 segundos de recorrido; 25,8 segundos de suite). EF confirmó que no hay cambios de modelo pendientes de migración y `git diff --check` no encontró errores. Se inspeccionó la captura completa del resultado.
+Resultados finales: **75 pruebas Domain, 16 Application, 9 CodeQuality y 59 de integración aprobadas**, sin omisiones en esas ejecuciones. **1 recorrido Playwright aprobado** en Chromium aislado, con dos procesos reales detrás de Nginx y endpoint TCP común (18,2 segundos de recorrido; 25,8 segundos de suite). EF confirmó que no hay cambios de modelo pendientes de migración y `git diff --check` no encontró errores. Se inspeccionó la captura completa del resultado.
 
 | Verificación | Evidencia |
 |---|---|

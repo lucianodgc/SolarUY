@@ -1,12 +1,12 @@
 # Implementación de req14: Monitoreo en tiempo real
 
-## Carga inicial — 17/11/2026
+## Carga inicial
 
 El notificador conserva por parque la última muestra compartida. El hub la entrega tras autorizar la suscripción y solo si sigue vigente (máximo tres intervalos, sin fechas futuras). La interfaz distingue espera inicial y no sobrescribe telemetría con una consulta histórica pendiente. No se añaden adquisiciones por usuario. En el diagnóstico real había cero lecturas; con el arranque local normal se guardaron 60 muestras y la salud dejó de mostrar todos desconectados (11 Normal, 1 Falla). Se detuvo la ejecución de diagnóstico al finalizar.
 
 Verificación: 44 integraciones aprobadas de SignalR, workers y reportes; 1 omitida (servidor de inspección manual), 0 fallidas con el simulador requerido activo. Incluye entrega inicial vigente y rechazo de muestras vencidas/futuras. Arquitectura: 9 aprobadas. Primera pasada sin simulador: 4 fallos de espera, resueltos al preparar el prerrequisito. Evidencia en artifacts/monitoreo-carga/. No se ejecutó recorrido visual en navegador.
 
-## Estado vigente: una instancia (05/11/2026)
+## Estado vigente: una instancia
 
 Por pedido del usuario se retiraron el repositorio, contrato, worker y configuración de distribución persistente. El guardado conserva la transacción y ya no escribe avisos ni secuencias. Los avisos posteriores al guardado se entregan directamente por SignalR local. La telemetría visual sigue cada 2 segundos y el historial cada 30 segundos.
 
@@ -18,7 +18,6 @@ En Edge con un perfil temporal se recibieron muestras cada 1,991–2,005 segundo
 
 Las secciones siguientes conservan el registro histórico del diseño anterior. El alcance actual está en requirements.md, specs.md y tasks.md. La distribución entre varias instancias no está implementada en esta versión.
 
-Fecha: 29/10/2026, America/Montevideo.
 
 ## Estado y acuerdos
 
@@ -108,7 +107,7 @@ Se inspeccionaron las capturas de página completa: jerarquía, estados, unidade
 
 Los dos fixtures interactivos se omiten en la ejecución general porque requieren activación explícita; el fixture de dos instancias se ejecutó y aprobó desde Playwright. El fixture manual antiguo queda sustituido por esa verificación automatizada. No se ejecutaron pruebas contra el despliegue productivo, TLS real, Keycloak externo ni el perfil personal del navegador; los cambios están preparados y verificados localmente para su despliegue coordinado.
 
-## Ajuste de telemetría en vivo (05/11/2026)
+## Ajuste de telemetría en vivo
 
 Se agregó `TelemetriaEnVivoWorker`, que consulta el simulador cada 2 segundos y publica una muestra por parque en el Hub local. Monitoreo y Simulador se suscriben al mismo evento; Simulador ya no inicia su propio temporizador de consultas. La persistencia histórica se configuró a 30 segundos y los reportes siguen leyendo MariaDB.
 

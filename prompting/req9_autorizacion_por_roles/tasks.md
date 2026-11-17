@@ -27,7 +27,7 @@
 ## 5. Verificación y cierre
 
 - [x] Completar Inicio con accesos por rol y alinear inicio/finalización de mantenimiento con el técnico asignado.
-- [ ] Repetir el recorrido visual de Inicio con los tres roles y los permisos de mantenimiento actualizados.
+- [x] Repetir el recorrido visual de Inicio con los tres roles y los permisos de mantenimiento actualizados.
 
 - [x] 5.1 Ejecutar las verificaciones existentes contempladas en `specs.md` y registrar sus resultados y cualquier verificación no ejecutada.
 - [x] 5.2 Crear el archivo implementations.md en la misma carpeta detallando los cambios realizados, archivos tocados y resultado de las pruebas.

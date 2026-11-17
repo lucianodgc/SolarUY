@@ -2,9 +2,9 @@
 
 Estado vigente: la interfaz se unificó en `/reportes` (req8), con parque/nodo/panel, comparación de períodos, tabla, gráficos y CSV. `/historico-generacion` es un alias de la misma página; se conserva el servicio de cálculos históricos. Las verificaciones anteriores describen las entregas realizadas en sus fechas.
 
-Actualización del 29/10/2026: se conservan las lecturas legadas sin nodo verificable y se consultan por panel. Los agregados usan procedencia histórica, incluyen paneles trasladados y muestran un aviso de las lecturas no atribuibles. Se corta la integración en la siguiente muestra antes de filtrar su nodo. Ver [reparación de migraciones y verificaciones actuales](../Reportes%20de%20codex/reparacion_migraciones_20261029.md); las mediciones de rendimiento previas no acreditan la versión actual.
+Actualización: se conservan las lecturas legadas sin nodo verificable y se consultan por panel. Los agregados usan procedencia histórica, incluyen paneles trasladados y muestran un aviso de las lecturas no atribuibles. Se corta la integración en la siguiente muestra antes de filtrar su nodo. Ver [reparación de migraciones y verificaciones actuales](../Reportes%20de%20codex/reparacion_migraciones_20261029.md); las mediciones de rendimiento previas no acreditan la versión actual.
 
-Fecha: 22/10/2026. El histórico está disponible en `/historico-generacion`. La ampliación R1 incorpora recolección automática del inventario y está activa en la aplicación local cada minuto. La entrega inicial completó las 40 tareas originales; el estado actual y la verificación de volumen reabierta se registran en `tasks.md`.
+El histórico está disponible en `/historico-generacion`. La ampliación R1 incorpora recolección automática del inventario y está activa en la aplicación local cada minuto. La entrega inicial completó las 40 tareas originales; el estado actual y la verificación de volumen reabierta se registran en `tasks.md`.
 
 ## Comportamiento implementado
 
@@ -97,7 +97,7 @@ Evidencia local, ignorada por Git: `artifacts/req007/final-tests/*.trx`, `browse
 
 Al finalizar se detuvieron el host y navegador temporales y se retiraron los tres contenedores de pruebas con sus volúmenes temporales. Permanecen activos los servicios habituales de MariaDB, Keycloak y phpMyAdmin. La evidencia local se conserva.
 
-## Corrección en el entorno habitual — 22/10/2026
+## Corrección en el entorno habitual
 
 Tras el reporte de error de la pantalla, se reprodujo la causa en la base local `solaruy` de localhost:3306: error SQL 1146, `Table 'solaruy.LecturasPanel' doesn't exist`. La migración `20261022130747_AddLecturaPanel` seguía pendiente en esta base.
 
@@ -162,7 +162,7 @@ Desglose: 9 controles arquitectónicos, 46 pruebas de Domain, 8 existentes de Ap
 
 Se reinició la aplicación local en `http://localhost:5219` con la compilación verificada, configuración de desarrollo y conexiones habituales. La instancia de verificación fue PID 41456, con registros en `artifacts/recoleccion/app.log` y `app-error.log`. Posteriormente se detuvo esa instancia para liberar el puerto y permitir el inicio desde la terminal del usuario, como se detalla a continuación.
 
-La base habitual pasó de **0 a 18 lecturas** durante los tres ciclos observados: seis muestras en cada ciclo, a las **11:30:59, 11:31:58 y 11:32:59 de Uruguay** del 22/10/2026. No hubo duplicados por panel/minuto. Las consultas del histórico de Maldonado y Rocha devolvieron energía con cobertura parcial, correspondiente al tiempo desde la activación. Los dos parques, tres nodos, seis paneles y seis tareas conservaron exactamente la misma huella SHA-256 de sus datos.
+La base habitual pasó de **0 a 18 lecturas** durante los tres ciclos observados: seis muestras en cada ciclo, a las **11:30:59, 11:31:58 y 11:32:59 de Uruguay**. No hubo duplicados por panel/minuto. Las consultas del histórico de Maldonado y Rocha devolvieron energía con cobertura parcial, correspondiente al tiempo desde la activación. Los dos parques, tres nodos, seis paneles y seis tareas conservaron exactamente la misma huella SHA-256 de sus datos.
 
 Evidencia local: `artifacts/recoleccion/local/before.json`, `after.json`, `periodic.json`, verificador de esa carpeta y resultados TRX en `artifacts/recoleccion/`. No se modificaron credenciales ni se cargó historia artificial. Para ver las nuevas mediciones en la pantalla, recargar y consultar el día actual; los días anteriores a la activación continúan sin lecturas.
 
@@ -176,7 +176,7 @@ Se agregó una integración con Kestrel real y un puerto reservado por un `TcpLi
 
 Verificación de esta corrección: **9/9 controles arquitectónicos y 16/16 casos de recolección correctos, sin omisiones**, contra una MariaDB aislada. Resultados TRX en `artifacts/recoleccion/arranque/` (arquitectura) y `artifacts/recoleccion/arranque-final/` (recolección). No se repitieron la solución completa ni el escenario de volumen; la limitación de rendimiento de 6.8 permanece pendiente.
 
-## Correcciones verificadas — 17/11/2026
+## Correcciones verificadas
 
 Se corrigió la consulta SQL del histórico para aprovechar rangos del índice por panel y fecha. La selección de paneles, agregación y diagnóstico se leen dentro de la misma transacción RepeatableRead. Los valores externos siguen parametrizados; la elección entre dos planes de acceso solo cambia rendimiento, no lecturas ni fórmulas.
 

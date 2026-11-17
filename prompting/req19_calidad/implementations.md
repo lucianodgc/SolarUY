@@ -1,6 +1,6 @@
 # Implementación: calidad y correcciones verificadas
 
-## Verificación vigente — 17/11/2026
+## Verificación vigente
 
 Se completó la compilación y las cuatro suites de la solución sin modificar CodeQuality.Tests ni archivos protegidos. Resultado del análisis final reproducible:
 
@@ -22,7 +22,7 @@ El analizador anterior se interrumpía y solo había evidencia histórica. Se a�
 
 Se corrigieron cuatro avisos bloqueantes con aserciones explícitas verificadas. Dos avisos SQL S2077 se revisaron y marcaron como falsos positivos en Sonar: las listas contienen nombres de parámetros generados internamente; todos los valores de consulta siguen siendo parámetros ligados. No se alteraron condiciones del Gate, línea base, pruebas arquitectónicas ni fórmulas para aprobarlo.
 
-Último análisis publicado: **17/11/2026, 16:40:52 UTC**, proyecto [SolarUY](http://localhost:9000/dashboard?id=SolarUY), identificador 57c3a1c3-926b-46bf-9809-4a9284a7fcd9.
+Último análisis publicado: proyecto [SolarUY](http://localhost:9000/dashboard?id=SolarUY), identificador 57c3a1c3-926b-46bf-9809-4a9284a7fcd9.
 
 | Indicador | Resultado |
 | --- | --- |

@@ -1,8 +1,8 @@
 # Implementación: Recolección periódica de lecturas
 
-Actualización del 29/10/2026: se reparó la migración pendiente para conservar las lecturas sin nodo verificable con NodoId NULL; el constructor y el recolector siguen exigiendo nodo en nuevas muestras. Se agregaron migraciones de compatibilidad y cobertura. El diagnóstico, respaldo restaurado, comparación de las 1.578 lecturas, migraciones realmente aplicadas y límites de verificación se registran en [el informe de reparación](../Reportes%20de%20codex/reparacion_migraciones_20261029.md). El registro original siguiente conserva su alcance histórico.
+Actualización: se reparó la migración pendiente para conservar las lecturas sin nodo verificable con NodoId NULL; el constructor y el recolector siguen exigiendo nodo en nuevas muestras. Se agregaron migraciones de compatibilidad y cobertura. El diagnóstico, respaldo restaurado, comparación de las 1.578 lecturas, migraciones realmente aplicadas y límites de verificación se registran en [el informe de reparación](../Reportes%20de%20codex/reparacion_migraciones_20261029.md). El registro original siguiente conserva su alcance histórico.
 
-Fecha de trabajo: 28/10/2026 (America/Montevideo). La carpeta de este requerimiento fue renombrada a req11 durante la implementación. Las referencias de los diagnósticos y escenarios de prueba se normalizan aquí a req11.
+La carpeta de este requerimiento fue renombrada a req11 durante la implementación. Las referencias de los diagnósticos y escenarios de prueba se normalizan aquí a req11.
 
 ## Cambios realizados
 
@@ -43,7 +43,7 @@ El intervalo es obligatorio, entero y positivo. Se rechazan valores ausentes, va
 
 ## Migración y datos anteriores
 
-Procedimiento actualizado el 29/10/2026: detener recolectores, respaldar y verificar una restauración antes de migrar. `AddRecoleccionPeriodica` comprueba duplicados antes del DDL y agrega el nodo nullable sin completar datos históricos. Las migraciones de compatibilidad y cobertura mantienen claves foráneas y unicidad. No se borra ni consolida ninguna lectura.
+Procedimiento actualizado: detener recolectores, respaldar y verificar una restauración antes de migrar. `AddRecoleccionPeriodica` comprueba duplicados antes del DDL y agrega el nodo nullable sin completar datos históricos. Las migraciones de compatibilidad y cobertura mantienen claves foráneas y unicidad. No se borra ni consolida ninguna lectura.
 
 En una base nueva o sin lecturas previas, se puede ejecutar `dotnet ef database update --project SolarUY.Infrastructure/SolarUY.Infrastructure.csproj` con la conexión configurada externamente.
 

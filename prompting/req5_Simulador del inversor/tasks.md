@@ -2,7 +2,7 @@
 
 - [x] Cierre adicional: crear `resumen.md` con una síntesis breve del trabajo y las verificaciones registradas.
 
-## Selección por parque (05/11/2026)
+## Selección por parque
 
 - [x] Agregar selector de parque y filtrar sus nodos.
 - [x] Cambiar la suscripción SignalR al elegir otro parque y consultar el nodo seleccionado.

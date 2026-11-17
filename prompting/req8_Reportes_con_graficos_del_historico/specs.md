@@ -1,6 +1,6 @@
 # Especificaciones: Reportes con gráficos del histórico y exportación
 
-> Reparación solicitada el 29/10/2026: reutilizar el histórico que respeta NodoId histórico y excluye lecturas legadas sin procedencia de los agregados por nodo/parque. Mostrar el aviso de lecturas sin nodo verificable y conservarlo en la exportación CSV. Las lecturas permanecen consultables por panel y nunca se reatribuyen usando la topología actual.
+> Reparación solicitada: reutilizar el histórico que respeta NodoId histórico y excluye lecturas legadas sin procedencia de los agregados por nodo/parque. Mostrar el aviso de lecturas sin nodo verificable y conservarlo en la exportación CSV. Las lecturas permanecen consultables por panel y nunca se reatribuyen usando la topología actual.
 
 Fuente funcional: `requirements.md` de esta carpeta. El alcance comprende una pantalla de reportes de generación y mantenimiento, gráficos Radzen de barras y líneas, filtros y descarga CSV. Este documento define el diseño; no acredita implementación ni pruebas ejecutadas.
 
@@ -13,7 +13,7 @@ Fuente funcional: `requirements.md` de esta carpeta. El alcance comprende una pa
 - Consultar parque obligatorio, nodo opcional y panel opcional pertenecientes al parque y al nodo seleccionado. La selección más específica define el objetivo. Integrar comparación de dos períodos, tabla, extremos, gráficos y CSV por período. No agregar PDF ni exportación de imágenes.
 - La card Mantenimiento de `Home.razor` enlaza a `MantenimientoPaneles.razor`. Esta página usa `ITareaMantenimientoService` y `TareaMantenimientoDto`; no existe un componente independiente que pueda reutilizarse como resumen. Reutilizar sus registros, conceptos y campos de consulta, sin copiar el flujo de gestión al reporte.
 - El servicio de mantenimiento actual permite Administrador y Tecnico, y limita al técnico a sus tareas. El criterio 8 de req8 autoriza a los tres roles a leer reportes de todos los parques: incorporar una consulta específica de solo lectura para el reporte, conservando los permisos de gestión y la página `/mantenimiento`.
-- No modificar el recolector ni reconstruir mediciones faltantes desde reportes. La consulta y su rendimiento pertenecen a req7; la tarea 6.8 quedó verificada allí en la revisión del 17/11/2026.
+- No modificar el recolector ni reconstruir mediciones faltantes desde reportes. La consulta y su rendimiento pertenecen a req7; la tarea 6.8 quedó verificada allí.
 
 ### Q1. Definición de mantenimiento realizado
 

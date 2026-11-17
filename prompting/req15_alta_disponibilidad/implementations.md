@@ -106,7 +106,7 @@ La dirección pública debe seguir respondiendo durante los dos reemplazos. El e
 - No se ejecutaron pruebas automatizadas. La construcción Docker aún debe repetirse después de la corrección.
 - El usuario confirmó que ejecutó las demostraciones de caída de una instancia y actualización secuencial, comprobando la disponibilidad pública.
 
-## Arranque reproducible corregido — 17/11/2026
+## Arranque reproducible corregido
 
 Compose incluye un simulador TCP en la red privada; A y B se conectan al mismo servicio y conservan la exclusión mutua de adquisición. Ollama del host se resuelve mediante host.docker.internal con permiso explícito limitado a ese nombre. Se configura la dirección de Nginx como proxy de confianza y MariaDB con buffer pool de 512 MiB.
 
