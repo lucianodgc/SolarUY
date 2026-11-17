@@ -1,6 +1,6 @@
 # Especificación: monitoreo en vivo
 
-## Alcance vigente (05/11/2026)
+## Alcance vigente
 
 Por pedido del usuario se simplifica la ejecución a una instancia. Este alcance reemplaza el acuerdo anterior D2 de distribución persistente entre instancias. Se mantienen .NET 8, Blazor Server, Radzen, EF Core, MariaDB y Keycloak. El balanceo queda para una etapa posterior.
 

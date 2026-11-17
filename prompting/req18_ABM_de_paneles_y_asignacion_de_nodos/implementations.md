@@ -1,6 +1,6 @@
 # Implementación: ABM de paneles y asignación a nodos
 
-## Presentación decimal — 17/11/2026
+## Presentación decimal
 
 `Paneles.razor`, `AltaPanel.razor` y `EditarPanel.razor` muestran la potencia sin ceros decimales sobrantes: `550.000…` se presenta como `550`. El formato conserva las cifras significativas y no cambia valores guardados ni reglas de negocio. Compilación y 9 pruebas de `CodeQuality.Tests` aprobadas; revisión visual en navegador pendiente.
 
@@ -28,7 +28,7 @@
 - `dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj --no-restore`: 9 pruebas aprobadas.
 - No se aplicó la migración sobre MariaDB ni se ejecutaron pruebas de autorización/integración contra una base configurada.
 
-## Persistencia y permisos verificados — 17/11/2026
+## Persistencia y permisos verificados
 
 Se reprodujo y corrigió un error real al crear o trasladar paneles: adjuntar el grafo del nodo duplicaba una clave ya seguida por EF al bloquear capacidad. La persistencia ahora registra únicamente la entidad Panel, conservando bloqueos y transacciones.
 

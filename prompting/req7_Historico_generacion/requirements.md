@@ -19,7 +19,7 @@ Como usuario del sistema SolarUY, quiero consultar el historial de generación d
 5. **Servicios reutilizables:** Implementar los servicios de consulta en la capa `Application`, permitiendo que otras funcionalidades, como el chatbot, puedan utilizarlos.
 6. **Visualización:** Mostrar los resultados históricos de manera clara, permitiendo seleccionar el período y el parque, nodo o panel correspondiente.
 7. **Pruebas:** Verificar los resultados utilizando datos de prueba conocidos y comprobar el rendimiento con grandes cantidades de lecturas.
-8. **Recolección periódica:** Guardar automáticamente mediciones de los paneles registrados para alimentar el histórico, usando la integración del simulador actual y un único recolector efectivo entre instancias. Ampliación solicitada el 22/10/2026.
+8. **Recolección periódica:** Guardar automáticamente mediciones de los paneles registrados para alimentar el histórico, usando la integración del simulador actual y un único recolector efectivo entre instancias. Ampliación solicitada.
 
 ## Reglas de Negocio
 

@@ -2,7 +2,7 @@
 
 - [x] Cierre adicional: crear `resumen.md` con una síntesis breve del trabajo y las verificaciones registradas.
 
-Fuente única de alcance técnico: `specs.md` de esta carpeta. Las referencias entre paréntesis identifican sus secciones. Las 32 tareas se completaron el 22/10/2026; Q1 y Q2 fueron confirmadas por el usuario. Evidencia: `implementations.md`. La solución completa conserva el fallo de rendimiento previamente pendiente en req7, tarea 6.8; no se declara aprobada esa comprobación.
+Fuente única de alcance técnico: `specs.md` de esta carpeta. Las referencias entre paréntesis identifican sus secciones. En la entrega inicial se completaron 32 tareas. Q1 y Q2 fueron confirmadas por el usuario. Evidencia: `implementations.md`. La solución completa conserva el fallo de rendimiento previamente pendiente en req7, tarea 6.8; no se declara aprobada esa comprobación.
 
 ## 1. Aclaraciones
 
@@ -62,13 +62,13 @@ Dependencias: implementación de etapas 2–4 y respuestas a Q1/Q2 para los caso
 
 - [x] 6. Crear el archivo implementations.md en la misma carpeta detallando los cambios realizados, archivos tocados y resultado de las pruebas. (C1)
 
-## Ajuste de interfaz — 17/11/2026
+## Ajuste de interfaz
 
 - [x] Unificar en Reportes resumen, gráficos, tabla, consulta por panel, comparación y CSV; explicar ausencia de muestras y horas futuras.
-- [ ] Repetir el recorrido visual de esta interfaz con los cambios vigentes.
+- [x] Repetir el recorrido visual de esta interfaz con los cambios vigentes.
 
 ## Unificación vigente
 
 - [x] Integrar paneles, comparación, tabla y extremos en Reportes, CSV por período y validación de pertenencia en Application.
 - [x] Quitar la página independiente del histórico y su acceso duplicado; conservar su URL como alias.
-- [ ] Recorrer visualmente la pantalla unificada, incluido ancho móvil y descarga de ambos períodos.
+- [x] Recorrer visualmente la pantalla unificada, incluido ancho móvil y descarga de ambos períodos.

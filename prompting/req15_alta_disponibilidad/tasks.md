@@ -26,7 +26,7 @@
 
 - [x] 4.1 Crear `implementations.md` con los cambios, archivos tocados y resultados de verificación; crear `resumen.md` con una síntesis breve del requerimiento.
 
-## 5. Correcciones de integración del 17/11/2026
+## 5. Correcciones de integración
 
 - [x] 5.1 Incluir el simulador TCP compartido en Compose, sin publicar el puerto al host.
 - [x] 5.2 Configurar Ollama del host para Docker con validación explícita del hostname permitido.

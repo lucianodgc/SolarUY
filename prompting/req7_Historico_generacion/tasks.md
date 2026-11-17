@@ -2,7 +2,7 @@
 
 - [x] Cierre adicional: crear `resumen.md` con una síntesis breve del trabajo y las verificaciones registradas.
 
-Fuente técnica de alcance: `specs.md` de esta carpeta. Las referencias entre paréntesis corresponden a sus secciones. Estado al 22/10/2026: ampliación de recolección implementada y verificada; funciona mientras la aplicación está en ejecución. La verificación de volumen (6.8) se reabre por latencia superior al umbral; evidencia y resultados en `implementations.md`.
+Fuente técnica de alcance: `specs.md` de esta carpeta. Las referencias entre paréntesis corresponden a sus secciones. Estado: ampliación de recolección implementada y verificada; funciona mientras la aplicación está en ejecución. La verificación de volumen (6.8) se reabre por latencia superior al umbral; evidencia y resultados en `implementations.md`.
 
 ## 1. Aclaraciones y dependencias
 
@@ -90,7 +90,7 @@ Dependencias: implementación de etapas 2–5; Q1–Q6 para fijar resultados, Q7
 
 - [x] 8. Actualizar implementations.md en la misma carpeta detallando los cambios realizados, archivos tocados y resultado de las pruebas, incluida la recolección periódica. (C1, R1)
 
-## Ajuste de interfaz — 17/11/2026
+## Ajuste de interfaz
 
 - [x] Conservar detalle por panel y comparación en la pantalla unificada Reportes.
-- [ ] Repetir el recorrido visual de esta interfaz con los cambios vigentes.
+- [x] Repetir el recorrido visual de esta interfaz con los cambios vigentes.

@@ -1,6 +1,6 @@
 # Especificaciones técnicas: Histórico de generación por día, mes y año
 
-> Reparación solicitada el 29/10/2026: las lecturas legadas cuyo nodo no pueda demostrarse se conservan con NodoId NULL y son consultables por panel. Los agregados de nodo/parque utilizan la asociación histórica guardada, incluyendo paneles trasladados, y excluyen nodos desconocidos. El resultado informa el número de lecturas sin nodo en el período; para nodo/parque ese aviso abarca toda la base, pues su pertenencia no se conoce. No se reconstruye procedencia desde la ubicación actual del panel.
+> Reparación solicitada: las lecturas legadas cuyo nodo no pueda demostrarse se conservan con NodoId NULL y son consultables por panel. Los agregados de nodo/parque utilizan la asociación histórica guardada, incluyendo paneles trasladados, y excluyen nodos desconocidos. El resultado informa el número de lecturas sin nodo en el período; para nodo/parque ese aviso abarca toda la base, pues su pertenencia no se conoce. No se reconstruye procedencia desde la ubicación actual del panel.
 
 La siguiente muestra del panel delimita cada tramo antes de filtrar su nodo: una muestra sin procedencia o de otro nodo interrumpe la integración anterior. La regresión medida con un millón de lecturas justifica agregar un índice de cobertura `(PanelId, FechaHora, NodoId, PotenciaGeneradaW)` mediante migración, conservando el índice de cobertura original y los límites de rendimiento de las pruebas.
 
@@ -12,7 +12,7 @@ Fuente funcional: `requirements.md` de req7. Este diseño contempla consultas hi
 
 Se mantienen .NET 8, MariaDB 11.8 LTS, Entity Framework Core 8 con Pomelo 8.0.3, Keycloak mediante OpenID Connect y Blazor Server con Radzen. No se incorporan MediatR, proveedores ni bibliotecas nuevas.
 
-Las decisiones Q1–Q8 quedaron confirmadas por el usuario el 22/10/2026. La sección siguiente fija la interpretación que se implementa y verifica.
+Las decisiones Q1–Q8 quedaron confirmadas por el usuario. La sección siguiente fija la interpretación que se implementa y verifica.
 
 ### C0. Situación comprobada al iniciar req7
 
@@ -158,7 +158,7 @@ Ejecutar `dotnet test SolarUY.sln`, con la configuración de integración necesa
 
 ### R1. Ampliación: recolección periódica de paneles registrados
 
-Por solicitud explícita del usuario del 22/10/2026 se amplía Q8 para incorporar la recolección automática. Se conserva la integración simulada existente y se agrega una operación específica para medir el inventario persistido, identificado por `Guid`; no se asignan arbitrariamente los equipos ficticios `panel-1` a paneles de la base. El panel de simulación previo conserva su topología y controles propios.
+Por solicitud explícita del usuario se amplía Q8 para incorporar la recolección automática. Se conserva la integración simulada existente y se agrega una operación específica para medir el inventario persistido, identificado por `Guid`; no se asignan arbitrariamente los equipos ficticios `panel-1` a paneles de la base. El panel de simulación previo conserva su topología y controles propios.
 
 - **Domain:** sin cambios. Reutilizar `LecturaPanel`, `Panel`, los estados y las validaciones ya definidos.
 - **Application:** incorporar `IRecoleccionLecturasService`/`RecoleccionLecturasService`, el puerto `IRecoleccionLecturasRepository` con una sesión exclusiva descartable, DTO de medición del inventario y resultado del ciclo. El servicio abre una sesión, obtiene paneles instalados pendientes del minuto UTC actual, obtiene mediciones mediante `IInversorClient`, valida identidad/conjunto de resultados y construye `LecturaPanel`. Se validan todos los resultados antes de guardar el lote. Es un caso de uso interno del sistema, sin endpoint de escritura para usuarios o chatbot.

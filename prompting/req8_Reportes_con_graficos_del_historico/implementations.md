@@ -1,10 +1,10 @@
 # Implementación: Reportes con gráficos del histórico y exportación
 
-Presentación — 17/11/2026: se separa el encabezado de cada período mediante la clase reporte-periodo y todos los selectores de fecha incluyen hora de 24 horas. Se aclara que Rango respeta horas y fin exclusivo, mientras Diario/Mensual/Anual conservan períodos completos. Se reutilizan los cálculos existentes. Compilación, arquitectura e integraciones de reportes aprobadas junto con la verificación de monitoreo; revisión visual pendiente.
+Presentación: se separa el encabezado de cada período mediante la clase reporte-periodo y todos los selectores de fecha incluyen hora de 24 horas. Se aclara que Rango respeta horas y fin exclusivo, mientras Diario/Mensual/Anual conservan períodos completos. Se reutilizan los cálculos existentes. Compilación, arquitectura e integraciones de reportes aprobadas junto con la verificación de monitoreo; revisión visual pendiente.
 
-Actualización del 29/10/2026: histórico, gráficos y CSV respetan el nodo histórico guardado; las lecturas legadas de nodo desconocido permanecen por panel y generan un aviso, sin asignarlas al nodo/parque actual. Ver [informe de reparación y pruebas](../Reportes%20de%20codex/reparacion_migraciones_20261029.md). La evidencia del 22/10 siguiente corresponde a la implementación anterior.
+Actualización: histórico, gráficos y CSV respetan el nodo histórico guardado; las lecturas legadas de nodo desconocido permanecen por panel y generan un aviso, sin asignarlas al nodo/parque actual. Ver [informe de reparación y pruebas](../Reportes%20de%20codex/reparacion_migraciones_20261029.md). La evidencia del 22/10 siguiente corresponde a la implementación anterior.
 
-Fecha: 22/10/2026. La pantalla está disponible en `/reportes` para Administrador, Tecnico y Consulta. Reutiliza el histórico de req7, agrega el resumen de mantenimiento realizado y permite descargar ambos conjuntos de datos en un único CSV.
+La pantalla está disponible en `/reportes` para Administrador, Tecnico y Consulta. Reutiliza el histórico de req7, agrega el resumen de mantenimiento realizado y permite descargar ambos conjuntos de datos en un único CSV.
 
 ## Comportamiento implementado
 
@@ -109,7 +109,7 @@ Recompilar y reiniciar la aplicación habitual, luego abrir `/reportes` o el nue
 
 ### Implementación: REQ020 — Reportes con gráficos del histórico y exportación
 
-Fecha de cierre: 12/11/2026. **Las 47 tareas de `tasks.md` están completas.** Se reutilizó la funcionalidad existente, se corrigió una condición de carrera y se ajustó la legibilidad del resumen de mantenimiento. La regresión final terminó con **241 pruebas correctas, 0 fallidas y 4 omitidas explícitamente**. Se completó la inspección de Chrome con los tres roles y la descarga real de los CSV.
+**Las 47 tareas de `tasks.md` están completas.** Se reutilizó la funcionalidad existente, se corrigió una condición de carrera y se ajustó la legibilidad del resumen de mantenimiento. La regresión final terminó con **241 pruebas correctas, 0 fallidas y 4 omitidas explícitamente**. Se completó la inspección de Chrome con los tres roles y la descarga real de los CSV.
 
 ## Resultado funcional
 
@@ -236,6 +236,6 @@ Son idénticos byte a byte, con **9827 bytes** y SHA-256 `8B210AB7E396B48FE24A7E
 
 Se comprobaron `git diff --check`, UTF-8 sin BOM y coherencia entre requisitos, especificación y tareas. No quedan tareas de REQ020 pendientes. Las omisiones explícitas de la suite general se conservan documentadas y no se contabilizan como pruebas aprobadas.
 
-## Interfaz unificada — 17/11/2026
+## Interfaz unificada
 
 Reportes integra toda la consulta histórica y comparación. Se amplían los filtros con PanelId validado, también aplicado al mantenimiento y exportación. Se conserva la lógica de cálculo de req7 sin migraciones. La navegación tiene una sola entrada; la URL antigua es un alias. Verificación: 32 integraciones de reportes y concurrencia aprobadas, incluida consulta por panel, CSV y rechazo de pertenencia inválida; 9 pruebas de arquitectura aprobadas. El recorrido visual de esta versión queda pendiente.

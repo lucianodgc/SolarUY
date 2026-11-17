@@ -1,6 +1,6 @@
 # Implementación de req2: autenticación con Keycloak
 
-## Recuperación de errores de login (05/11/2026)
+## Recuperación de errores de login
 
 En Program.cs, OnRemoteFailure registra el fallo y redirige a InicioSesionIncompleto.razor. La página permite acceso anónimo, muestra un mensaje comprensible y ofrece un enlace completo al inicio para comenzar una autenticación nueva. No se deshabilitaron las comprobaciones de correlación, estado, cookies o roles ni se agregó un reintento automático en bucle.
 

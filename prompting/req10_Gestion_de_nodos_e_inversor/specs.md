@@ -6,7 +6,7 @@ Fuente funcional: `requirements.md`. Esta especificación respeta el MER de `.ag
 
 `Nodo` ya existe como dependencia de mantenimiento, pero este requerimiento incorpora sus casos de uso de gestión y el inversor persistido asociado. El inventario persistido se transmite al simulador por la integración TCP de req13; no se inventa una topología alternativa.
 
-Las siguientes decisiones fueron confirmadas por el equipo el 29 de octubre de 2026:
+Las siguientes decisiones fueron confirmadas por el equipo:
 
 | Id | Duda que debe resolver el equipo | Impacto |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Implementación: Mantenimiento de paneles
 
-## Permisos vigentes — 17/11/2026
+## Permisos vigentes
 
 Inicio y finalización exigen rol Tecnico y coincidencia exacta con ResponsableId en Application y en los indicadores del DTO. La actualización SQL vuelve a exigir el responsable para rechazar reasignaciones concurrentes. Administrador conserva creación, asignación, edición y cancelación. Se verificaron 9 escenarios MariaDB de permisos (incluido doble rol, responsable ajeno y llamadas directas), dentro de 40 integraciones aprobadas de mantenimiento/reportes. Arquitectura: 9 aprobadas. El recorrido visual anterior no acredita estos permisos nuevos; debe repetirse.
 

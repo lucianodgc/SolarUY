@@ -84,7 +84,7 @@ Fuente única de alcance técnico: `specs.md` de esta carpeta. Tareas completada
   - [x] 7.2. Incluir pasos reproducibles de las cuatro órdenes, integración con entradas existentes y resultados V1–V9, con las comprobaciones omitidas. (Sección 8)
   - [x] 7.3. Revisar consistencia de requisitos, especificaciones y tareas con el alcance finalmente aprobado. (Sección 8)
 
-## Ajuste de interfaz — 17/11/2026
+## Ajuste de interfaz
 
 - [x] Retirar el componente duplicado de órdenes y adaptar el escenario de navegador a Simulador.
-- [ ] Repetir el recorrido visual de esta interfaz con los cambios vigentes.
+- [x] Repetir el recorrido visual de esta interfaz con los cambios vigentes.

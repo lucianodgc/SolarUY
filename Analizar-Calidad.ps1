@@ -33,7 +33,7 @@ try {
         --mount "type=volume,source=solaruy_scanner_nuget_app,target=/home/app/.nuget/packages" `
         -e SONAR_TOKEN -e SONAR_HOST_URL -e PROJECT_KEY `
         -e SOLARUY_HISTORICO_TEST_CONNECTION `
-        $imagen /app/deploy/sonar/analizar.sh
+        $imagen /opt/sonar/analizar.sh
     $estadoAnalisis = $LASTEXITCODE
     & docker cp "${contenedor}:/resultados/." $resultados
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron exportar los resultados del analizador.' }

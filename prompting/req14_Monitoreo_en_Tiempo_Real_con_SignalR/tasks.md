@@ -2,7 +2,7 @@
 
 - [x] Cierre adicional: crear `resumen.md` con una síntesis breve del trabajo y las verificaciones registradas.
 
-Alcance vigente aprobado el 05/11/2026: una instancia, SignalR directo y retirada de la distribución persistente. Sustituye las tareas anteriores de D2/Nginx; el registro histórico permanece en Git y en implementations.md.
+Alcance vigente aprobado: una instancia, SignalR directo y retirada de la distribución persistente. Sustituye las tareas anteriores de D2/Nginx; el registro histórico permanece en Git y en implementations.md.
 
 - [x] Mantener telemetría compartida cada 2 segundos y persistencia histórica cada 30 segundos.
 - [x] Retirar worker, repositorio, contrato y configuración de distribución persistente.
@@ -16,7 +16,7 @@ Alcance vigente aprobado el 05/11/2026: una instancia, SignalR directo y retirad
 - [x] Comprobar actualizaciones en navegador después de retirar las tablas.
 - [x] Actualizar README, requisitos y especificación para el alcance actual.
 
-## Ajuste de interfaz — 17/11/2026
+## Ajuste de interfaz
 
 - [x] Retirar órdenes de Monitoreo y enlazar al Simulador, conservando telemetría y salud.
-- [ ] Repetir el recorrido visual de esta interfaz con los cambios vigentes.
+- [x] Repetir el recorrido visual de esta interfaz con los cambios vigentes.

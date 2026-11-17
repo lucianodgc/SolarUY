@@ -18,7 +18,7 @@ Brechas observadas:
 
 ## 2. Decisiones confirmadas y dependencias
 
-El usuario confirmó las decisiones siguientes el 28/10/2026. La tabla original identifica el conflicto de partida; la resolución indicada debajo gobierna la implementación.
+El usuario confirmó las decisiones siguientes. La tabla original identifica el conflicto de partida; la resolución indicada debajo gobierna la implementación.
 
 | Id | Duda | Impacto |
 |---|---|---|
@@ -30,7 +30,7 @@ El usuario confirmó las decisiones siguientes el 28/10/2026. La tabla original 
 Resolución aprobada:
 
 - D1: conservar `LecturaPanel.FechaHora` y la tabla `LecturasPanel`, sin renombrar consumidores.
-- D2, actualización solicitada el 29/10/2026: guardar `NodoId` y navegación `Nodo` como asociación histórica. Las mediciones nuevas requieren un nodo y lo fijan al construirse. Conservar las filas anteriores sin procedencia demostrable con `NodoId = NULL`, sin completar desde `Panel.NodoId` ni usar una variable de sesión como prueba. Esas filas siguen consultables por panel; no participan en agregados por nodo/parque ni en potencia vigente. Mostrar su existencia en histórico/reportes y CSV, sin atribuirlas al parque seleccionado. Su eventual certificación exige evidencia por panel e intervalo y una operación posterior explícita y auditable; queda fuera de esta reparación.
+- D2, actualización solicitada: guardar `NodoId` y navegación `Nodo` como asociación histórica. Las mediciones nuevas requieren un nodo y lo fijan al construirse. Conservar las filas anteriores sin procedencia demostrable con `NodoId = NULL`, sin completar desde `Panel.NodoId` ni usar una variable de sesión como prueba. Esas filas siguen consultables por panel; no participan en agregados por nodo/parque ni en potencia vigente. Mostrar su existencia en histórico/reportes y CSV, sin atribuirlas al parque seleccionado. Su eventual certificación exige evidencia por panel e intervalo y una operación posterior explícita y auditable; queda fuera de esta reparación.
 - D3: para el simulador, usar límites de intervalos UTC de N segundos desde el origen de `DateTime`, truncando hacia abajo el instante actual. Cada límite identifica una muestra puntual del simulador, no un agregado del intervalo. El mismo intervalo e inventario permiten reintentar sin cambiar la identidad. Todas las instancias deben usar el mismo N y relojes UTC sincronizados. Las fechas de lectura se truncan a microsegundos y se almacenan en `datetime(6)`; un futuro origen real deberá suministrar su instante estable y requiere revisar este contrato.
 - D4: detectar duplicados por panel/fecha antes de cualquier DDL y detener con un diagnóstico; no eliminar ni consolidar automáticamente filas anteriores. Detener los recolectores durante la migración para evitar escrituras entre comprobaciones y cambios de esquema.
 
@@ -72,7 +72,7 @@ Crear un índice único `(PanelId, FechaHora)` usando el nombre aprobado en D1 p
 
 Conservar adicionalmente el índice existente `(PanelId, FechaHora, PotenciaGeneradaW)`, utilizado como índice de cobertura por el histórico. La unicidad nueva no lo reemplaza: retirarlo provoca una regresión en la verificación existente de un millón de lecturas. Mantener los límites y aserciones originales de esa prueba.
 
-Mantener las migraciones aplicadas. Excepción de reparación solicitada el 29/10/2026: se comprobó en MariaDB que `AddRecoleccionPeriodica` no estaba aplicada ni había ejecutado su DDL; ajustar esa migración pendiente para conservar NodoId NULL sin atribución. Agregar `PreserveUnknownHistoricalNodes` para compatibilizar instalaciones donde la versión anterior sí estaba aplicada, sin modificar sus nodos existentes. Proteger la reversión mientras existan nodos desconocidos. Verificar duplicados antes de imponer unicidad y aplicar D4. Respaldar/restaurar en una copia y comparar todos los campos originales antes de operar sobre la base habitual. Ante DDL parcial, detenerse e inspeccionar: no alterar el historial para saltarlo.
+Mantener las migraciones aplicadas. Excepción de reparación solicitada: se comprobó en MariaDB que `AddRecoleccionPeriodica` no estaba aplicada ni había ejecutado su DDL; ajustar esa migración pendiente para conservar NodoId NULL sin atribución. Agregar `PreserveUnknownHistoricalNodes` para compatibilizar instalaciones donde la versión anterior sí estaba aplicada, sin modificar sus nodos existentes. Proteger la reversión mientras existan nodos desconocidos. Verificar duplicados antes de imponer unicidad y aplicar D4. Respaldar/restaurar en una copia y comparar todos los campos originales antes de operar sobre la base habitual. Ante DDL parcial, detenerse e inspeccionar: no alterar el historial para saltarlo.
 
 ### INF2. Coordinación compartida
 
