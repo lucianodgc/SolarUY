@@ -57,7 +57,7 @@ public sealed class RecoleccionLecturasRepository : IRecoleccionLecturasReposito
             if (instanteUtc.Kind != DateTimeKind.Utc) throw new ArgumentException("Se requiere fecha UTC.", nameof(instanteUtc));
             await VerificarPropiedadAsync(cancellationToken);
             return await context.Paneles.AsNoTrackingWithIdentityResolution().Include(panel => panel.Nodo)
-                .Where(panel => panel.FechaInstalacion <= instanteUtc && !context.LecturasPanel.Any(lectura =>
+                .Where(panel => !panel.EstaDadoDeBaja && panel.FechaInstalacion <= instanteUtc && !context.LecturasPanel.Any(lectura =>
                     lectura.PanelId == panel.Id && lectura.FechaHora == instanteUtc))
                 .OrderBy(panel => panel.Id).ToListAsync(cancellationToken);
         }

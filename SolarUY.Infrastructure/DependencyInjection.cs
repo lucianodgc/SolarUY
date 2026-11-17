@@ -37,6 +37,7 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IPanelRepository, PanelRepository>();
+        services.AddScoped<SolarUY.Application.Paneles.IPanelRepository, PanelRepository>();
         services.AddSingleton<IInversorInventarioRepository, InversorInventarioRepository>();
         services.AddScoped<IIntentoOrdenInversorRepository, IntentoOrdenInversorRepository>();
         services.AddScoped<IHistoricoGeneracionRepository, HistoricoGeneracionRepository>();
