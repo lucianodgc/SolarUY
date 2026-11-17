@@ -1,4 +1,4 @@
-# Monitoreo con dos instancias
+# Monitoreo y salud con dos instancias
 
 El proxy usa cookie de afinidad, WebSockets y respaldo entre dos aplicaciones. La cookie se actualiza con la instancia que efectivamente respondió, también cuando se utilizó el respaldo. Las zonas de upstream comparten el estado de disponibilidad entre workers de Nginx.
 
@@ -11,7 +11,7 @@ El proxy usa cookie de afinidad, WebSockets y respaldo entre dos aplicaciones. L
    dotnet ef database update --project SolarUY.Infrastructure/SolarUY.Infrastructure.csproj
    ```
 
-   Si todavía está pendiente la migración de req011, cumplir primero sus comprobaciones de datos históricos. Para introducir esta primera versión distribuida, deshabilitar la adquisición en binarios anteriores: no generan avisos transaccionales. Mantener una instancia atendiendo la interfaz mientras se reemplaza la otra y habilitar la recolección únicamente en versiones compatibles con el registro compartido.
+   Si todavía está pendiente la migración de req011, cumplir primero sus comprobaciones de datos históricos. Salud requiere `AddEstadoSaludAlertas`, que conserva lecturas y enums anteriores. D6 no agrega otra migración ni reinstala tablas de transporte. No mezclar binarios antiguos que escribían `AvisosMonitoreo` con la versión posterior a `RemoveDistribucionMonitoreo`: deshabilitar su adquisición y reemplazarlos según el procedimiento de esa versión. Mantener una instancia atendiendo mientras se reemplaza la otra.
 
 3. Usar la misma `DataProtection__RutaClaves` y el nombre de aplicación `SolarUY` en ambas instancias. La carpeta debe ser privada, accesible por las identidades de las aplicaciones y estar fuera del código y del contenido web. En hosts distintos debe ser realmente compartida; no bastan dos carpetas locales con el mismo nombre.
 4. Usar identificadores diferentes y estables, por ejemplo `solaruy-a` y `solaruy-b`. El valor local predeterminado `solaruy-local` no sirve para las dos instancias simultáneas.
@@ -23,7 +23,9 @@ En dos terminales, conservar la configuración externa común y establecer respe
 | Variable | Instancia A | Instancia B |
 |---|---|---|
 | `ASPNETCORE_URLS` | `http://127.0.0.1:5051` | `http://127.0.0.1:5052` |
-| `DistribucionMonitoreo__InstanciaId` | `solaruy-a` | `solaruy-b` |
+| `Instancia__Id` | `solaruy-a` | `solaruy-b` |
+| `SaludDistribucion__InstanciaId` | `solaruy-a` | `solaruy-b` |
+| `SaludDistribucion__Habilitada` | `true` | `true` |
 | `DataProtection__RutaClaves` | directorio privado compartido | el mismo directorio |
 
 En cada terminal ejecutar `dotnet run --project SolarUY.Presentation/SolarUY.Presentation.csproj --no-launch-profile`. Las dos pueden tener habilitada la recolección: el bloqueo compartido mantiene un único propietario por ciclo.
@@ -42,12 +44,22 @@ Abrir `http://127.0.0.1:18088/monitoreo`. El puerto puede cambiarse con `SOLARUY
 
 ## Configuración operativa
 
-- `DistribucionMonitoreo__IntervaloSegundos=1` y `DistribucionMonitoreo__TamanoLote=100` controlan el consumidor por instancia. No crean otro recolector ni leen inversores.
+- `SaludDistribucion__IntervaloSegundos=1` controla el observador por instancia y debe ser menor o igual a `SaludPanel__EvaluacionSegundos`. Lee salud confirmada y topología; no crea otro recolector ni consulta inversores. `Instancia__Id` se conserva por compatibilidad para el encabezado de afinidad; si se omite, se usa `SaludDistribucion__InstanciaId`. Cuando estén ambos, mantener el mismo valor, coincidente con `SOLARUY_ID_A/B` del proxy.
+- `SaludPanel__Habilitada=false` permite una instancia que solo observe salud; también desactiva su evaluación posterior a la adquisición. Mantener al menos un evaluador habilitado. Si se desea una instancia sin adquisición, establecer además `RecoleccionLecturas__Habilitada=false`. La verificación distribuida deshabilita ambas funciones en la instancia receptora para demostrar que no depende de procesamiento local.
 - Las credenciales, certificados TLS y claves de Data Protection permanecen externos. Integrar el bloque de proxy con el listener HTTPS existente de Luciano. Para interpretar `X-Forwarded-Proto`/`X-Forwarded-For`, configurar `ReverseProxy__Direccion` con la dirección real del proxy confiable; no confiar indiscriminadamente en cualquier cliente.
 - Si cambian las direcciones de los backends, actualizar los parámetros y recargar/recrear la configuración del proxy manteniendo un backend disponible.
 - Reemplazar una instancia por vez. El circuito Blazor pertenece al proceso original; si no puede recuperarse, el cliente de monitoreo recarga automáticamente y reconstruye el estado con la cookie compartida y el parque conservado en la URL.
-- Los avisos se retienen sin purga automática en esta versión. Cada instancia conserva su cursor; una caída o entrega fallida no lo adelanta. No eliminar avisos o cursores manualmente durante la operación. La entrega es al menos una vez; el mismo aviso puede repetirse sin duplicar lecturas ni puntos.
+- Cada observador conserva en memoria las firmas del último snapshot entregado. Un fallo no las adelanta; al reiniciar invalida todos los parques actuales, incluidos vacíos, y reconstruye el seguimiento. El estado compartido y todo su historial permanecen en MariaDB. Los avisos convergen al estado vigente; pueden repetirse y no reproducen individualmente todas las transiciones intermedias. La consulta del historial conserva esas transiciones sin duplicarlas.
+
+## Reemplazo de una instancia
+
+1. Confirmar migraciones aplicadas por un único operador, política de salud igual en ambos procesos, claves compartidas y nombres de instancia consistentes con el proxy.
+2. Mantener B disponible y reemplazar A. Si A era el único evaluador/recolector, habilitar esas funciones en B durante la operación o restablecer A para reanudar el procesamiento; la exclusión compartida evita dos adquisiciones del mismo panel/intervalo si se solapan.
+3. Verificar `X-SolarUY-Instancia`, cookie de afinidad, autorización y salud vigente. El circuito perdido de Blazor se reconstruye desde MariaDB conservando el parque de la URL; el cliente que ya estaba en B sigue conectado.
+4. Esperar recuperación de adquisición/evaluación y entrega antes de reemplazar B. No detener ambas instancias a la vez. En el primer despliegue de salud, aplicar antes el esquema incremental y no habilitar workers nuevos contra tablas inexistentes.
+
+La ejecución con dos procesos y el relevo se verifican localmente. Certificados, directorios compartidos en hosts distintos, reinicio de servicios y coordinación del entorno real se aplican por el operador responsable; estas instrucciones no acreditan una aprobación de otro integrante del equipo.
 
 ## Verificación
 
-`MonitoreoNginxIntegrationTests` utiliza dos procesos reales, el proxy, cookies compartidas y WebSockets. `SolarUY.Browser.Tests` prueba la misma aplicación en Chromium aislado: actualizaciones, selección de parques, repetición, liberación de conexiones, interrupción de MariaDB y relevo del circuito. Las instrucciones completas y resultados están en `prompting/req14_Monitoreo_en_Tiempo_Real_con_SignalR/implementations.md`.
+`SaludNginxIntegrationTests` utiliza dos procesos reales, el simulador TCP, proxy, cookies compartidas y WebSockets; prueba que A o B puedan ser la única fuente y que el otro observador reciba cambios/cierres. `ObservacionSaludIntegrationTests` comprueba reintentos, reinicio, commits durante lectura y traslados. Desde `SolarUY.Browser.Tests`, `npm test -- --config=playwright.salud-distribuida.config.mjs` verifica clientes distintos, salud, alertas e historial y el relevo completo de Blazor. Definir `SOLARUY_HISTORICO_TEST_CONNECTION` con una base aislada `solaruy_req007_test...` y `SOLARUY_MONITOREO_PROXY_URL` con el proxy para puertos 5051/5052. Resultados y límites en `prompting/req016_Estado_de_Salud_y_Alertas_de_Fallas/implementations.md`.

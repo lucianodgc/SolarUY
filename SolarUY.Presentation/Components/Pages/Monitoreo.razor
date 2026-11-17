@@ -71,6 +71,7 @@
                     }
                 }
             </section>
+            <SaludMonitoreo ParqueId="_parqueId" @ref="_salud" />
             <section class="surface" aria-label="Gráfico de potencia en vivo">
                 <h2>Evolución de potencia del parque</h2>
                 <p class="note">UTC · W · Hasta @Opciones.Value.MaximoPuntosGrafico puntos. Se inicia un tramo nuevo tras intervalos
@@ -125,6 +126,14 @@
     private bool _pendiente;
     private DateTime _ultimaConsultaUtc;
     private DateTime _ultimaTelemetriaUtc;
+    private SaludMonitoreo? _salud;
+
+    [JSInvokable]
+    public Task SaludActualizada(string parqueId) => InvokeAsync(async () =>
+    {
+        if (Guid.TryParse(parqueId, out var id) && id == _parqueId && _salud is not null)
+            await _salud.ActualizarAsync();
+    });
 
     protected override async Task OnInitializedAsync()
     {
@@ -142,7 +151,7 @@
         if (!firstRender) return;
         try
         {
-            _modulo = await Js.InvokeAsync<IJSObjectReference>("import", "./js/monitoreo.js?v=telemetria-2");
+            _modulo = await Js.InvokeAsync<IJSObjectReference>("import", "./js/monitoreo.js?v=salud-1");
             _referencia = DotNetObjectReference.Create(this);
             _puente = await _modulo.InvokeAsync<IJSObjectReference>("crear", _referencia);
             await CambiarParqueAsync();
@@ -171,6 +180,8 @@
     [JSInvokable]
     public Task NuevaLectura(string parqueId) => InvokeAsync(async () =>
     {
+        if (Guid.TryParse(parqueId, out var parqueSalud) && parqueSalud == _parqueId && _salud is not null)
+            await _salud.ActualizarAsync();
         if (_ultimaTelemetriaUtc == default && Guid.TryParse(parqueId, out var id) && id == _parqueId)
             await ActualizarAsync(false);
     });

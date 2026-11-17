@@ -226,6 +226,117 @@ namespace SolarUY.Infrastructure.Migrations
                     b.ToTable("TareasMantenimiento", (string)null);
                 });
 
+            modelBuilder.Entity("SolarUY.Domain.Salud.AlertaPanel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CierreUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Condicion")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DeteccionUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PanelActivo")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasComputedColumnSql("CASE WHEN `CierreUtc` IS NULL THEN RTRIM(`PanelId`) ELSE NULL END", true)
+                        .UseCollation("ascii_general_ci");
+
+                    b.Property<Guid>("PanelId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PanelActivo")
+                        .IsUnique();
+
+                    b.HasIndex("PanelId", "CierreUtc");
+
+                    b.ToTable("AlertasPanel", (string)null);
+                });
+
+            modelBuilder.Entity("SolarUY.Domain.Salud.CambioEstadoSaludPanel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<int?>("EstadoAnterior")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EstadoNuevo")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("PanelId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PanelId", "Version")
+                        .IsUnique();
+
+                    b.HasIndex("PanelId", "FechaUtc", "Version");
+
+                    b.ToTable("CambiosEstadoSaludPanel", (string)null);
+                });
+
+            modelBuilder.Entity("SolarUY.Domain.Salud.SaludPanel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<int?>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EvaluadoUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("EvidenciaUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<Guid>("NodoEvaluadoId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("PanelId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("PrimeraObservacionUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("Suficiente")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PanelId")
+                        .IsUnique();
+
+                    b.ToTable("SaludPaneles", (string)null);
+                });
+
             modelBuilder.Entity("SolarUY.Domain.Entities.Inversor", b =>
                 {
                     b.HasOne("SolarUY.Domain.Entities.Nodo", "Nodo")
@@ -278,6 +389,39 @@ namespace SolarUY.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("SolarUY.Domain.Entities.TareaMantenimiento", b =>
+                {
+                    b.HasOne("SolarUY.Domain.Entities.Panel", "Panel")
+                        .WithMany()
+                        .HasForeignKey("PanelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Panel");
+                });
+
+            modelBuilder.Entity("SolarUY.Domain.Salud.AlertaPanel", b =>
+                {
+                    b.HasOne("SolarUY.Domain.Entities.Panel", "Panel")
+                        .WithMany()
+                        .HasForeignKey("PanelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Panel");
+                });
+
+            modelBuilder.Entity("SolarUY.Domain.Salud.CambioEstadoSaludPanel", b =>
+                {
+                    b.HasOne("SolarUY.Domain.Entities.Panel", "Panel")
+                        .WithMany()
+                        .HasForeignKey("PanelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Panel");
+                });
+
+            modelBuilder.Entity("SolarUY.Domain.Salud.SaludPanel", b =>
                 {
                     b.HasOne("SolarUY.Domain.Entities.Panel", "Panel")
                         .WithMany()
