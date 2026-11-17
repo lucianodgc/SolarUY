@@ -66,6 +66,8 @@ public sealed class ReportesPantallaIntegrationTests(HistoricoDatabase database)
         var cierre = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         await using var app = CrearHost(5215, cierre);
         await app.StartAsync();
+        using var cliente = new HttpClient { BaseAddress = new Uri("http://127.0.0.1:5215") };
+        Assert.Equal(HttpStatusCode.Unauthorized, (await cliente.GetAsync("/reportes")).StatusCode);
         var segundos = int.TryParse(Environment.GetEnvironmentVariable("SOLARUY_REPORTES_UI_SEGUNDOS"), out var valor)
             ? Math.Clamp(valor, 30, 1800) : 600;
         await cierre.Task.WaitAsync(TimeSpan.FromSeconds(segundos));

@@ -302,3 +302,9 @@ powershell -NoProfile -File SolarUY.Integration.Tests/Verificar-Chatbot.ps1 -Oll
 ```
 
 El equipo tenía 12,12 GiB libres en C: antes de estas pruebas. No se detuvieron servicios de CI ni se ejecutó la suite completa. El simulador aislado terminó con el caso real y el modelo se descargó después; `/api/ps` confirmó cero modelos cargados. OpenAI no se invocó ni se consumieron sus créditos. El contexto de 16384 sigue siendo un límite: se verificó esta conversación y los escenarios indicados, no una conversación ilimitada o cualquier petición compleja. El recorrido visual posterior a estos cambios sigue pendiente en 12.1.
+
+## Configuración de Ollama en Docker — 17/11/2026
+
+Se corrigió el endpoint de Compose: 127.0.0.1 dentro de la web no alcanzaba Ollama del host. El permiso `Chatbot:Ollama:PermitirHostDocker` admite exactamente host.docker.internal, además de loopback, y conserva rechazo de servidores arbitrarios, credenciales y rutas no válidas. Ollama debe escuchar en una interfaz accesible desde Docker; el README explica la configuración.
+
+Los ocho escenarios de proveedor/configuración aprobaron. La suite general usa proveedores controlados; las cinco pruebas que requieren modelos o proveedores reales permanecen omitidas. Se ejercitó además el servidor temporal de chatbot y su rechazo HTTP 401 sin identidad. No se declara un nuevo recorrido visual ni una conversación con Ollama real.

@@ -4,11 +4,11 @@
 
 `ParqueSolarService` verifica `IUsuarioActual` en sus seis operaciones. Rechaza anónimos, identificadores vacíos y usuarios sin rol Administrador antes de validar o consultar almacenamiento. La interfaz pública de operaciones no cambia; su constructor incorpora la dependencia de identidad existente, sin constructor alternativo que omita permisos. Las pruebas de Application existentes conservan sus aserciones y reciben un usuario Administrador en su preparación.
 
-Las tres páginas conservan su ámbito de datos por componente mediante `ParqueSolarComponentBase`, que propaga el estado de autenticación del circuito al ámbito hijo y sus cambios, y retira la suscripción al disponerlo. Se mantienen las directivas de autorización del servidor. No se cambia Domain, persistencia, esquema ni transacciones. Ver pruebas y estado en [seguimiento_auditoria.md](../seguimiento_auditoria.md).
+Las tres páginas conservan su ámbito de datos por componente mediante `ParqueSolarComponentBase`, que propaga el estado de autenticación del circuito al ámbito hijo y sus cambios, y retira la suscripción al disponerlo. Se mantienen las directivas de autorización del servidor. No se cambia Domain, persistencia, esquema ni transacciones. Ver pruebas y estado en [seguimiento_auditoria.md](../Reportes%20de%20codex/seguimiento_auditoria.md).
 
 ## Actualización de integración frontend
 
-Se incorpora acceso desde menú/inicio y al alta desde el listado; `RadzenDialog` ahora aloja las confirmaciones de baja. Se bloquean operaciones repetidas y se conserva el formulario de edición después de errores de validación. Se verificaron búsqueda, limpieza, confirmación/cancelación, alta-edición-baja de un parque temporal y corrección tras un nombre duplicado. Técnico y Consulta tienen denegado el acceso directo a gestión de parques. Detalle vigente en [frontend_integracion.md](../frontend_integracion.md); el resto conserva la entrega original.
+Se incorpora acceso desde menú/inicio y al alta desde el listado; `RadzenDialog` ahora aloja las confirmaciones de baja. Se bloquean operaciones repetidas y se conserva el formulario de edición después de errores de validación. Se verificaron búsqueda, limpieza, confirmación/cancelación, alta-edición-baja de un parque temporal y corrección tras un nombre duplicado. Técnico y Consulta tienen denegado el acceso directo a gestión de parques. Detalle vigente en [frontend_integracion.md](../Reportes%20de%20codex/frontend_integracion.md); el resto conserva la entrega original.
 
 ## Alcance implementado
 
@@ -31,10 +31,16 @@ La baja requiere confirmación explícita y se ejecuta dentro de una transacció
 - `SolarUY.Presentation/Components/Pages/ParquesSolares.razor`: búsqueda, enlace de edición y baja confirmada por parque.
 - `SolarUY.Presentation/Components/Pages/EditarParqueSolar.razor`: página protegida de edición.
 - `SolarUY.Application.Tests/ParqueSolarServiceTests.cs`: adaptación del doble de prueba al contrato de persistencia ampliado.
-- `prompting/req6_gestion_multiparque/tasks.md`: actualización del estado de las tareas.
+- `prompting/req6_Gestion_Multiparque/tasks.md`: actualización del estado de las tareas.
 
 ## Resultado de pruebas
 
 - `dotnet test SolarUY.Domain.Tests/SolarUY.Domain.Tests.csproj`: correcto, 16 pruebas aprobadas.
 - `dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj`: correcto, 9 pruebas aprobadas.
 - `dotnet test SolarUY.Application.Tests/SolarUY.Application.Tests.csproj`: correcto, 8 pruebas aprobadas.
+
+## Corrección de borrado de inventario — 17/11/2026
+
+Se corrigió el borrado de parques con inversores: las dependencias se eliminan en orden y la baja final no provoca conflictos con entidades ya seguidas por EF. El borrado físico de parques o nodos que tengan evaluación, cambios o alertas de salud se rechaza antes de eliminar dependencias, con un mensaje que indica usar la baja lógica de paneles.
+
+Tres integraciones contra MariaDB aislada verifican el rechazo sin pérdida de datos para parque/nodo y el borrado correcto con inversor cuando no existe historial de salud. No se migró ni restableció la base habitual. Evidencia: `artifacts/correcciones/paneles-final/`.

@@ -56,6 +56,7 @@ public sealed class NodoRepository : INodoRepository
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        await context.VerificarBorradoPanelesAsync(context.Paneles.Where(panel => panel.NodoId == nodo.Id), cancellationToken);
         await context.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM TareasMantenimiento WHERE PanelId IN (SELECT Id FROM Paneles WHERE NodoId = {nodo.Id})", cancellationToken);
         await context.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM LecturasPanel WHERE PanelId IN (SELECT Id FROM Paneles WHERE NodoId = {nodo.Id})", cancellationToken);
         await context.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM Paneles WHERE NodoId = {nodo.Id}", cancellationToken);

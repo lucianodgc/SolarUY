@@ -182,3 +182,12 @@ Referencias: [GET_LOCK de MariaDB](https://mariadb.com/docs/server/reference/sql
 ### C1. Documentación de la implementación
 
 La última tarea crea `implementations.md` en esta carpeta con los cambios realizados, archivos tocados, decisiones aclaradas y resultados de pruebas, incluidos límites operativos. El estado de ejecución se registra en `tasks.md` únicamente a partir de la evidencia obtenida.
+
+
+## Rangos de índice por panel
+
+La consulta selecciona primero los identificadores de paneles actuales e históricos del objetivo, sin cargar sus lecturas. Esos identificadores se parametrizan como rangos del índice compuesto por panel y fecha. La selección, el agregado y el diagnóstico se leen dentro de una transacción RepeatableRead. Se conserva el corte por la siguiente muestra antes de filtrar la procedencia histórica; los cálculos, cobertura y extremos permanecen en MariaDB. Se agrupa por ordinal de intervalo y se conserva el umbral de menos de cinco segundos con cuatro consultas concurrentes.
+
+## Rendimiento comprobado
+
+El entorno Compose configura InnoDB con un buffer pool de 512 MiB. Para rangos cortos, la consulta usa identificadores parametrizados y el índice de panel/fecha; para rangos amplios puede conservar el join original. El rango temporal de un panel orienta únicamente esa elección del plan: nunca filtra el conjunto de resultados. La consulta completa usa una transacción RepeatableRead para mantener coherencia entre selección, agregación y avisos de procedencia.

@@ -6,7 +6,7 @@ El alta se integra en el inicio, el menú administrativo y el listado de parques
 
 ## Estado vigente y alcance
 
-El informe de integración anterior y `tasks.md` registran el alta desde la interfaz y la migración aplicada (tarea 2.5 completada). La autenticación con Keycloak se documenta en [req2](../req2_login_keycloak/implementations.md); la gestión multiparque posterior pertenece a [req6](../req6_gestion_multiparque/implementations.md).
+El informe de integración anterior y `tasks.md` registran el alta desde la interfaz y la migración aplicada (tarea 2.5 completada). La autenticación con Keycloak se documenta en [req2](../req2_Login_Keycloak/implementations.md); la gestión multiparque posterior pertenece a [req6](../req6_Gestion_Multiparque/implementations.md).
 
 Las comprobaciones siguientes corresponden a la entrega original. Sus pendientes de conexión, migración y autenticación describen ese momento y no sustituyen el estado actualizado anterior. El resultado de SonarQube también es histórico; esta consolidación documental no ejecuta nuevas verificaciones del producto.
 
@@ -114,7 +114,7 @@ La implementación está lista para commit con pendientes declarados; no corresp
 - `SolarUY.Infrastructure/Persistence/ParqueSolarConfiguration.cs`
 - `SolarUY.Presentation/Components/Pages/AltaParqueSolar.razor`
 - `SolarUY.Presentation/Components/Pages/ParquesSolares.razor`
-- `prompting/req1_alta_parque_solar/implementations.md`
+- `prompting/req1_Alta_Parque_Solar/implementations.md`
 
 ### Archivos modificados
 
@@ -132,4 +132,4 @@ La implementación está lista para commit con pendientes declarados; no corresp
 - `SolarUY.Presentation/SolarUY.Presentation.csproj`
 - `SolarUY.Presentation/appsettings.json`
 - `SolarUY.sln`
-- `prompting/req1_alta_parque_solar/tasks.md`
+- `prompting/req1_Alta_Parque_Solar/tasks.md`

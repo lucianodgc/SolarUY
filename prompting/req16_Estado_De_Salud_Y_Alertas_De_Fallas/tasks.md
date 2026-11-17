@@ -1,6 +1,6 @@
 # Tareas: Estado de salud y alertas de fallas
 
-Fuente única de alcance técnico: `specs.md` de esta carpeta. D1–D5 confirmadas; D6 implementada y verificada. Coordinación cerrada el 17/11/2026 mediante la validación y delegación de Luciano comunicadas por el usuario: ambas instancias candidatas a recolectar, exclusión MariaDB existente y relevo sin promoción manual. Ver `coordinacion_despliegue.md`; no se atribuye una fecha original de aprobación ni un despliegue real ejecutado. Las referencias DOM/APP/INF/PRE/D/V corresponden a esa especificación.
+Fuente única de alcance técnico: `specs.md` de esta carpeta. Las decisiones D1–D6 están incorporadas en la especificación. D6 está implementada y verificada técnicamente; no se declara realizado un despliegue productivo. Las referencias DOM/APP/INF/PRE/D/V corresponden a esa especificación.
 
 ## 1. Clarificaciones y compatibilidad
 
@@ -14,7 +14,7 @@ Fuente única de alcance técnico: `specs.md` de esta carpeta. D1–D5 confirmad
   - [x] 1.7. Validar con el responsable el mecanismo vigente de distribución y recuperación entre instancias, considerando `RemoveDistribucionMonitoreo`; documentar coordinación de evaluadores y despliegue sin elegir un transporte nuevo unilateralmente. (D6)
     - [x] 1.7.1. Registrar la autorización posterior del usuario, implementar la propuesta MariaDB y documentar la verificación con dos procesos y navegador.
     - [x] 1.7.2. Registrar la validación y la delegación del responsable comunicadas por el usuario; concretar la decisión delegada y documentar relevo y despliegue.
-      - Cierre registrado el 17/11/2026 en [coordinacion_despliegue.md](coordinacion_despliegue.md). A/B quedan candidatas con exclusión compartida; solo una adquiere por ciclo. B no depende de que A esté sana. La verificación del entorno real y sus certificados sigue siendo una actividad operativa separada.
+      - A/B son candidatas con exclusión MariaDB compartida; solo una adquiere por ciclo. B no depende de que A esté sana. La verificación del entorno real y sus certificados sigue siendo una actividad operativa separada.
   - [x] 1.8. Actualizar `specs.md` con los acuerdos y ajustar las tareas afectadas antes de cerrar sus contratos, reglas o migración. (Secciones 2 y 8)
 
 ## 2. Domain

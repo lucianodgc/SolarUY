@@ -4,17 +4,17 @@
 
 Fuente funcional: `requirements.md` de esta carpeta. Entrega 3. Incorporar en el monitoreo las órdenes de activar/desactivar panel y activar/desactivar volcado, con confirmación visual, autorización efectiva de Administrador y auditoría persistente. Conservar .NET 8, EF Core 8, Pomelo 8.0.3, MariaDB 11.8, Blazor Server/Radzen y Keycloak. No agregar un proveedor, bus, ORM ni mecanismo de comunicación distinto del vigente.
 
-Referencias de la base revisada antes de implementar req017 (resultado final en `implementations.md`):
+Referencias de la base revisada antes de implementar req21 (resultado final en `implementations.md`):
 
 - `IInversorClient` ofrece `ActivarPanelAsync(string nodoId, string panelId, CancellationToken)` y `DesactivarPanelAsync(...)`. Volcado usa `ActivarVolcadoRedAsync(CancellationToken)` y `DesactivarVolcadoRedAsync(CancellationToken)`, sin identificador de nodo/parque. La lectura correspondiente es `ObtenerEstadoVolcadoRedAsync`.
-- `InversorTcpClient` implementa ese puerto y utiliza `InversorTcpProtocol`/`InversorTcpServer`. Las órdenes devuelven `Task`, aunque el protocolo devuelve un resultado booleano. Actualmente `EjecutarOrdenAsync` descarta ese booleano; un resultado falso no debe transformarse en éxito de req017.
+- `InversorTcpClient` implementa ese puerto y utiliza `InversorTcpProtocol`/`InversorTcpServer`. Las órdenes devuelven `Task`, aunque el protocolo devuelve un resultado booleano. Actualmente `EjecutarOrdenAsync` descarta ese booleano; un resultado falso no debe transformarse en éxito de req21.
 - `InversorService` ya expone `EstablecerPanelActivoAsync` y `EstablecerVolcadoRedAsync`, y comprueba el rol Administrador. `SimuladorInversor.razor` permite esas operaciones. No existe auditoría específica de órdenes en el código revisado. Las cuatro operaciones existentes deben integrarse con los mismos casos de uso auditados para evitar rutas alternativas sin auditoría.
 - El simulador mantiene `_panelesActivados`, `_panelesDesactivados` y un único `_volcadoRedActivo`. La telemetría consulta esas banderas; `MedirPanelRegistrado`, usado por la adquisición histórica, todavía no aplica las banderas de activación/desactivación. Corregir esa divergencia es necesario para verificar la siguiente lectura de 0 W.
 - Existen `ParqueSolar`, `Nodo`, `Panel` e `Inversor`. `Inversor.VolcadoRedActivo` pertenece al inventario por nodo; no demuestra que la orden TCP global pueda dirigirse a ese nodo. No actualizar indiscriminadamente esos registros con una confirmación global.
-- `UsuarioActualService` obtiene claims autenticados mediante `AuthenticationStateProvider`; `UsuarioActualDto.Id` actualmente permite un fallback a NameIdentifier. Req017 necesita acreditar el `sub` de Keycloak, no atribuir automáticamente ese fallback como si fuera `sub` ni recibir el actor del navegador.
+- `UsuarioActualService` obtiene claims autenticados mediante `AuthenticationStateProvider`; `UsuarioActualDto.Id` actualmente permite un fallback a NameIdentifier. Req21 necesita acreditar el `sub` de Keycloak, no atribuir automáticamente ese fallback como si fuera `sub` ni recibir el actor del navegador.
 - `MonitoreoHub` y los eventos de lecturas/telemetría existentes actualizan las pantallas; req016 agrega `ObservacionSaludWorker` sobre MariaDB. Reutilizar estos mecanismos y sus grupos autorizados. No convertir el hub en una nueva API de escritura.
 
-Quedan fuera de alcance nuevas órdenes de encendido del inversor, gestión de inventario, usuarios, mantenimientos, exportaciones, pantalla de búsqueda de auditoría y notificaciones externas. La operación de encendido ya existente no se amplía por req017.
+Quedan fuera de alcance nuevas órdenes de encendido del inversor, gestión de inventario, usuarios, mantenimientos, exportaciones, pantalla de búsqueda de auditoría y notificaciones externas. La operación de encendido ya existente no se amplía por req21.
 
 ## 2. Decisiones acordadas D1–D4
 
@@ -25,7 +25,7 @@ Quedan fuera de alcance nuevas órdenes de encendido del inversor, gestión de i
 | D3 | Auditoría y recuperación | Actor sub real o nulo, solicitud/destino/UTC/resultado/código acotado. Guardar antes del envío; fallar ese guardado impide enviar. Cierre independiente de 5 segundos y hasta dos guardados; pendientes abandonados se recuperan bajo bloqueo sin reenviar. |
 | D4 | Operación y salud | Evidencia operacional consultada o telemetría fechada; desactivar no cambia Panel.Estado, genera 0 W/Sano salvo falla explícita. Conservar precisión histórica y reglas de salud aprobadas. |
 
-D1–D4 fueron confirmadas explícitamente por el usuario el 16/11/2026. El acuerdo completo está en `propuesta_decisiones.md`: volcado global; solo ACK verdadero confirma; estados Pendiente/Confirmada/Rechazada/Fallida/Indeterminada; sin reenvío automático; correlación por sub; bloqueo de sesión MariaDB por endpoint; auditoría anterior al envío y cierre independiente configurable de 5 segundos y hasta dos guardados; recuperación de pendientes bajo bloqueo antes de otra orden, sin reenviar. La evidencia operacional es la consulta/telemetría fechada, vigente durante tres intervalos de telemetría; desactivar implica 0 W/Sano salvo falla explícita. Se conserva el estado administrativo y la clasificación por potencia baja continúa deshabilitada.
+D1–D4 están incorporadas como decisiones vigentes en esta especificación: volcado global; ACK válido para confirmar; estados Pendiente/Confirmada/Rechazada/Fallida/Indeterminada; sin reenvío automático; correlación por usuario; bloqueo de sesión MariaDB por endpoint; auditoría anterior al envío y cierre independiente de cinco segundos y hasta dos guardados; recuperación de pendientes bajo bloqueo sin reenviar. La evidencia operacional es la consulta/telemetría fechada, vigente durante tres intervalos; desactivar implica 0 W/Sano salvo falla explícita. Se conserva el estado administrativo y la clasificación por potencia baja continúa deshabilitada.
 
 ## 3. Domain
 
@@ -47,7 +47,7 @@ No cambiar el estado administrativo de `Panel`, ni marcarlo automáticamente `Fa
 
 ### DOM3. Pruebas de dominio
 
-Crear pruebas xUnit simultáneamente con las reglas nuevas: construcción de un intento válido, destinos/operaciones inválidos según D3, UTC, transiciones permitidas y prohibidas, imposibilidad de confirmar sin evidencia y conservación de solicitud/actor. Cubrir las reglas de salud modificadas por D4: cero por desactivación no se transforma en falla y una falla explícita mantiene su significado. No fijar en pruebas valores o políticas todavía pendientes.
+Crear pruebas xUnit simultáneamente con las reglas nuevas: construcción de un intento válido, destinos/operaciones inválidos según D3, UTC, transiciones permitidas y prohibidas, imposibilidad de confirmar sin evidencia y conservación de solicitud/actor. Cubrir las reglas de salud modificadas por D4: cero por desactivación no se transforma en falla y una falla explícita mantiene su significado.
 
 ## 4. Application
 
@@ -89,7 +89,7 @@ La adquisición sigue siendo la fuente de lecturas históricas; no generar una f
 
 ### INF1. Persistencia incremental de auditoría
 
-Implementar `IntentoOrdenInversorRepository` y su configuración EF Core. Crear una migración incremental `AddAuditoriaOrdenesInversor`, una vez cerrado D3, para el almacenamiento del intento y del estado de ejecución acordado. No borrar/recrear tablas de inventario, lecturas o salud ni inventar auditoría de operaciones anteriores.
+Implementar `IntentoOrdenInversorRepository` y su configuración EF Core. Crear una migración incremental `AddAuditoriaOrdenesInversor` para el almacenamiento del intento y del estado de ejecución definido en D3. No borrar/recrear tablas de inventario, lecturas o salud ni inventar auditoría de operaciones anteriores.
 
 Mapear UTC y enums explícitamente; definir longitudes acotadas para actor, destino, código y mensaje seguro. Las relaciones y datos de destino deben conservar trazabilidad aunque cambie el inventario; no usar cascadas que eliminen auditoría. No crear FK a una tabla Usuario inexistente: Keycloak administra las identidades. Incorporar las restricciones de correlación/concurrencia D2 y los índices mínimos para localizar un intento y recuperar ejecuciones incompletas según D3.
 

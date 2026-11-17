@@ -6,7 +6,7 @@
 - [x] 1.2 Excluir archivos locales, secretos y artefactos de compilación del contexto Docker.
 - [x] 1.3 Extender Compose con las instancias A y B, Nginx y la red compartida, conservando MariaDB, Keycloak y phpMyAdmin.
 - [x] 1.4 Configurar la conexión MariaDB y los secretos de login web y directorio de técnicos desde variables externas de Compose.
-- [x] 1.5 Mantener habilitada la recolección histórica solo en A para evitar que ambas instancias ejecuten el worker.
+- [x] 1.5 Mantener A y B como candidatas a recolección con exclusión compartida en MariaDB, sin lecturas duplicadas y con relevo automático.
 
 ## 2. Balanceo, sesiones y salud
 
@@ -25,3 +25,10 @@
 ## 4. Cierre y documentación
 
 - [x] 4.1 Crear `implementations.md` con los cambios, archivos tocados y resultados de verificación; crear `resumen.md` con una síntesis breve del requerimiento.
+
+## 5. Correcciones de integración del 17/11/2026
+
+- [x] 5.1 Incluir el simulador TCP compartido en Compose, sin publicar el puerto al host.
+- [x] 5.2 Configurar Ollama del host para Docker con validación explícita del hostname permitido.
+- [x] 5.3 Añadir arranque con migraciones, validación de secretos y conservación de datos.
+- [x] 5.4 Validar sintaxis, configuración efectiva y construcción de imágenes. El recorrido real de login/relevo no se repitió tras estos cambios.

@@ -12,18 +12,18 @@ La solución respeta Clean Architecture, .NET 8, Blazor Server con Radzen, EF Co
 
 - Implementar o completar la entidad `Panel` definida en el MER, sin crear una entidad o tabla alternativa. Tendrá identidad `Guid` generada por el dominio, `NodoId`, navegación obligatoria a `Nodo`, `NumeroSerie`, `Marca`, `Modelo`, `PotenciaNominalW`, `FechaInstalacion` en UTC y `Estado`.
 - El constructor y los métodos de modificación encapsularán la validación de los datos aprobados y preservarán la invariancia de que un panel pertenece a un único nodo existente. La lógica de negocio no se ubicará en Application ni en componentes Blazor.
-- Se conservarán los valores de estado ya definidos en el MER (`Activo`, `Inactivo`, `Falla`) solo como catálogo de valores. Las transiciones permitidas requieren la confirmación C2 antes de codificarse.
+- Se conservarán los valores de estado ya definidos en el MER (`Activo`, `Inactivo`, `Falla`) solo como catálogo de valores. Todas las transiciones entre esos tres estados están permitidas según C2.
 - No se inventarán límites de longitud, precisión decimal, formatos adicionales ni reglas de validación para atributos cuyo detalle no figure en el requerimiento o el MER.
 
 ### D2. Cantidad de paneles y baja
 
-- El alta, la reasignación autorizada y la baja deberán validar la cantidad resultante de paneles de cada `Nodo` contra `Nodo.CantidadPanelesPrevista`. La regla concreta (máximo o cantidad exacta) y el tratamiento de un valor nulo se definirán en C1.
-- Una operación rechazada no modificará el panel ni los nodos involucrados. Si C3 habilita cambiar de nodo, se validarán origen y destino como una única operación.
-- La baja observará la política aprobada en C4 respecto de `TareaMantenimiento` y `LecturaPanel`. Hasta entonces no se presupone baja física, baja lógica, eliminación en cascada ni borrado de historial.
+- El alta, la reasignación autorizada y la baja deberán validar la cantidad resultante de paneles de cada `Nodo` contra `Nodo.CantidadPanelesPrevista`. La cantidad configurada es máxima; null no impone límite, según C1.
+- Una operación rechazada no modificará el panel ni los nodos involucrados. El traslado está permitido y valida origen y destino como una única operación.
+- La baja observará la política aprobada en C4 respecto de `TareaMantenimiento` y `LecturaPanel`. Se utiliza baja lógica y se conservan las relaciones históricas.
 
 ### D3. Pruebas de dominio
 
-Al implementar comportamiento de dominio, crear pruebas xUnit simultáneas para construcción, datos inválidos, asociación obligatoria, actualización, estados aprobados y regla de cantidades. Incluir reasignación y baja solo cuando C3 y C4 estén resueltas.
+Al implementar comportamiento de dominio, crear pruebas xUnit simultáneas para construcción, datos inválidos, asociación obligatoria, actualización, estados aprobados y regla de cantidades. Incluir traslado y baja lógica según C3 y C4.
 
 ## 2. Application
 
@@ -37,7 +37,7 @@ Al implementar comportamiento de dominio, crear pruebas xUnit simultáneas para 
 ### A2. Autorización
 
 - Las operaciones de alta, edición y baja exigirán usuario autenticado con rol efectivo `Administrador` mediante el contexto de usuario existente. La comprobación se hará en Application antes de efectos de persistencia; ocultar botones no la sustituye.
-- Los listados reutilizarán la matriz de permisos vigente para consultas. Si no existe una definición reutilizable, deberá confirmarse en C5 antes de implementar los accesos de solo lectura.
+- Administrador, Tecnico y Consulta pueden consultar; solo Administrador puede escribir.
 
 ## 3. Infrastructure
 
@@ -56,7 +56,7 @@ Las verificaciones de cantidad y las escrituras correspondientes se realizarán 
 ### P1. Pantallas y comportamiento
 
 - Crear o completar páginas/componentes Blazor Server con Radzen para el listado general y la consulta por nodo, mostrando claramente el nodo de cada panel.
-- Incorporar formularios de alta y edición para los campos aprobados, selección de nodo y mensajes claros de éxito, validación, inexistencia y conflicto. La modificación de nodo se expondrá únicamente si C3 la autoriza.
+- Incorporar formularios de alta y edición para los campos aprobados, selección de nodo y mensajes claros de éxito, validación, inexistencia y conflicto. El formulario permite traslado con capacidad disponible según C3.
 - Incluir confirmación de baja para Administrador y presentar el resultado real de la operación, sin informar éxito cuando Application la rechace.
 - Proteger rutas, acciones y controles según A2. Los componentes consumirán exclusivamente servicios de Application y no contendrán cálculos de cantidades ni reglas de negocio.
 
@@ -68,9 +68,9 @@ Las verificaciones de cantidad y las escrituras correspondientes se realizarán 
 - V4. Ejecutar `dotnet test` sobre el proyecto `CodeQuality.Tests` después de cambios de código, corrigiendo el código fuente si incumple guardarraíles y sin modificar dichas pruebas.
 - V5. Comprobar en la interfaz los listados, formularios, confirmación y mensajes. Si se crea una migración, verificar su aplicación en una base MariaDB configurada externamente.
 
-## 6. Aclaraciones requeridas antes de implementación
+## 6. Decisiones vigentes
 
-| ID | Decisión pendiente | Impacto |
+| ID | Decisión resuelta | Impacto |
 | --- | --- | --- |
 | C1 | Resuelto: `CantidadPanelesPrevista` representa la capacidad máxima; `null` significa capacidad sin límite. | Alta y traslado validan el máximo dentro de una transacción y con bloqueo de nodo. |
 | C2 | Resuelto: los estados son `Activo`, `Inactivo` y `Falla`; todas las transiciones entre ellos están permitidas. La potencia debe ser positiva y la fecha UTC. | Define las invariantes y pruebas de `Panel`. |
@@ -81,3 +81,8 @@ Las verificaciones de cantidad y las escrituras correspondientes se realizarán 
 ## 7. Cierre documental
 
 Al finalizar una implementación aprobada, crear o actualizar `implementations.md` con los cambios realizados, archivos tocados y resultados reales de las verificaciones; crear o actualizar `resumen.md` con una síntesis breve y fácil de leer. La generación de esta especificación no constituye implementación funcional.
+
+
+## Protección del historial al eliminar inventario
+
+La eliminación física de un nodo o parque con estado, transiciones o alertas de salud se rechaza antes de modificar dependencias y conserva todo el historial. Para retirar paneles se utiliza la baja lógica de req18. Si no existe historial de salud, la baja administrativa mantiene el comportamiento transaccional previo y elimina también los inversores asociados.

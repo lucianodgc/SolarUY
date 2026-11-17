@@ -304,7 +304,8 @@ public sealed class HistoricoGeneracionIntegrationTests(HistoricoDatabase databa
             new(2026, 1, 1, 3, 0, 0, DateTimeKind.Utc), new(2026, 1, 2, 3, 0, 0, DateTimeKind.Utc),
             new[] { new IntervaloHistoricoDto(new(2026, 1, 1, 3, 0, 0, DateTimeKind.Utc), new(2026, 1, 2, 3, 0, 0, DateTimeKind.Utc), "2026-01-01") });
         var creador = typeof(HistoricoGeneracionRepository).GetMethod("CrearComando", BindingFlags.NonPublic | BindingFlags.Static)!;
-        await using var real = (System.Data.Common.DbCommand)creador.Invoke(null, new object[] { context, consulta })!;
+        await using var real = await (Task<System.Data.Common.DbCommand>)creador.Invoke(null,
+            new object[] { context, consulta, CancellationToken.None })!;
         real.CommandText = real.CommandText.Insert(real.CommandText.IndexOf("WITH", StringComparison.Ordinal), "EXPLAIN FORMAT=JSON ");
         var plan = (string)(await real.ExecuteScalarAsync())!;
         output.WriteLine("Plan SQL: " + plan);

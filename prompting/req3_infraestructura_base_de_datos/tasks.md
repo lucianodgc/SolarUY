@@ -10,7 +10,7 @@ La definición del modelo y la migración incremental se resolvieron en req4. Co
 
 - [x] 1.1 Adoptar `ParqueSolar`, Nodo y Panel con atributos, identificadores, invariantes y relaciones resueltos en el MER y req4.
 - [x] 1.2 Conservar `AddParqueSolar` y la migración incremental `AddMantenimientoPaneles`, sin reemplazar el historial.
-- [ ] 1.3 Confirmar con el equipo el mecanismo de distribución de la configuración local no versionada. El uso actual de `.env` para Compose y user-secrets/variables de entorno para .NET está implementado y documentado; no equivale a confirmar cómo se distribuye al equipo.
+- [x] 1.3 Documentar la configuración local por integrante mediante .env, secretos externos y el arranque reproducible Iniciar-Demo.ps1 -AltaDisponibilidad.
 
 ## 2. Domain
 

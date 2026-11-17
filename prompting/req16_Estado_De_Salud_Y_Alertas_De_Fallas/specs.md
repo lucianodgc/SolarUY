@@ -17,20 +17,20 @@ Referencias comprobadas en el repositorio:
 
 ## 2. Decisiones previas y trazabilidad
 
-No fijar valores arbitrarios ni tratar estas decisiones como aprobadas por la generación del documento. Cerrar cada decisión y actualizar las secciones dependientes antes de implementarlas; el resto del trabajo independiente puede avanzar.
+Las decisiones D1–D6 están definidas e incorporadas en el diseño implementado. Se conservan aquí para dar trazabilidad a las reglas vigentes, sin dejar aprobaciones pendientes.
 
-| Id | Decisión que debe acordarse | Resultado necesario |
+| Id | Decisión | Resultado vigente |
 |---|---|---|
-| D1 | Fuente/fórmula de potencia esperada y condiciones de generación normal | Datos realmente disponibles, fórmula y unidades; tratamiento de noche, apagado, desactivación y potencia nominal. No equiparar potencia nominal a potencia esperada sin aprobación. No agregar clima, sensores o servicios externos por suposición. |
-| D2 | Clasificación y precedencia | Umbrales configurables, inclusividad de límites, duración/persistencia si corresponde, prioridad de falla explícita frente a ausencia/degradación, plazo sin lecturas, referencia para panel sin primera muestra y manejo de evidencia desconocida/incompleta. |
-| D3 | Agregación de salud de nodo | Regla para combinaciones de estados, cobertura insuficiente, paneles excluidos según D1/D2 y nodo vacío. No presumir simplemente el peor estado. |
-| D4 | Compatibilidad y arranque | Correspondencia entre `EstadoSaludLectura`, señal del inversor y salud calculada; significado de `EstadoPanel`; primera evaluación, estado anterior inicial, momento de cambio frente a detección, lecturas del nodo anterior y paneles trasladados. No inventar estados históricos. |
-| D5 | Ciclo de alertas | Condiciones que abren alerta, relación entre degradación/falla/desconexión, prioridad o coexistencia, cierre/reactivación e intermitencia. Determinar si cada recurrencia abre un episodio nuevo o reabre el anterior y si cambios de política provocan transiciones. |
-| D6 | Integración vigente de alta disponibilidad | MariaDB compartida y observadores por instancia; acuerdo cerrado mediante la validación y delegación de Luciano comunicadas por el usuario. A/B candidatas de adquisición con exclusión compartida, evaluación/observación activas y relevo sin promoción manual; B independiente de la salud de A. No agregar transporte ni restaurar tablas retiradas. Ver `coordinacion_despliegue.md`. |
+| D1 | Potencia esperada | No clasificar potencia baja hasta disponer de evidencia de operación; los umbrales 50 %/80 % quedan configurables para una habilitación futura. No inferir el estado operativo desde lecturas históricas. |
+| D2 | Clasificación y precedencia | La ausencia de lectura vigente produce Desconectado; con lectura vigente, la falla explícita precede a potencia baja y señal normal. Tres intervalos sin lectura causan desconexión; la evaluación se ejecuta cada cinco segundos. |
+| D3 | Agregación de salud de nodo | Prioridad Falla > Desconectado > Degradado > Normal entre paneles evaluables. Informar cobertura y falta de datos; un nodo vacío no adquiere un estado inventado. |
+| D4 | Compatibilidad y arranque | Conservar `EstadoSaludLectura` y `EstadoPanel`; la primera transición tiene estado anterior nulo. Usar solo lecturas con nodo histórico demostrado y no reconstruir estados anteriores al inicio. |
+| D5 | Ciclo de alertas | Una alerta activa por panel. Una condición sostenida conserva su episodio; una transición cierra el anterior y una recurrencia abre uno nuevo. |
+| D6 | Integración vigente de alta disponibilidad | MariaDB compartida y observadores por instancia. A/B candidatas de adquisición con exclusión compartida, evaluación/observación activas y relevo sin promoción manual; B independiente de la salud de A. No agregar transporte ni restaurar tablas retiradas. |
 
 ## 3. Domain
 
-Acuerdo de implementación: el usuario confirmó D1–D5 de `propuesta_decisiones.md`. La clasificación por potencia baja queda deshabilitada inicialmente hasta contar con evidencia de operación; se conservan umbrales configurables 50 %/80 %, desconexión tras tres intervalos y evaluación cada cinco segundos. La prioridad del nodo es Falla > Desconectado > Degradado > Normal, con cobertura explícita. La primera transición tiene anterior nulo; existe una alerta activa por panel y cada cambio o recurrencia abre otro episodio después de cerrar el previo. Posteriormente, al solicitar completar los pendientes y responder «hazlo lo mejor posible», el usuario autorizó avanzar con la propuesta D6 mediante MariaDB existente. Posteriormente el usuario informó la validación de Luciano y su delegación de la elección técnica: se cerró la coordinación el 17/11/2026 con ambas instancias candidatas a adquirir, exclusión MariaDB y relevo sin promoción manual, según `coordinacion_despliegue.md`. No se atribuye una fecha original de validación ni un despliegue real ejecutado.
+La clasificación por potencia baja queda deshabilitada inicialmente hasta contar con evidencia de operación; se conservan umbrales configurables 50 %/80 %, desconexión tras tres intervalos y evaluación cada cinco segundos. La prioridad del nodo es Falla > Desconectado > Degradado > Normal, con cobertura explícita. La primera transición tiene anterior nulo; existe una alerta activa por panel y cada cambio o recurrencia abre otro episodio después de cerrar el previo. La integración distribuida usa MariaDB compartida: A y B pueden adquirir con exclusión, y cada instancia observa los cambios confirmados. No se declara realizado un despliegue productivo.
 
 ### D6. Diseño autorizado de observación compartida
 
@@ -66,7 +66,7 @@ El historial conserva la identidad del panel; las consultas de alertas muestran 
 
 ### DOM3. Pruebas de dominio
 
-Crear pruebas xUnit simultáneamente con cada comportamiento: clasificaciones, límites aprobados, baja potencia normal fuera de generación, falla explícita, evidencia incompleta, ausencia de datos y desconexión; agregación D3; estado administrativo separado; primera evaluación; repetición, orden temporal y transición; apertura, cierre y recurrencia D5. Ninguna prueba debe cristalizar una decisión todavía pendiente.
+Crear pruebas xUnit simultáneamente con cada comportamiento: clasificaciones, límites configurados, falla explícita, evidencia incompleta, ausencia de datos y desconexión; agregación D3; estado administrativo separado; primera evaluación; repetición, orden temporal y transición; apertura, cierre y recurrencia D5.
 
 ## 4. Application
 
@@ -156,3 +156,8 @@ Usar los proyectos y herramientas de verificación existentes. Si faltan decisio
 ## 8. Cierre y documentación
 
 Al implementar, crear `implementations.md` en esta carpeta con acuerdos D1–D6, comportamientos finales, archivos tocados, migración, configuración externa, pasos reproducibles de falla/recuperación/historial, coordinación de dos instancias y resultados V1–V8. Distinguir evidencia ejecutada de verificaciones omitidas y sus causas. Mantener requisitos, especificación y tareas coherentes con el alcance aprobado.
+
+
+## Protección del historial al eliminar inventario
+
+La eliminación física de un nodo o parque con estado, transiciones o alertas de salud se rechaza antes de modificar dependencias y conserva todo el historial. Para retirar paneles se utiliza la baja lógica de req18. Si no existe historial de salud, la baja administrativa mantiene el comportamiento transaccional previo y elimina también los inversores asociados.

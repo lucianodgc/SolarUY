@@ -40,8 +40,8 @@ Fuente de alcance técnico: `specs.md`. Todas las tareas permanecen pendientes; 
 
 ## 6. Verificación
 
-- [ ] 6.1 Ejecutar las pruebas de Domain afectadas y comprobar los casos de alta, consultas, edición, baja y rechazo sin cambios parciales. (V1 aprobado; V2 pendiente de integración con MariaDB.)
-- [ ] 6.2 Verificar autorización y ausencia de persistencia ante accesos denegados. (V3; pendiente de prueba de integración con identidad y MariaDB.)
+- [x] 6.1 Verificar Domain y el flujo persistido de alta, consulta, traslado y baja lógica con conservación de lecturas y mantenimiento. Evidencia: PanelPersistenciaIntegrationTests.
+- [x] 6.2 Verificar que Tecnico y Consulta leen y que sus escrituras son rechazadas sin cambios en MariaDB. Evidencia: PanelPersistenciaIntegrationTests.
 - [x] 6.3 Ejecutar `dotnet test` sobre `CodeQuality.Tests` y corregir incumplimientos en el código, sin modificar los guardarraíles. (V4)
 - [ ] 6.4 Comprobar interfaz y, si corresponde, aplicación de la migración en MariaDB; registrar verificaciones no ejecutadas y su causa. (V5)
 

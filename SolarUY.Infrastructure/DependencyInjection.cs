@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using SolarUY.Application.Abstractions;
@@ -44,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<IRecoleccionLecturasRepository, RecoleccionLecturasRepository>();
         services.AddScoped<IMonitoreoRepository, MonitoreoRepository>();
         services.AddScoped<SolarUY.Application.Salud.ISaludPanelRepository, SaludPanelRepository>();
+        services.TryAddSingleton<SolarUY.Domain.Salud.EvaluacionSaludService>();
         services.AddScoped<SolarUY.Application.Salud.IObservacionSaludRepository, ObservacionSaludRepository>();
         services.AddScoped<ITareaMantenimientoRepository, TareaMantenimientoRepository>();
         services.AddScoped<INodoRepository, NodoRepository>();

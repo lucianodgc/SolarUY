@@ -1,5 +1,7 @@
 # Requerimientos: Histórico de generación por día, mes y año
 
+La adquisición periódica se mantiene en req11. Las menciones a recolección en este documento corresponden a la ampliación inicial y no definen otro recolector.
+
 ## Descripción General
 
 Como usuario del sistema SolarUY, quiero consultar el historial de generación de energía de un parque solar, nodo o panel, para conocer la energía generada durante un día, mes o año determinado, comparar períodos y analizar el rendimiento de las instalaciones.

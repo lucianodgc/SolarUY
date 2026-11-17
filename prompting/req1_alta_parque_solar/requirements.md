@@ -1,5 +1,7 @@
 # Requerimientos: Alta de Parque Solar
 
+El alta es parte del ABM de parques de req6; este documento conserva sus reglas específicas y no define otra pantalla ni otra implementación.
+
 ## Descripción General
 Como Administrador del sistema SolarUY, quiero poder registrar un nuevo Parque Solar en la plataforma para poder gestionar de forma independiente sus nodos, paneles e inversores.
 

@@ -173,3 +173,11 @@ El fallo de inicio también exponía una carrera: el worker comenzaba a resolver
 Se agregó una integración con Kestrel real y un puerto reservado por un `TcpListener`: verifica el error de enlace, la finalización del worker sin excepción y cero lecturas persistidas. Se mantienen las comprobaciones de recolección normal, recuperación de errores y detención entre hosts.
 
 Verificación de esta corrección: **9/9 controles arquitectónicos y 16/16 casos de recolección correctos, sin omisiones**, contra una MariaDB aislada. Resultados TRX en `artifacts/recoleccion/arranque/` (arquitectura) y `artifacts/recoleccion/arranque-final/` (recolección). No se repitieron la solución completa ni el escenario de volumen; la limitación de rendimiento de 6.8 permanece pendiente.
+
+## Correcciones verificadas — 17/11/2026
+
+Se corrigió la consulta SQL del histórico para aprovechar rangos del índice por panel y fecha. La selección de paneles, agregación y diagnóstico se leen dentro de la misma transacción RepeatableRead. Los valores externos siguen parametrizados; la elección entre dos planes de acceso solo cambia rendimiento, no lecturas ni fórmulas.
+
+Con MariaDB 11.8 y buffer pool de 512 MiB se completó el escenario de volumen existente sin ampliar su límite de 5 segundos ni su presupuesto de memoria. Comparar parques por mes demoró entre 3,457 y 3,634 segundos; las restantes consultas también cumplieron. El uso adicional de memoria del proceso permaneció bajo 2 MiB. Queda cerrado el pendiente 6.8 citado en verificaciones anteriores. Evidencia nativa: `artifacts/correcciones/cierre/`.
+
+También se repararon la composición del servicio de salud y la preparación de pruebas de migración: el esquema legado se carga mediante SQL parametrizado antes de aplicar las migraciones actuales, conservando las comprobaciones de datos e índices.

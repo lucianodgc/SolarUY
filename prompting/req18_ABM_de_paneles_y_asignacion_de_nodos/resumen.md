@@ -1,5 +1,5 @@
 # Resumen req18
 
-Se implementó el ABM de paneles solares. Administrador puede dar de alta, editar, trasladar y realizar baja lógica; Administrador, Tecnico y Consulta pueden consultar los paneles activos.
+Administrador puede crear, editar, trasladar y dar de baja paneles; los tres roles pueden consultar. Se corrigió el error de seguimiento de EF al guardar o trasladar.
 
-Cada nodo respeta su capacidad máxima configurada y los traslados conservan el historial del panel. La baja no borra lecturas ni mantenimientos. Las pruebas de dominio y arquitectura finalizaron correctamente; queda pendiente comprobar la migración y autorización contra MariaDB e identidad reales.
+Las migraciones y cuatro casos de persistencia/permisos aprobaron contra MariaDB aislada, incluida la concurrencia por el último cupo. La baja lógica conserva lecturas y mantenimientos. Queda el recorrido visual con identidad OIDC real indicado en tasks.md.

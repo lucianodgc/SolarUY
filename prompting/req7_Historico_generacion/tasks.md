@@ -69,7 +69,7 @@ Dependencias: implementación de etapas 2–5; Q1–Q6 para fijar resultados, Q7
 - [x] 6.5 Incorporar pruebas de máximos/mínimos, empates, falta de datos, cobertura parcial y cero medido conforme a Q4/Q5. (V2)
 - [x] 6.6 Incorporar pruebas de rangos invertidos, identificadores inválidos/inexistentes y permisos para consultas, comparación y opciones según Q6. (V2)
 - [x] 6.7 Verificar mediante integración que consultar conserva las lecturas y que la nueva FK es compatible con la baja de un parque temporal de req6, sin afectar las lecturas del otro parque. (V2)
-- [ ] 6.8 Ejecutar el escenario de volumen/concurrencia acordado, medir latencia y memoria e inspeccionar SQL/planes para verificar agregación en servidor, filtrado e índices; registrar resultados frente a Q7. **Pendiente: la comprobación actual de parque/mes alcanzó 5,487 s frente al límite de 5 s.** (V3)
+- [x] 6.8 Verificar un millón de lecturas y cuatro consultas concurrentes: todos los escenarios por debajo de 5 s, comparación mensual entre 3,457 y 3,634 s y memoria adicional inferior a 256 MiB. MariaDB 11.8 con caché InnoDB de 512 MiB; evidencia en artifacts/correcciones/cierre.
 - [x] 6.9 Recorrer la página con los roles acordados y comprobar selecciones, períodos, comparación, extremos, unidades/zona, mensajes y denegación de acceso. (V4)
 - [x] 6.10 Ejecutar `dotnet test SolarUY.sln` con la configuración de integración necesaria y registrar resultados de pruebas existentes/nuevas y cualquier comprobación no ejecutada. (V4)
 

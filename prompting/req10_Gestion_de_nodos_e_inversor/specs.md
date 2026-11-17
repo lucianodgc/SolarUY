@@ -2,9 +2,9 @@
 
 ## Alcance, dependencias y decisiones confirmadas
 
-Fuente funcional: `requeriments.md`. Esta especificación respeta el MER de `.agents/rules/9_modelo_de_datos.md`, .NET 8, Blazor Server con Radzen, EF Core 8/Pomelo y MariaDB 11.8 LTS. No incorpora MediatR, nuevas bibliotecas, APIs ni proveedores de identidad.
+Fuente funcional: `requirements.md`. Esta especificación respeta el MER de `.agents/rules/9_modelo_de_datos.md`, .NET 8, Blazor Server con Radzen, EF Core 8/Pomelo y MariaDB 11.8 LTS. No incorpora MediatR, nuevas bibliotecas, APIs ni proveedores de identidad.
 
-`Nodo` ya existe como dependencia de mantenimiento, pero este requerimiento incorpora sus casos de uso de gestión y el inversor persistido asociado. El simulador definido en `req5` conserva su topología e identificadores propios y no se vincula automáticamente con estos inversores.
+`Nodo` ya existe como dependencia de mantenimiento, pero este requerimiento incorpora sus casos de uso de gestión y el inversor persistido asociado. El inventario persistido se transmite al simulador por la integración TCP de req13; no se inventa una topología alternativa.
 
 Las siguientes decisiones fueron confirmadas por el equipo el 29 de octubre de 2026:
 
@@ -15,7 +15,7 @@ Las siguientes decisiones fueron confirmadas por el equipo el 29 de octubre de 2
 | C3 | Los estados son `Encendido` y `Apagado`. | Se persisten mediante `EstadoInversor`; este alcance solo registra y muestra el estado. |
 | C4 | Al eliminar un nodo se eliminan su inversor, paneles, tareas de mantenimiento y lecturas. | La operación se ejecuta transaccionalmente y conserva la regla de no eliminar el último nodo. |
 
-El simulador definido en `req5` sigue aislado del inventario persistido.
+Los datos administrativos del inversor no sustituyen la telemetría operacional del simulador.
 
 ## 1. Domain
 
@@ -57,7 +57,7 @@ Ampliar las pruebas de integración existentes adecuadas para comprobar que Admi
 
 Persistir `Nodo` e `Inversor` mediante configuraciones EF separadas y repositorios que implementen los puertos de Application. La configuración conserva `Nodo.ParqueId` como FK obligatoria y configura `Inversor.NodoId` como FK obligatoria y única, materializando la relación uno-a-uno del MER. La eliminación explícita y transaccional borra primero tareas, lecturas, paneles e inversor, y después el nodo.
 
-Extender el contexto y crear la migración EF incremental `AddInversorNodo`. La migración no incluye cadenas de conexión ni secretos. No se modifica ni se integra el `IInversorClient` simulador de `req5`.
+Extender el contexto y crear la migración EF incremental `AddInversorNodo`. La migración no incluye cadenas de conexión ni secretos. La integración TCP del inventario se mantiene en req13, sin duplicarla en los casos de uso de nodos.
 
 ## 4. Presentation
 
@@ -69,3 +69,8 @@ Los formularios capturan los campos que finalmente aprueben C1--C3, invocan excl
 
 Ejecutar las pruebas de dominio que se creen o modifiquen, las pruebas de integración de autorización contempladas en A3 y `dotnet test` sobre `CodeQuality.Tests`. Verificar que la migración se aplica en una base MariaDB configurada externamente y que se conservan la relación uno-a-uno, la FK y las restricciones aprobadas. Cuando exista entorno de interfaz, comprobar los flujos administrativos, la consulta de los tres roles y los mensajes de validación/denegación. Informar explícitamente cualquier verificación que no se ejecute.
 
+
+
+## Protección del historial al eliminar inventario
+
+La eliminación física de un nodo o parque con estado, transiciones o alertas de salud se rechaza antes de modificar dependencias y conserva todo el historial. Para retirar paneles se utiliza la baja lógica de req18. Si no existe historial de salud, la baja administrativa mantiene el comportamiento transaccional previo y elimina también los inversores asociados.

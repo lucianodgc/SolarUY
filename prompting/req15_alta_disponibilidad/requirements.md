@@ -21,4 +21,4 @@ La aplicación debe permanecer disponible si una instancia cae o se reemplaza po
 ## Límites operativos conocidos
 
 - La afinidad de Nginx conserva la conexión SignalR en una instancia mientras esa instancia vive. Si el proceso cae, el circuito Blazor Server se reconstruye mediante la reconexión del cliente.
-- En esta configuración solo `solaruy-a` ejecuta la recolección histórica. El worker actual no implementa una elección distribuida de propietario; habilitar ambos duplicaría trabajo.
+- A y B pueden recolectar, pero el bloqueo compartido de MariaDB permite un único propietario por ciclo. La instancia restante retoma la adquisición sin promoción manual.

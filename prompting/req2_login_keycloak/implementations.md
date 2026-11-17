@@ -10,7 +10,7 @@ Esto controla la presentación y permite recuperar el intento. No acredita haber
 
 ## Actualización de integración frontend
 
-La cabecera conserva identidad y cierre de sesión visibles. `/mi-cuenta` concentra roles y claims, y el inicio/menú muestran accesos por perfil. Se verificó login OIDC y navegación con los tres usuarios de prueba, sin cambiar credenciales ni la configuración del proveedor. Detalle vigente en [frontend_integracion.md](../frontend_integracion.md); el resto documenta la integración original.
+La cabecera conserva identidad y cierre de sesión visibles. `/mi-cuenta` concentra roles y claims, y el inicio/menú muestran accesos por perfil. Se verificó login OIDC y navegación con los tres usuarios de prueba, sin cambiar credenciales ni la configuración del proveedor. Detalle vigente en [frontend_integracion.md](../Reportes%20de%20codex/frontend_integracion.md); el resto documenta la integración original.
 
 ## Cambios y tareas completadas
 
@@ -22,8 +22,8 @@ La cabecera conserva identidad y cierre de sesión visibles. `/mi-cuenta` concen
 
 ## Archivos modificados
 
-- `prompting/req2_login_keycloak/tasks.md`: se actualizaron las tareas completadas y se registró el pendiente de las URLs de producción.
-- `prompting/req2_login_keycloak/implementations.md`: se agregó este informe.
+- `prompting/req2_Login_Keycloak/tasks.md`: se actualizaron las tareas completadas y se registró el pendiente de las URLs de producción.
+- `prompting/req2_Login_Keycloak/implementations.md`: se agregó este informe.
 
 También se guardó el secreto de `solaruy-web` en el almacén local de .NET User Secrets. No se modificaron archivos de código ni se alteró el `.env` existente.
 

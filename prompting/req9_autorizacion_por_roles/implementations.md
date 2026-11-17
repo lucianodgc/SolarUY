@@ -24,8 +24,8 @@
 - `SolarUY.Presentation/Components/Pages/Home.razor`
 - `SolarUY.Application.Tests/ParqueSolarServiceTests.cs`
 - `SolarUY.Integration.Tests/PresentationAuthorizationTests.cs`
-- `prompting/req9_autorizacion_por_roles/tasks.md`
-- `prompting/req9_autorizacion_por_roles/implementations.md`
+- `prompting/req9_Autorizacion_Por_Roles/tasks.md`
+- `prompting/req9_Autorizacion_Por_Roles/implementations.md`
 
 ## Verificaciones
 

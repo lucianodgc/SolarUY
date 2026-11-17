@@ -1,5 +1,5 @@
 # Resumen de calidad — req19
 
-Las pruebas automatizadas ejecutadas están en verde: 77 de Domain, 16 de Application, 125 de integración y 9 de arquitectura, sin fallos. La cobertura actual del Dominio es 97,4 % de líneas y 84,76 % de ramas.
+La verificación final tiene 420 pruebas aprobadas, cero fallidas y 14 omitidas. Los nueve controles de arquitectura pasan y no se modificaron sus guardarraíles.
 
-SonarQube no publicó un análisis nuevo: el contenedor de análisis se detiene antes de finalizar el envío. El Gate verde visible corresponde al análisis histórico del 8 de octubre de 2026 y no se declara como resultado de la entrega 3. Quedan pendientes estabilizar esa ejecución, revisar todos los avisos de mantenibilidad y obtener capturas reales del panel actualizado.
+SonarQube ya publica el análisis actual de SolarUY. Security, Reliability y Maintainability están en A y quedan cero bloqueantes. El Gate sigue rojo: cobertura nueva de 66,4 % frente al 80 % exigido y 138 hallazgos nuevos de mantenibilidad. Ese cierre y las capturas del panel siguen pendientes; los límites no se cambiaron.

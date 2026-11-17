@@ -8,11 +8,35 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SolarUY.Application.Chatbot;
 using SolarUY.Infrastructure.Chatbot;
+using SolarUY.Infrastructure;
+using Microsoft.Extensions.Options;
 
 namespace SolarUY.Integration.Tests;
 
 public sealed class ChatbotProveedorIntegrationTests
 {
+    [Theory]
+    [InlineData("http://127.0.0.1:11434/", "false", true)]
+    [InlineData("http://host.docker.internal:11434/", "false", false)]
+    [InlineData("http://host.docker.internal:11434/", "true", true)]
+    [InlineData("http://ejemplo.com:11434/", "true", false)]
+    [InlineData("http://host.docker.internal.ejemplo.com:11434/", "true", false)]
+    [InlineData("http://host.docker.internal:11434/api/", "true", false)]
+    public void ConfiguracionOllamaEnDockerSePropagaSinPermitirDestinosArbitrarios(string endpoint, string permitir, bool valido)
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Chatbot:Ollama:Endpoint"] = endpoint,
+            ["Chatbot:Ollama:PermitirHostDocker"] = permitir
+        }).Build();
+        var servicios = new ServiceCollection();
+        servicios.AddChatbotInfrastructure(configuration);
+        using var provider = servicios.BuildServiceProvider();
+        var opciones = provider.GetRequiredService<IOptions<ChatbotOptions>>().Value;
+        if (valido) new OllamaChatClient(opciones).Dispose();
+        else Assert.Throws<ArgumentException>(() => new OllamaChatClient(opciones));
+    }
+
     [Fact]
     public async Task Ollama_AdaptadorNativoInvocaMcpSinClaveDeOpenAiNiCredencialesEnElPayload()
     {

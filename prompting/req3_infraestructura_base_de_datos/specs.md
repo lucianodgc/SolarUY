@@ -53,8 +53,8 @@ Se documentará, en un archivo versionado de uso del proyecto, el procedimiento 
 
 ## Verificación
 
-Después de implementar las decisiones pendientes, se verificará con la configuración local aprobada que:
+La verificación con la configuración local comprueba que:
 
 1. `docker compose up -d` deja disponible el servicio MariaDB para los compañeros.
-2. `dotnet ef database update` contra esa instancia termina correctamente y crea las tablas derivadas del modelo aprobado, incluidas Parque, Nodo y Panel cuando dichas entidades y relaciones estén definidas.
+2. `dotnet ef database update` contra esa instancia termina correctamente y crea las tablas derivadas del modelo aprobado, incluidas ParqueSolar, Nodo y Panel según el modelo implementado.
 3. `dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj` pasa, para confirmar que los cambios respetan los guardarraíles arquitectónicos. No se modificarán las pruebas de calidad para conseguir ese resultado.

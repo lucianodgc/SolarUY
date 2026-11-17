@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using SolarUY.Application.HistoricoGeneracion;
 
 namespace SolarUY.Infrastructure.Persistence;
@@ -46,7 +47,8 @@ public sealed class HistoricoGeneracionRepository : IHistoricoGeneracionReposito
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         await context.Database.OpenConnectionAsync(cancellationToken);
-        await using var command = CrearComando(context, consulta);
+        await using var transaction = await context.Database.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, cancellationToken);
+        await using var command = await CrearComando(context, consulta, cancellationToken);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var serie = new List<PuntoHistoricoDto>();
         decimal? total = null;
@@ -62,21 +64,26 @@ public sealed class HistoricoGeneracionRepository : IHistoricoGeneracionReposito
         }
         await reader.DisposeAsync();
         await using var pendientes = context.Database.GetDbConnection().CreateCommand();
+        pendientes.Transaction = transaction.GetDbTransaction();
         // En nodo/parque el aviso es global al período: no conocemos su pertenencia.
         pendientes.CommandText = "SELECT COUNT(*) FROM LecturasPanel WHERE NodoId IS NULL AND FechaHora >= DATE_SUB(@inicio, INTERVAL 5 MINUTE) AND FechaHora < @fin AND (@esPanel = 0 OR PanelId = @objetivo)";
         AgregarParametro(pendientes, "@inicio", consulta.InicioUtc);
         AgregarParametro(pendientes, "@fin", consulta.FinUtc);
         AgregarParametro(pendientes, "@objetivo", consulta.ObjetivoId.ToString());
         AgregarParametro(pendientes, "@esPanel", consulta.Tipo == TipoObjetivoHistorico.Panel ? 1 : 0);
-        return new ResultadoHistoricoDto(consulta, total, cobertura, serie)
+        var resultado = new ResultadoHistoricoDto(consulta, total, cobertura, serie)
         {
             LecturasSinNodoHistorico = Convert.ToInt64(await pendientes.ExecuteScalarAsync(cancellationToken))
         };
+        await transaction.CommitAsync(cancellationToken);
+        return resultado;
     }
 
-    private static DbCommand CrearComando(ApplicationDbContext context, ConsultaHistoricoDto consulta)
+    private static async Task<DbCommand> CrearComando(ApplicationDbContext context, ConsultaHistoricoDto consulta,
+        CancellationToken cancellationToken = default)
     {
         var command = context.Database.GetDbConnection().CreateCommand();
+        command.Transaction = context.Database.CurrentTransaction?.GetDbTransaction();
         command.CommandText = CrearSql(consulta.Tipo);
         AgregarParametro(command, "@objetivo", consulta.ObjetivoId.ToString());
         AgregarParametro(command, "@inicio", consulta.InicioUtc);
@@ -93,7 +100,50 @@ public sealed class HistoricoGeneracionRepository : IHistoricoGeneracionReposito
                     FinUtc = intervalo.FinUtc.ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture)
                 }));
         AgregarParametro(command, "@intervalos", JsonSerializer.Serialize(intervalos));
+        // Las constantes de panel permiten usar todos los componentes del índice de rango.
+        // Un join dependiente por PanelId hace que MariaDB recorra todas las fechas de cada panel.
+        await using var seleccion = context.Database.GetDbConnection().CreateCommand();
+        seleccion.Transaction = command.Transaction;
+        seleccion.CommandText = command.CommandText[..command.CommandText.IndexOf("), muestras AS (", StringComparison.Ordinal)]
+            + ") SELECT Id FROM paneles_objetivo";
+        foreach (DbParameter parametro in command.Parameters)
+            AgregarParametro(seleccion, parametro.ParameterName, parametro.Value ?? DBNull.Value);
+        var paneles = new List<string>();
+        await using (var reader = await seleccion.ExecuteReaderAsync(cancellationToken))
+            while (await reader.ReadAsync(cancellationToken)) paneles.Add(reader.GetGuid(0).ToString("D"));
+        var nombres = new List<string>();
+        for (var indice = 0; indice < paneles.Count; indice++)
+        {
+            var nombre = "@panel" + indice.ToString(CultureInfo.InvariantCulture);
+            nombres.Add(nombre);
+            AgregarParametro(command, nombre, paneles[indice]);
+        }
+        if (nombres.Count > 0 && await ConvieneLeerPanelCompletoAsync(context, command, nombres, consulta, cancellationToken))
+            return command;
+        command.CommandText = command.CommandText
+            .Replace("FROM paneles_objetivo objetivo STRAIGHT_JOIN LecturasPanel l", "FROM LecturasPanel l", StringComparison.Ordinal)
+            .Replace("ON l.PanelId = objetivo.Id", "WHERE l.PanelId IN (" + (nombres.Count == 0 ? "NULL" : string.Join(",", nombres)) + ")", StringComparison.Ordinal)
+            .Replace("WHERE l.FechaHora >=", "AND l.FechaHora >=", StringComparison.Ordinal);
         return command;
+    }
+
+    private static async Task<bool> ConvieneLeerPanelCompletoAsync(ApplicationDbContext context, DbCommand original,
+        IReadOnlyList<string> nombres, ConsultaHistoricoDto consulta, CancellationToken cancellationToken)
+    {
+        await using var limites = context.Database.GetDbConnection().CreateCommand();
+        limites.Transaction = original.Transaction;
+        // Una muestra solo orienta el plan de acceso; nunca modifica el conjunto de lecturas consultado.
+        limites.CommandText = "SELECT MIN(FechaHora), MAX(FechaHora) FROM LecturasPanel "
+            + "FORCE INDEX (IX_LecturasPanel_PanelId_FechaHora_PotenciaGeneradaW) WHERE PanelId = @panelMuestra";
+        AgregarParametro(limites, "@panelMuestra", original.Parameters[nombres[0]].Value ?? DBNull.Value);
+        await using var reader = await limites.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken) || reader.IsDBNull(0) || reader.IsDBNull(1)) return false;
+        var inicio = reader.GetDateTime(0);
+        var fin = reader.GetDateTime(1);
+        var desde = consulta.InicioUtc.AddMinutes(-5) > inicio ? consulta.InicioUtc.AddMinutes(-5) : inicio;
+        var hasta = consulta.FinUtc < fin ? consulta.FinUtc : fin;
+        // Los rangos cortos evitan recorrer todo el índice; para rangos amplios el join evita cientos de rangos.
+        return hasta > desde && (hasta - desde).Ticks > (fin - inicio).Ticks / 2;
     }
 
     private static void AgregarParametro(DbCommand command, string nombre, object valor)
@@ -163,12 +213,12 @@ public sealed class HistoricoGeneracionRepository : IHistoricoGeneracionReposito
                         GREATEST(t.FechaHora, i.InicioUtc), LEAST(t.Fin, i.FinUtc))) AS EnergiaMicroWh,
                     COALESCE(SUM(TIMESTAMPDIFF(MICROSECOND,
                         GREATEST(t.FechaHora, i.InicioUtc), LEAST(t.Fin, i.FinUtc))), 0) AS Cubierto,
-                    TIMESTAMPDIFF(MICROSECOND, i.InicioUtc, i.FinUtc)
+                    MAX(TIMESTAMPDIFF(MICROSECOND, i.InicioUtc, i.FinUtc))
                         * (SELECT COUNT(*) FROM paneles_objetivo) AS Esperado
                 FROM intervalos i LEFT JOIN tramos t ON t.DiaUtc = i.DiaUtc
                     AND t.FechaHora < i.FinUtc AND t.Fin > i.InicioUtc
                     AND t.EsObjetivo = 1
-                GROUP BY i.Ordinal, i.InicioUtc, i.FinUtc
+                GROUP BY i.Ordinal ORDER BY NULL
             ), energias AS (
                 SELECT Ordinal, CAST(EnergiaMicroWh AS DECIMAL(65,24)) / 3600000000000 AS Energia,
                     Cubierto, Esperado FROM aportes
