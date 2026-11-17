@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Radzen;
 using SolarUY.Application.Abstractions;
+using SolarUY.Application.Chatbot;
 using SolarUY.Application.Mantenimiento;
 using SolarUY.Application.Inversores;
 using SolarUY.Application.HistoricoGeneracion;
@@ -58,12 +59,20 @@ builder.Services.AddOptions<SaludDistribucionOptions>().Bind(builder.Configurati
     .ValidateOnStart();
 builder.Services.AddHostedService<ObservacionSaludWorker>();
 builder.Services.AddSolarInfrastructure(builder.Configuration);
+builder.Services.AddChatbotInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IParqueSolarService, ParqueSolarService>();
 builder.Services.AddScoped<INodoService, NodoService>();
 builder.Services.AddScoped<IUsuarioActual, UsuarioActualService>();
+
+// Servicios del chatbot
+builder.Services.AddScoped<IConsultaChatbotService, ConsultaChatbotService>();
+builder.Services.AddScoped<IChatbotService, ChatbotService>();
+
+// Servicios de paneles
 builder.Services.AddScoped<SolarUY.Application.Paneles.IPanelService, SolarUY.Application.Paneles.PanelService>();
 builder.Services.AddScoped<IValidator<SolarUY.Application.Paneles.CrearPanelDto>, SolarUY.Application.Paneles.PanelDtoValidator>();
 builder.Services.AddScoped<IValidator<SolarUY.Application.Paneles.ActualizarPanelDto>, SolarUY.Application.Paneles.ActualizarPanelDtoValidator>();
+
 builder.Services.AddScoped<ITareaMantenimientoService, TareaMantenimientoService>();
 builder.Services.AddScoped<IInversorService, InversorService>();
 builder.Services.AddScoped<IOrdenInversorService, OrdenInversorService>();
