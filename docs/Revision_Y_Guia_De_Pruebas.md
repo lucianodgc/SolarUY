@@ -44,11 +44,3 @@ finally { Remove-Item Env:SONAR_TOKEN }
 ```
 
 El repositorio incluye el analizador, no el servidor. Publica cobertura y espera el Quality Gate. Para incluir MariaDB, configura también la conexión aislada; desde su contenedor usa `host.docker.internal` para alcanzar el host. Resultados en `artifacts/calidad/`.
-
-## Estado y límites conocidos
-
-Última evidencia registrada, **17/11/2026**: 420 pruebas aprobadas, 0 fallidas y 14 omitidas. Quedan recorridos visuales con OIDC, nodos/paneles, chatbot y relevo real.
-
-SonarQube publicó con cero bloqueantes y ratings A; el Gate seguía rojo por cobertura nueva de **66,4 % frente al 80 % exigido** y **138 hallazgos nuevos**. Correcciones/capturas pendientes en [req19](../prompting/req19_Calidad/tasks.md).
-
-La evaluación de salud por potencia baja sigue deshabilitada por falta de evidencia operacional suficiente. Compose usa HTTP local y Keycloak de desarrollo; producción necesita HTTPS y callbacks públicos. Los requisitos y la evidencia detallada permanecen en `prompting/`.
