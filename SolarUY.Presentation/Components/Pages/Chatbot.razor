@@ -1,0 +1,116 @@
+@page "/chatbot"
+@attribute [Authorize(Roles = "Administrador,Tecnico,Consulta")]
+@using SolarUY.Application.Chatbot
+@using Microsoft.AspNetCore.Components.Authorization
+@implements IAsyncDisposable
+@inject IChatbotService Servicio
+@inject AuthenticationStateProvider Autenticacion
+
+<PageTitle>Asistente | SolarUY</PageTitle>
+<PageHeader Title="Asistente de SolarUY" Section="Consultas" Description="Preguntá por la generación, los equipos y el mantenimiento de tus parques." />
+<section class="surface chat-panel" aria-label="Conversación con el asistente">
+    <p class="note"><RadzenIcon Icon="info" /> El asistente solo consulta información y respeta tus permisos.</p>
+    <div class="chat-messages" aria-live="polite" aria-relevant="additions text" role="log" aria-label="Mensajes">
+        @if (_mensajes.Count == 0)
+        {
+            <p class="chat-welcome">Podés empezar con «¿Cómo está funcionando todo hoy?» o preguntar por un parque concreto.</p>
+        }
+        @foreach (var mensaje in _mensajes)
+        {
+            <article class="chat-message @(mensaje.EsUsuario ? "chat-user" : "chat-assistant")">
+                <strong>@(mensaje.EsUsuario ? "Vos" : "Asistente")</strong>
+                <p>@mensaje.Texto</p>
+            </article>
+        }
+        @if (_ocupado) { <p role="status" class="loading-state">Consultando SolarUY…</p> }
+    </div>
+    @if (_error is not null) { <p role="alert" class="alert alert-danger">@_error</p> }
+    <div class="chat-input">
+        <label for="pregunta-chat">Tu pregunta</label>
+        <RadzenTextArea id="pregunta-chat" Name="PreguntaChat" @bind-Value="_pregunta" Rows="3"
+            Disabled="_ocupado" Style="width:100%" aria-label="Pregunta al asistente" />
+        <div class="action-buttons">
+            <RadzenButton Text="Enviar pregunta" Icon="send" Click="EnviarAsync" Disabled="@(_ocupado || string.IsNullOrWhiteSpace(_pregunta))" />
+            <RadzenButton Text="Nueva conversación" Icon="restart_alt" Click="ReiniciarAsync" Disabled="_ocupado" ButtonStyle="ButtonStyle.Light" />
+        </div>
+    </div>
+</section>
+
+@code {
+    private readonly List<MensajeChatDto> _mensajes = [];
+    private CancellationTokenSource? _consulta;
+    private string _pregunta = "";
+    private string? _error;
+    private bool _ocupado;
+    private bool _destruido;
+    private long _version;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Autenticacion.AuthenticationStateChanged += SesionCambiada;
+        var version = _version;
+        var mensajes = await Servicio.ObtenerConversacionAsync();
+        if (!_destruido && version == _version) _mensajes.AddRange(mensajes);
+    }
+
+    private async Task EnviarAsync()
+    {
+        if (_ocupado || string.IsNullOrWhiteSpace(_pregunta)) return;
+        _ocupado = true; _error = null;
+        var version = ++_version;
+        using var consulta = new CancellationTokenSource();
+        _consulta = consulta;
+        var texto = _pregunta;
+        _pregunta = "";
+        _mensajes.Add(new(true, texto));
+        try
+        {
+            var respuesta = await Servicio.EnviarPreguntaAsync(new(texto), consulta.Token);
+            if (_destruido || version != _version || consulta.IsCancellationRequested) return;
+            if (respuesta.Estado == EstadoConsultaChat.NoAutorizado) _mensajes.Clear();
+            _mensajes.Add(new(false, respuesta.Texto));
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception)
+        { if (!_destruido && version == _version) _error = "No se pudo completar la consulta. Podés volver a intentar."; }
+        finally
+        { if (!_destruido && version == _version) { _ocupado = false; _consulta = null; } }
+    }
+
+    private async Task ReiniciarAsync()
+    {
+        await Servicio.ReiniciarAsync();
+        _mensajes.Clear(); _error = null; _pregunta = "";
+    }
+
+    private void SesionCambiada(Task<AuthenticationState> estado)
+    {
+        ++_version;
+        _consulta?.Cancel();
+        _ = LimpiarSesionAsync();
+    }
+
+    private async Task LimpiarSesionAsync()
+    {
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                _mensajes.Clear(); _pregunta = ""; _error = null; _ocupado = false; _consulta = null;
+                await Servicio.ReiniciarAsync();
+                if (!_destruido) StateHasChanged();
+            });
+        }
+        catch (ObjectDisposedException) { }
+        catch (OperationCanceledException) { }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        if (_destruido) return ValueTask.CompletedTask;
+        _destruido = true; ++_version;
+        Autenticacion.AuthenticationStateChanged -= SesionCambiada;
+        _consulta?.Cancel();
+        return ValueTask.CompletedTask;
+    }
+}
