@@ -111,6 +111,7 @@ public sealed class ObservacionSaludIntegrationTests(HistoricoDatabase database,
             await MedirAsync(Ahora.AddSeconds(1), EstadoSaludLectura.Sano);
             gate.Liberar.TrySetResult();
             await EsperarAsync(() => entrega.Avisos.Any(x => x.PanelId == database.Panel.Id && x.Version == 2));
+            Assert.Contains(entrega.Avisos, aviso => aviso.PanelId == database.Panel.Id && aviso.Version == 2);
         }
         finally { gate.Liberar.TrySetResult(); await worker.StopAsync(default); }
     }
@@ -162,7 +163,11 @@ public sealed class ObservacionSaludIntegrationTests(HistoricoDatabase database,
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.NodoId, database.PanelAjeno.NodoId));
         await using var provider = Provider(); var entrega = new Entrega();
         using var worker = CrearWorker(provider, entrega); await worker.StartAsync(default);
-        try { await EsperarAsync(() => entrega.Avisos.Any(a => a.ParqueId == database.Parque.Id && a.PanelId == null)); }
+        try
+        {
+            await EsperarAsync(() => entrega.Avisos.Any(a => a.ParqueId == database.Parque.Id && a.PanelId == null));
+            Assert.Contains(entrega.Avisos, aviso => aviso.ParqueId == database.Parque.Id && aviso.PanelId == null);
+        }
         finally { await worker.StopAsync(default); }
     }
 

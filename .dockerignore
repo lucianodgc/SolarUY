@@ -2,6 +2,14 @@
 .vs
 .sonarqube
 .env
+.env.*
+.aws
+.codex
+.agents
+artifacts
+tmp
+**/node_modules
+**/.runtime
 **/bin
 **/obj
 **/TestResults

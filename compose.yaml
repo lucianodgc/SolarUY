@@ -1,6 +1,7 @@
 services:
   mariadb:
     image: mariadb:11.8
+    command: ["--innodb-buffer-pool-size=512M"]
     environment:
       MARIADB_DATABASE: ${MARIADB_DATABASE:?Define MARIADB_DATABASE en .env}
       MARIADB_USER: ${MARIADB_USER:?Define MARIADB_USER en .env}
@@ -61,6 +62,14 @@ services:
       - keycloak_data:/data
     restart: "no"
 
+  simulador:
+    build:
+      context: .
+      dockerfile: SolarUY.InversorSimulador/Dockerfile
+    image: solaruy-simulador:${SOLARUY_VERSION:-local}
+    networks:
+      - solaruy_ha
+
   solaruy-a:
     build:
       context: .
@@ -75,7 +84,10 @@ services:
       Authentication__OpenIdConnect__ClientSecret: ${SOLARUY_WEB_CLIENT_SECRET:-}
       Keycloak__Directory__BaseUrl: http://keycloak:8080
       Keycloak__Directory__ClientSecret: ${SOLARUY_DIRECTORY_CLIENT_SECRET:-}
-      InversorTcp__Host: host.docker.internal
+      InversorTcp__Host: simulador
+      Chatbot__Ollama__Endpoint: http://host.docker.internal:11434/
+      Chatbot__Ollama__PermitirHostDocker: "true"
+      ReverseProxy__Direccion: 172.29.0.10
       RecoleccionLecturas__Habilitada: "true"
       SaludPanel__Habilitada: "true"
       SaludDistribucion__Habilitada: "true"
@@ -93,6 +105,8 @@ services:
       mariadb:
         condition: service_healthy
       keycloak:
+        condition: service_started
+      simulador:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
@@ -120,6 +134,8 @@ services:
       mariadb:
         condition: service_healthy
       keycloak:
+        condition: service_started
+      simulador:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]

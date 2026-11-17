@@ -224,3 +224,8 @@ Informar resultados reales, fallos, omisiones y recorridos manuales pendientes. 
 ## C2. Cierre y documentación
 
 Al implementar, crear o actualizar `implementations.md` en esta carpeta con cambios, archivos tocados, decisiones de C1 resueltas, configuración externa de IA/MCP, catálogo de herramientas y resultados de pruebas, incluidas omisiones y limitaciones. Crear o actualizar también `resumen.md` con una síntesis breve y fácil de leer de lo realizado. Marcar las tareas únicamente cuando sus resultados estén efectivamente comprobados.
+
+
+## Conexión de Ollama desde Docker
+
+El endpoint conserva loopback como valor predeterminado. La configuración externa `Chatbot:Ollama:PermitirHostDocker=true` admite únicamente el hostname exacto `host.docker.internal`; no habilita destinos arbitrarios. Compose fija `http://host.docker.internal:11434/`. Ollama debe aceptar la conexión de la red Docker. No se modifica el catálogo MCP ni la autorización de consultas.

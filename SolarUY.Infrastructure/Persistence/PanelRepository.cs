@@ -62,8 +62,7 @@ public sealed class PanelRepository : IPanelRepository, PanelesApplication.IPane
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
         var nodo = await BloquearNodoAsync(context, panel.NodoId, cancellationToken);
         nodo.ValidarCapacidadPaneles(await ContarPanelesActivosAsync(context, nodo.Id, cancellationToken) + 1);
-        context.Attach(panel.Nodo);
-        context.Paneles.Add(panel);
+        context.Entry(panel).State = EntityState.Added;
         await context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
@@ -80,8 +79,6 @@ public sealed class PanelRepository : IPanelRepository, PanelesApplication.IPane
             var destino = primero.Id == panel.NodoId ? primero : segundo;
             destino.ValidarCapacidadPaneles(await ContarPanelesActivosAsync(context, destino.Id, cancellationToken) + 1);
         }
-        context.Attach(panel.Nodo);
-        context.Attach(panel);
         context.Entry(panel).State = EntityState.Modified;
         await context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -90,7 +87,7 @@ public sealed class PanelRepository : IPanelRepository, PanelesApplication.IPane
     public async Task DarDeBajaAsync(Panel panel, CancellationToken cancellationToken = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
-        context.Attach(panel);
+        context.Entry(panel).State = EntityState.Unchanged;
         context.Entry(panel).Property(actual => actual.EstaDadoDeBaja).IsModified = true;
         await context.SaveChangesAsync(cancellationToken);
     }

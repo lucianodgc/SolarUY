@@ -2,7 +2,7 @@
 
 ## Alcance y decisiones confirmadas
 
-Fuente funcional: `requierements.md`, el MER de `.agents/rules/9_modelo_de_datos.md` y las respuestas explícitas del usuario. Se mantienen .NET 8, Blazor Server con Radzen, MariaDB 11.8 LTS, EF Core 8/Pomelo 8.0.3 y Keycloak. Para la corrección de EF CLI solicitada por el usuario se incorpora únicamente Microsoft.Extensions.Configuration.UserSecrets 8.0.1 en Infrastructure. No se agregan tablas de usuarios, credenciales humanas ni MediatR.
+Fuente funcional: `requirements.md`, el MER de `.agents/rules/9_modelo_de_datos.md` y las decisiones vigentes del requerimiento. Se mantienen .NET 8, Blazor Server con Radzen, MariaDB 11.8 LTS, EF Core 8/Pomelo 8.0.3 y Keycloak. Para la corrección de EF CLI se incorpora únicamente Microsoft.Extensions.Configuration.UserSecrets 8.0.1 en Infrastructure. No se agregan tablas de usuarios, credenciales humanas ni MediatR.
 
 | Referencia | Decisión confirmada |
 | --- | --- |

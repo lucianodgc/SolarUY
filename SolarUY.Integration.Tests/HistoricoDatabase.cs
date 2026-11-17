@@ -79,6 +79,7 @@ public sealed class HistoricoDatabase : IAsyncLifetime
         await context.LecturasPanel.ExecuteDeleteAsync();
         await context.TareasMantenimiento.ExecuteDeleteAsync();
         await context.Paneles.ExecuteDeleteAsync();
+        await context.Inversores.ExecuteDeleteAsync();
         await context.Nodos.ExecuteDeleteAsync();
         await context.ParquesSolares.ExecuteDeleteAsync();
         Parque = new ParqueSolar("Parque histórico", "Salto");

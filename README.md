@@ -1,126 +1,106 @@
 # SolarUY
 
-SolarUY es una aplicación web para gestionar parques solares, nodos y mantenimiento de paneles. Permite consultar generación, ver reportes y operar un inversor simulado según el rol del usuario: Administrador, Técnico o Consulta.
+Aplicación del Taller .NET para gestionar parques solares, nodos, inversores, paneles y mantenimiento; observar generación y salud; consultar históricos/reportes; y realizar consultas mediante un chatbot de solo lectura.
 
-Monitoreo y Simulador reciben datos por SignalR cada 2 segundos. El historial se guarda cada 30 segundos y alimenta los reportes.
+Este README presenta el proyecto y permite ubicar el arranque y la documentación. Los procedimientos completos se mantienen en `docs/`, con enlaces a los detalles específicos de cada integración.
 
-## Tecnologías y organización
+## Documentación
 
-Se utiliza C# con .NET 8, Blazor Server y Radzen, EF Core con Pomelo y MariaDB 11.8, Keycloak con OpenID Connect, SignalR, TCP y Docker Compose. La aplicación se ejecuta en el servidor; no usa WebAssembly.
-
-La solución sigue una arquitectura por capas:
-
-| Proyecto | Responsabilidad |
+| Necesito… | Documento |
 | --- | --- |
-| Presentation | Pantallas, autenticación y conexiones SignalR. |
-| Application | Casos de uso, permisos y coordinación. |
-| Domain | Entidades y reglas del negocio. |
-| Infrastructure | Base de datos e integraciones externas. |
-| InversorSimulador | Proceso separado que responde por TCP como un inversor. |
+| Instalar, configurar secretos y arrancar en Docker o local | [Configuración y ejecución](docs/Configuracion.md) |
+| Entender capas, patrones, tácticas, diagramas y archivos | [Arquitectura](docs/Arquitectura.md) |
+| Probar funciones, disponibilidad, chatbot y SonarQube | [Pruebas y calidad](docs/Revision_Y_Guia_De_Pruebas.md) |
+| Consultar requisitos, tareas y evidencia de una funcionalidad | [Requerimientos](prompting/) |
 
-## Diagramas
+## Funcionalidades y permisos
 
-Modelo de datos: los responsables se identifican mediante su usuario de Keycloak, sin una tabla local de usuarios.
+| Función | Administrador | Tecnico | Consulta |
+| --- | --- | --- | --- |
+| Gestión de parques y nodos | Consultar y administrar | Sin gestión administrativa | Sin gestión administrativa |
+| Paneles | Consultar, crear, editar, trasladar y dar de baja | Consultar | Consultar |
+| Monitoreo, salud e histórico | Consultar | Consultar | Consultar |
+| Reportes de generación/mantenimiento y CSV | Consultar y exportar | Consultar y exportar | Consultar y exportar |
+| Mantenimiento | Crear, editar, asignar y gestionar tareas | Consultar y cambiar estado de sus tareas | Sin acceso a gestión |
+| Órdenes al inversor | Ejecutar con confirmación y auditoría | Consultar estado | Consultar estado |
+| Chatbot | Consultar información autorizada | Consultar información autorizada | Consultar información autorizada |
 
-<img width="988" height="737" alt="MER" src="https://github.com/user-attachments/assets/1869ff6a-645e-4b18-9eb6-f18ba0fb95f5" />
+La lectura de paneles, monitoreo o reportes no concede acceso a la gestión de parques. El resumen de mantenimiento realizado de los reportes tampoco habilita consultar tareas pendientes ajenas. El chatbot conserva los permisos de cada servicio y rechaza operaciones de escritura para todos los roles.
 
-Arquitectura de la aplicación. La Entrega 3 añade dos instancias detrás de Nginx; el chat con IA queda pendiente.
+## Tecnologías
 
-<img width="1204" height="804" alt="Arquitectura" src="https://github.com/user-attachments/assets/27bb301c-7e24-4ad8-b4e8-98c013fe0d0a" />
+Versiones declaradas en los proyectos y archivos de despliegue:
 
-### Flujo de SignalR
+| Área | Tecnología |
+| --- | --- |
+| Plataforma | .NET 8 y C# |
+| Interfaz | Blazor Server, Radzen.Blazor 6.0.0, CSS/Bootstrap y JavaScript de apoyo |
+| Tiempo real | ASP.NET Core SignalR y WebSockets |
+| Persistencia | MariaDB 11.8, EF Core 8.0.31 y Pomelo 8.0.3 |
+| Autenticación | Keycloak 26.8.1, OpenID Connect y cookies de ASP.NET Core |
+| Validación | FluentValidation 11.11.0 y reglas del dominio |
+| Chatbot | Microsoft Agent Framework (`Microsoft.Agents.AI` 1.28.0), MCP Core 2.1.0, Ollama con `qwen3:8b`; OpenAI opcional |
+| Simulador | Proceso .NET independiente, TCP y mensajes JSON Lines |
+| Despliegue local | Docker Compose, Nginx (`stable`), volúmenes persistentes y phpMyAdmin 5.2.3 |
+| Calidad | xUnit, ArchUnitNET, Coverlet/OpenCover, Playwright y SonarQube |
 
-![Flujo de SignalR en SolarUY](docs/diagramas/signalr.svg)
+Los `.csproj` y el `package.json` de navegador son la referencia de versiones de paquetes. `global.json` selecciona el SDK 8. Node.js solo es necesario para las pruebas de navegador.
 
-[Editar el diagrama en draw.io](docs/diagramas/signalr.drawio).
+## Arquitectura en breve
 
-El servidor consulta la telemetría cada 2 segundos y la publica en `/hubs/monitoreo` para los usuarios suscritos al parque. El cliente JavaScript recibe los eventos y los pasa a los componentes del servidor; Blazor actualiza la interfaz mediante su circuito SignalR `/_blazor`. En paralelo, el recolector guarda lecturas cada 30 segundos y emite `LecturasConfirmadas` después del guardado. Los intervalos son configurables.
+Clean Architecture con cuatro capas: **Domain** contiene reglas; **Application**, casos de uso y contratos; **Infrastructure**, persistencia e integraciones; **Presentation**, Blazor y alojamiento de workers. Cada instancia web contiene las cuatro capas. Docker ejecuta dos réplicas detrás de Nginx y comparte MariaDB, Keycloak y el simulador TCP. Ollama se ejecuta en el host.
 
-## Desarrollo con IA y SonarQube
+Los [diagramas de capas, despliegue, datos, login y chatbot](docs/Arquitectura.md), junto con las tácticas y la explicación de carpetas/archivos, están en la guía de arquitectura.
 
-Codex ayudó a implementar funcionalidades, explicar errores y revisar avisos de SonarQube. El proceso dejó como mejora pendiente reforzar la comprensión y revisión del código y mantener registros más breves. Los requisitos, especificaciones y resultados están en `prompting/`.
+## Configuración inicial
 
-El análisis compartido registró **14,9 % de cobertura general**, generado con **57 pruebas de dominio aprobadas**. Ese porcentaje incluye también código de otras capas. Enviar el informe a SonarQube no implica aprobar su Quality Gate: los avisos se revisan en el panel y se contrastan con el código.
+Necesitas .NET SDK 8, PowerShell y Docker Desktop con contenedores Linux. Para migraciones se utiliza `dotnet-ef` 8; para el chatbot local, Ollama con `qwen3:8b`. La [guía completa](docs/Configuracion.md#configuración-inicial) incluye instalación de la herramienta, secretos y direcciones.
 
-## Preparación inicial
-
-Se necesita .NET SDK 8 y Docker Desktop. Todos los comandos siguientes se ejecutan desde la raíz, en PowerShell.
-
-Si aún no tienes `.env`, créalo y completa sus contraseñas:
+1. Si todavía no tienes `.env`, cópialo desde `.env.example` y completa tus contraseñas locales.
+2. Restaura dependencias e inicia MariaDB/Keycloak con los comandos siguientes.
+3. En Keycloak, completa los dos secretos de cliente y comprueba roles/redirecciones siguiendo la [preparación del realm](docs/Configuracion.md#3-keycloak).
+4. Si usarás el chatbot, prepara el modelo y el acceso de Docker a [Ollama](docs/Configuracion.md#4-ollama).
 
 ```powershell
-Copy-Item .env.example .env
 dotnet restore SolarUY.sln
-docker compose up -d
+docker compose up -d mariadb keycloak phpmyadmin
 ```
 
-Guarda la conexión y los secretos de los clientes de Keycloak, reemplazando los ejemplos. El puerto habitual del Compose es 3307; comprueba el tuyo con `docker compose port mariadb 3306`. La contraseña, usuario y base deben coincidir con `.env`, que no se carga automáticamente en .NET.
+Cada integrante conserva sus secretos fuera de Git. `.env` configura Compose; el modo .NET local necesita user-secrets o variables de entorno.
+
+## Ejecución
+
+Con la configuración inicial terminada, desde la raíz:
 
 ```powershell
-dotnet user-secrets set "ConnectionStrings:SolarUY" "Server=127.0.0.1;Port=3307;Database=solaruy;User=solaruy;Password=TU_PASSWORD_MARIADB;" --project SolarUY.Presentation
-dotnet user-secrets set "Authentication:OpenIdConnect:ClientSecret" "SECRETO_DE_SOLARUY_WEB" --project SolarUY.Presentation
-dotnet user-secrets set "Keycloak:Directory:ClientSecret" "SECRETO_DE_SOLARUY_TECNICO_DIRECTORY" --project SolarUY.Presentation
+.\Iniciar-Demo.ps1 -AltaDisponibilidad
 ```
 
-Los secretos se copian de **Keycloak → Clients → cliente → Credentials**. La configuración de login y mantenimiento está en [keycloak/README.md](keycloak/README.md) y [keycloak/TECNICOS.md](keycloak/TECNICOS.md). Los usuarios de prueba son `admin.test`, `tecnico.test` y `consulta.test`.
+Abre **http://localhost:18088**. El script aplica migraciones y levanta las dos webs, Nginx y el simulador, conservando datos. Para detener sin borrar volúmenes: `docker compose stop`.
 
-Instala la herramienta de EF si no la tienes y aplica las migraciones. El último comando también se usa cuando cambia la estructura de la base:
+La [guía de ejecución](docs/Configuracion.md#ejecución) incluye puertos, registros, desarrollo local en 5219 y datos de demostración. El restablecimiento de datos es una operación opcional y destructiva; no forma parte del arranque habitual.
 
-```powershell
-dotnet tool install --global dotnet-ef --version 8.0.31
-dotnet ef database update --project SolarUY.Infrastructure/SolarUY.Infrastructure.csproj --startup-project SolarUY.Presentation/SolarUY.Presentation.csproj -- --environment Development
-```
-
-## Iniciar y detener
-
-Inicia Docker y deja el simulador funcionando en una terminal:
+## Pruebas
 
 ```powershell
-docker compose up -d
-dotnet run --project SolarUY.InversorSimulador/SolarUY.InversorSimulador.csproj
-```
-
-En otra terminal, inicia la web:
-
-```powershell
-dotnet run --project SolarUY.Presentation/SolarUY.Presentation.csproj --launch-profile http
-```
-
-Web: http://localhost:5219 · Keycloak: http://localhost:8080 · phpMyAdmin: http://localhost:8081.
-
-## Entrega 3: alta disponibilidad
-
-La pila Docker incluye dos instancias de la web y Nginx. Configura en `.env` los secretos de `solaruy-web` y `solaruy-tecnico-directory` (ver `.env.example`) y levántala:
-
-```powershell
-docker compose up -d --build
-```
-
-Web balanceada: http://localhost:18088. La guía de caída y actualización por instancia está en [req15 implementations](prompting/req15_alta_disponibilidad/implementations.md).
-
-Como alternativa al último comando, elige un modo del script. **Solo inicia la web; Docker y el simulador se ejecutan aparte.**
-
-| Comando | Resultado |
-| --- | --- |
-| `.\Iniciar-Demo.ps1` | Conserva los datos y guarda nuevas lecturas. |
-| `.\Iniciar-Demo.ps1 -SinGuardarHistorial` | Conserva los datos sin guardar nuevas lecturas. |
-| `.\Iniciar-Demo.ps1 -ReiniciarDatos` | Restaura los datos del SQL y vuelve a guardar lecturas. |
-| `.\Iniciar-Demo.ps1 -ReiniciarDatos -SinGuardarHistorial` | Restaura los datos del SQL y mantiene el historial vacío. |
-
-**ReiniciarDatos reemplaza los datos actuales de SolarUY** importando una sola vez [solaruy_pruebas.sql](solaruy_pruebas.sql). Detén la web antes de usarlo. El SQL carga 2 parques, 4 nodos, 4 inversores, 12 paneles y 3 tareas, sin lecturas; también se importa desde phpMyAdmin. En otro Keycloak, ajusta el ID del técnico con `-TecnicoId 'ID-REAL-DEL-TECNICO'`.
-
-El restablecimiento usa la base del servicio MariaDB de Compose; la conexión .NET debe apuntar a ella. SinGuardarHistorial afecta solo a esa ejecución y mantiene el monitoreo en vivo.
-
-Para detener la web y el simulador, pulsa **Ctrl + C** en sus terminales. Detén Docker conservando los datos con `docker compose stop`. Para volver, repite los comandos de inicio.
-
-## Comprobaciones
-
-```powershell
-dotnet build SolarUY.sln
-dotnet test SolarUY.Domain.Tests/SolarUY.Domain.Tests.csproj
-dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj
-dotnet test SolarUY.Domain.Tests/SolarUY.Domain.Tests.csproj --collect:"XPlat Code Coverage"
 dotnet test SolarUY.sln
 ```
 
-La cobertura se genera en `SolarUY.Domain.Tests/TestResults`; no se envía automáticamente a SonarQube. Algunas pruebas requieren una base aislada: ver [SolarUY.Integration.Tests/README.md](SolarUY.Integration.Tests/README.md).
+Los casos que requieren servicios pueden omitirse. La [guía de pruebas](docs/Revision_Y_Guia_De_Pruebas.md) explica la base aislada, simulador, proveedor IA real, Playwright, recorrido por roles, caída/actualización de instancias y SonarQube. Una prueba omitida no acredita esa funcionalidad.
+
+## Estado y límites conocidos
+
+El último cierre registrado, del **17/11/2026**, tiene pruebas automatizadas aprobadas y verificaciones manuales pendientes. SonarQube publica el análisis, pero su Gate todavía requiere correcciones. Los resultados, cifras y pendientes se mantienen en una sola ubicación: [estado de pruebas y calidad](docs/Revision_Y_Guia_De_Pruebas.md#estado-y-límites-conocidos).
+
+La configuración de Compose es de desarrollo: HTTP local y Keycloak `start-dev`. La redundancia cubre las webs; las dependencias compartidas y el host no tienen alta disponibilidad en esta pila.
+
+## Cómo mantener la documentación
+
+- **README:** descripción, tecnologías, resumen de arquitectura, arranque y enlaces.
+- **docs/Configuracion.md:** configuración completa, modos de ejecución y problemas frecuentes.
+- **docs/Arquitectura.md:** diseño, diagramas, decisiones y estructura del código.
+- **docs/Revision_Y_Guia_De_Pruebas.md:** procedimientos de prueba, calidad y resultados fechados.
+- **prompting/:** requisitos, especificaciones, tareas e implementación por funcionalidad.
+- **Documentos junto a integraciones:** procedimientos específicos de [Keycloak](keycloak/TECNICOS.md), [Nginx](deploy/nginx/README.md) y [tests](SolarUY.Integration.Tests/README.md).
+
+Al cambiar un procedimiento, actualiza su documento principal y conserva enlaces desde los demás. Las instrucciones protegidas de `.agents/` se consultan sin modificarlas.

@@ -1,8 +1,8 @@
-# Implementación de req017 — Órdenes al inversor
+# Implementación de req21 — Órdenes al inversor
 
 ## Acuerdos y alcance
 
-D1–D4 fueron confirmadas explícitamente por el usuario el 16/11/2026; ver `propuesta_decisiones.md`. Las cuatro órdenes usan el mismo `IInversorClient` TCP existente. El volcado corresponde al inversor configurado completo, independientemente del parque seleccionado. Encender/apagar el inversor conserva su comportamiento anterior y queda fuera de las cuatro órdenes auditadas de req017.
+D1–D4 están documentadas en `specs.md`. Las cuatro órdenes usan el mismo `IInversorClient` TCP existente. El volcado corresponde al inversor configurado completo, independientemente del parque seleccionado. Encender/apagar el inversor conserva su comportamiento anterior y queda fuera de las cuatro órdenes auditadas de req21.
 
 ## Cambios
 
@@ -45,7 +45,7 @@ El protocolo no ofrece deduplicación remota ni fencing: perder la sesión de bl
 4. Parámetros opcionales: `OrdenInversor__CierreAuditoriaSegundos=5` (1–30) y `OrdenInversor__IntentosPersistencia=2` (1–2). El arranque valida estos rangos. No se incorporaron bibliotecas ni servicios adicionales.
 5. Iniciar ambas instancias y Nginx. Volver a iniciar sesión si la cookie anterior solo tenía NameIdentifier; las órdenes exigen el `sub` original. Verificar que Monitoreo y Simulador muestran el mismo estado.
 
-La configuración Nginx utilizada por la suite de req017 es una fixture de pruebas con afinidad explícita para fijar A/B y respaldo cruzado. No reemplaza el template de despliegue existente.
+La configuración Nginx utilizada por la suite de req21 es una fixture de pruebas con afinidad explícita para fijar A/B y respaldo cruzado. No reemplaza el template de despliegue existente.
 
 ## Verificación y reproducción
 
@@ -104,8 +104,7 @@ SolarUY.Integration.Tests/OrdenInversorIntegrationTests.cs
 SolarUY.Integration.Tests/OrdenNginxIntegrationTests.cs
 SolarUY.Presentation/Components/Shared/OrdenesInversor.razor
 SolarUY.Presentation/Monitoreo/MensajeResultadoOrden.cs
-prompting/req017_Órdenes al inversor_activar_desactivar_panel_y_volcado_a_la_red/implementations.md
-prompting/req017_Órdenes al inversor_activar_desactivar_panel_y_volcado_a_la_red/propuesta_decisiones.md
+prompting/req21_Ordenes Al Inversor_Activar_Desactivar_Panel_Y_Volcado_A_La_Red/implementations.md
 SolarUY.Application/Abstractions/UsuarioActualDto.cs
 SolarUY.Application/Inversores/InversorService.cs
 SolarUY.Infrastructure/DependencyInjection.cs
@@ -124,6 +123,6 @@ SolarUY.Presentation/Components/Pages/Monitoreo.razor
 SolarUY.Presentation/Components/Pages/SimuladorInversor.razor
 SolarUY.Presentation/Program.cs
 SolarUY.Presentation/wwwroot/js/monitoreo.js
-prompting/req017_Órdenes al inversor_activar_desactivar_panel_y_volcado_a_la_red/specs.md
-prompting/req017_Órdenes al inversor_activar_desactivar_panel_y_volcado_a_la_red/tasks.md
+prompting/req21_Ordenes Al Inversor_Activar_Desactivar_Panel_Y_Volcado_A_La_Red/specs.md
+prompting/req21_Ordenes Al Inversor_Activar_Desactivar_Panel_Y_Volcado_A_La_Red/tasks.md
 ```

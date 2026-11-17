@@ -485,5 +485,6 @@ $RECYCLE.BIN/
 
 # SonarQube / SonarScanner
 .sonarqube/
+SolarUY.Browser.Tests/.runtime/
 
 .env

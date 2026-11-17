@@ -32,7 +32,7 @@ No duplicar pruebas ni inventar reglas de negocio que no estén definidas.
 
 ### 2. Análisis estático de calidad
 
-Ejecutar periódicamente el script `./analizar`, como mínimo antes de cada entrega.
+Ejecutar periódicamente el script `Analizar-Calidad.ps1`, como mínimo antes de cada entrega.
 
 Revisar los resultados de Sonar y corregir los problemas identificados en las categorías:
 
@@ -72,7 +72,7 @@ Las capturas y los resultados deben corresponder a ejecuciones reales del análi
 - `dotnet test` finaliza correctamente.
 - Las pruebas unitarias del Dominio cubren las reglas de negocio relevantes de las cinco entidades indicadas.
 - Los tests de arquitectura existentes continúan pasando sin modificaciones injustificadas.
-- El script `./analizar` se ejecuta correctamente y se revisan los problemas de Security, Reliability y Maintainability.
+- El script `Analizar-Calidad.ps1` se ejecuta correctamente y se revisan los problemas de Security, Reliability y Maintainability.
 - Existe una nota documentada sobre la evolución de calidad, con capturas reales de Sonar.
 
 ## Restricciones
@@ -84,9 +84,6 @@ Las capturas y los resultados deben corresponder a ejecuciones reales del análi
 - No modificar los tests estructurales para ocultar incumplimientos.
 - No declarar pruebas, análisis o resultados como satisfactorios sin haberlos ejecutado.
 
-## Aspectos pendientes de confirmar
+## Estado de verificación
 
-- Identificar los proyectos y convenciones actuales de pruebas unitarias del Dominio.
-- Identificar el alcance y funcionamiento del script `./analizar`.
-- Confirmar la configuración y el proyecto de Sonar utilizados por el equipo.
-- Determinar qué indicadores de Sonar se utilizarán para documentar la evolución de calidad.
+Las convenciones y proyectos de pruebas vigentes, y el script de análisis utilizado, están identificados en `implementations.md`. La última ejecución intentada de Sonar no llegó a publicar un análisis de esta entrega; por tanto, el Quality Gate y los indicadores actuales siguen pendientes de verificación. No se usan resultados históricos como evidencia de esta entrega.

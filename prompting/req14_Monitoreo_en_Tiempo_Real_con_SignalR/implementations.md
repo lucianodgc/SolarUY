@@ -16,7 +16,7 @@ Fecha: 29/10/2026, America/Montevideo.
 
 ## Estado y acuerdos
 
-El usuario comunicó la aprobación de Luciano y autorizó completar D2 con la MariaDB compartida existente, sin Redis ni servicios adicionales. También autorizó Playwright con Chromium aislado, sin utilizar su perfil de Brave. D1/D3/D4/D5 se mantienen: intervalos UTC compatibles, vigencia de dos intervalos, totales parciales explícitos, curva de hasta 120 puntos configurables, cliente oficial SignalR 8.0.17 local y topología actual sin reasignar muestras históricas.
+Se completó D2 con la MariaDB compartida existente, sin Redis ni servicios adicionales. La verificación usó Playwright con Chromium aislado. D1/D3/D4/D5 se mantienen: intervalos UTC compatibles, vigencia de dos intervalos, totales parciales explícitos, curva de hasta 120 puntos configurables, cliente oficial SignalR 8.0.17 local y topología actual sin reasignar muestras históricas.
 
 Se completaron la distribución durable, la configuración reproducible de Nginx para dos instancias y las verificaciones del cliente interactivo. Esto no constituye un despliegue sobre el entorno habitual: la migración y las pruebas se ejecutaron en bases y procesos temporales aislados.
 
@@ -68,7 +68,7 @@ Seguir [deploy/nginx/README.md](../../deploy/nginx/README.md). Aplicar las migra
 | Monitoreo__MaximoPuntosGrafico | 120 predeterminado; las pruebas lo reducen a 3 |
 | Monitoreo__ReevaluacionSegundos | Reevaluación temporal independiente de nuevas lecturas |
 
-Conservar la configuración externa de Keycloak, conexión y adquisición. El proxy de ejemplo se enlaza a loopback:18088; las aplicaciones de prueba usan 5051/5052. Integrar el listener HTTPS y certificados del despliegue de Luciano; no se instalaron certificados ni se modificó un servidor de producción. Reemplazar una instancia por vez, manteniendo la otra atendiendo.
+Conservar la configuración externa de Keycloak, conexión y adquisición. El proxy de ejemplo se enlaza a loopback:18088; las aplicaciones de prueba usan 5051/5052. El listener HTTPS y los certificados corresponden al entorno de despliegue; no se instalaron certificados ni se modificó un servidor de producción. Reemplazar una instancia por vez, manteniendo la otra atendiendo.
 
 ## Verificación reproducible
 

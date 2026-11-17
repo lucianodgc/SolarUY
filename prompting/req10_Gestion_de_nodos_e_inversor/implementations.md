@@ -27,3 +27,9 @@ Se implementó la gestión de nodos con su inversor persistido, conforme a las d
 ## Pendiente operativo
 
 No se aplicó `database update` sobre MariaDB porque la conexión disponible para el entorno devolvió acceso denegado para el usuario configurado. Tampoco se ejecutó una comprobación visual en navegador. La tarea 4.3 y la 5.5 permanecen pendientes hasta disponer de una base MariaDB autorizada y una sesión de navegador de prueba.
+
+## Corrección de borrado de inventario — 17/11/2026
+
+Se corrigió el borrado de parques con inversores: las dependencias se eliminan en orden y la baja final no provoca conflictos con entidades ya seguidas por EF. El borrado físico de parques o nodos que tengan evaluación, cambios o alertas de salud se rechaza antes de eliminar dependencias, con un mensaje que indica usar la baja lógica de paneles.
+
+Tres integraciones contra MariaDB aislada verifican el rechazo sin pérdida de datos para parque/nodo y el borrado correcto con inversor cuando no existe historial de salud. No se migró ni restableció la base habitual. Evidencia: `artifacts/correcciones/paneles-final/`.

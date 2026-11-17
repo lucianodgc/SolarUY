@@ -61,11 +61,6 @@ Incluir pruebas que verifiquen, como mínimo, los siguientes casos:
 
 Las pruebas de dominio deben validar las invariantes del parque y del nodo. Las pruebas de autorización deben comprobar que solamente los usuarios con rol Administrador pueden realizar las operaciones protegidas.
 
-## 5. Decisiones pendientes
+## Decisiones vigentes
 
-Antes de comenzar la implementación, se deben definir los siguientes aspectos:
-
-1. **Parámetros técnicos del nodo:** especificar qué parámetros deben almacenarse, por ejemplo, potencia instalada, orientación, inclinación o tensión, según los requisitos del proyecto.
-2. **Gestión del inversor:** definir si el inversor se crea junto con el nodo o si se selecciona uno existente.
-3. **Estados del inversor:** definir los estados operativos permitidos y sus reglas de transición.
-4. **Eliminación de nodos:** definir qué sucede con el inversor asociado cuando se elimina un nodo.
+Las decisiones están resueltas en [specs.md](specs.md). No requieren otra confirmación antes de usar la implementación.

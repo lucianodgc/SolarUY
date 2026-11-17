@@ -65,15 +65,9 @@ Esta funcionalidad corresponde a la **Entrega 3** y se integra con la recoleccio
 - Mantener el funcionamiento previsto con dos instancias detras de Nginx. La distribucion de eventos entre instancias debe seguir el mecanismo aprobado para monitoreo; no elegir otro transporte sin coordinacion.
 - Evitar modificar el comportamiento de la recoleccion historica o reemplazar su estado de salud existente sin una decision explicita de compatibilidad.
 
-## Decisiones Pendientes Antes de Implementar
+## Decisiones vigentes
 
-- Fuente y formula para calcular la potencia esperada (incluidas condiciones de operacion en las que una potencia baja es normal).
-- Umbrales y precedencia de `Normal`, `Degradado`, `Falla` y `Desconectado`; tiempo maximo sin datos y tratamiento de lecturas incompletas.
-- Regla de agregacion del estado de salud de los nodos.
-- Correspondencia entre los estados de salud nuevos y los estados/enumeraciones existentes de `LecturaPanel` y `Panel`, incluyendo tratamiento de datos historicos.
-- Politica de cierre/reactivacion de alertas ante fallas intermitentes, sin duplicaciones.
-
-Estas decisiones deben cerrarse sin inventar valores fijos ni modificar retroactivamente datos que no permitan inferir su estado original.
+Las decisiones están resueltas en [specs.md](specs.md). No requieren otra confirmación antes de usar la implementación.
 
 ## Pruebas y Entrega
 

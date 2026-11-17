@@ -4,7 +4,7 @@ Como usuario autenticado quiero consultar la generación de un parque, sus nodos
 
 ## Alcance aprobado
 
-- Ejecutar actualmente una instancia de SolarUY. El balanceo queda para otra etapa.
+- Este documento describe el transporte de monitoreo local. El despliegue vigente admite A/B detrás de Nginx según req15; la salud distribuida se define en req16.
 - Consultar el simulador cada 2 segundos y compartir la misma muestra con Monitoreo y Simulador mediante SignalR.
 - Guardar lecturas históricas en segundo plano cada 30 segundos; conservar Histórico y Reportes basados en MariaDB.
 - Retirar las tablas técnicas AvisosMonitoreo, CursoresMonitoreo y SecuenciaMonitoreo, y el proceso que las consulta, conservando los datos solares.
@@ -18,7 +18,7 @@ Como usuario autenticado quiero consultar la generación de un parque, sus nodos
 - Administrador, Tecnico y Consulta pueden consultar. Autorizar también consultas y suscripciones en el servidor.
 - Monitoreo no permite modificar parques, nodos, paneles ni lecturas. El simulador conserva los permisos de operación existentes.
 - La migración elimina solo las tablas técnicas; las lecturas y el inventario permanecen intactos y se siguen guardando sin duplicados.
-- Documentar qué se verificó y qué quedó pendiente. La distribución entre varias instancias no forma parte de esta versión.
+- Documentar qué se verificó y qué quedó pendiente. La continuidad entre instancias se verifica junto con req15 y req16.
 
 ## Restricciones
 

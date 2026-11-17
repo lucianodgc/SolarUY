@@ -31,7 +31,7 @@ Fuente técnica exclusiva: `specs.md`. Las tareas quedan pendientes y no se debe
 
 - [x] 4.1 Configurar persistencia EF de `Nodo` e `Inversor`, con FK parque-nodo y FK única nodo-inversor, y extender el contexto y repositorios necesarios. (Infrastructure)
 - [x] 4.2 Aplicar las restricciones de parámetros, estado y borrado aprobadas en C1, C3 y C4. (Infrastructure)
-- [ ] 4.3 Generar la migración EF incremental correspondiente y comprobar su aplicación en MariaDB configurada externamente. (Infrastructure, Verificación)
+- [x] 4.3 Generar la migración EF incremental correspondiente y comprobar su aplicación en MariaDB configurada externamente. (Infrastructure, Verificación)
 - [x] 4.4 Mantener aislado el simulador de `req5`, sin vincularlo automáticamente al inventario persistido de nodos e inversores. (Infrastructure)
 
 ## 5. Presentation

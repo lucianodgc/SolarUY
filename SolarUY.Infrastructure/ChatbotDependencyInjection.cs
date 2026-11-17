@@ -14,6 +14,8 @@ public static class ChatbotDependencyInjection
             options.Proveedor = configuration["Chatbot:Proveedor"] ?? options.Proveedor;
             options.Modelo = configuration["Chatbot:Modelo"] ?? (options.Proveedor == "OpenAI" ? "gpt-6-luna" : "qwen3:8b");
             options.EndpointOllama = configuration["Chatbot:Ollama:Endpoint"] ?? options.EndpointOllama;
+            options.PermitirHostDocker = bool.TryParse(configuration["Chatbot:Ollama:PermitirHostDocker"], out var permitirDocker)
+                && permitirDocker;
             if (configuration["Chatbot:Ollama:Contexto"] is { } contexto)
                 options.ContextoOllama = int.TryParse(contexto, out var tokens) ? tokens : 0;
             options.TransporteMcp = configuration["Chatbot:Mcp:Transporte"] ?? options.TransporteMcp;

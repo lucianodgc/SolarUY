@@ -2,7 +2,7 @@
 
 ## Estado y autorización
 
-El usuario confirmó D1–D5. Para D6 primero pidió solo propuesta y después solicitó completar los pendientes y respondió «hazlo lo mejor posible», autorizando avanzar con MariaDB compartida. Se implementaron y verificaron los pendientes técnicos, incluido el observador y V8. La coordinación de 1.7 se cerró el 17/11/2026 mediante la validación y delegación de Luciano comunicadas por el usuario; ver `coordinacion_despliegue.md`.
+Se implementaron y verificaron las decisiones D1–D6, incluido el observador distribuido y V8. El estado describe la solución del proyecto y las pruebas aisladas; no acredita un despliegue productivo.
 
 ## Reglas implementadas
 
@@ -65,7 +65,7 @@ Prueba de navegador: desde SolarUY.Browser.Tests, con la misma variable de conex
 
 Se inspeccionó la captura final: indicadores de nodo/panel coloreados, motivos completos y UTC legible sin recorte. La suite general de integración no se ejecutó completa: se seleccionaron los 57 casos relacionados con salud y sus integraciones.
 
-Coordinación cerrada el 17/11/2026 mediante la validación y delegación de Luciano comunicadas por el usuario. La elección final y su evidencia están en [coordinacion_despliegue.md](coordinacion_despliegue.md): A/B habilitadas como candidatas a recolectar con exclusión MariaDB, evaluación/observación activas e identificadores distintos; B no depende de la salud de A. La fecha original de aprobación no fue informada y no se inventa. No se ejecutó un despliegue productivo, TLS real ni un reemplazo de los servicios habituales; esas operaciones siguen a cargo del operador.
+La configuración del proyecto deja A/B como candidatas a recolectar con exclusión MariaDB, evaluación y observación activas e identificadores distintos; B no depende de la salud de A. No se ejecutó un despliegue productivo, TLS real ni un reemplazo de los servicios habituales.
 
 ## D6: observación compartida y alta disponibilidad verificadas
 
@@ -86,10 +86,16 @@ La guía deploy/nginx/README.md se actualizó para SaludDistribucion, claves y p
 
 ## Cierre delegado de coordinación — 17/11/2026
 
-El usuario informó la validación de Luciano y la delegación de la elección técnica. Se actualizó `compose.yaml`: adquisición, evaluación y observación activas en A/B; IDs de observadores distintos; B depende de MariaDB y Keycloak, sin depender de la salud de A. La exclusión por sesión y la consulta de paneles pendientes por intervalo UTC mantienen un único propietario de adquisición; la candidata restante puede continuar sin promoción manual. No hay primaria fija, garantía de relevo instantáneo ante partición ni reconstrucción automática de intervalos perdidos.
+Se actualizó `compose.yaml`: adquisición, evaluación y observación activas en A/B; IDs de observadores distintos; B depende de MariaDB y Keycloak, sin depender de la salud de A. La exclusión por sesión y la consulta de paneles pendientes por intervalo UTC mantienen un único propietario de adquisición; la candidata restante puede continuar sin promoción manual. No hay primaria fija, garantía de relevo instantáneo ante partición ni reconstrucción automática de intervalos perdidos.
 
-Se actualizaron `coordinacion_despliegue.md`, `propuesta_decisiones.md`, `specs.md`, `tasks.md` y `deploy/nginx/README.md`. Quedan cerradas 1.7.2, 1.7 y 1, registrando el testimonio del usuario sin inventar fecha original de aprobación, contacto directo ni despliegue real.
+Se actualizaron `specs.md`, `tasks.md` y `deploy/nginx/README.md`. Quedan cerradas las tareas técnicas 1.7.2, 1.7 y 1. El despliegue del entorno real no forma parte de la evidencia registrada.
 
 Verificación de este cambio: `docker compose config --quiet` y comprobación de configuración efectiva correctas (sin imprimir secretos); 9 CodeQuality aprobadas; 4 integraciones aprobadas con MariaDB temporal y TCP compartido: `DosProcesos_RecolectanSinDuplicarYContinuanTrasTerminarElPrimero`, `ConexionPerdida_NoPermiteGuardarYOtraSesionPuedeRetomar`, `DosRecolectores_SoloElPropietarioDelBloqueoLeeYGuarda` y `Workers_DosHostsRecolectanPeriodicamenteSinDuplicarYSeDetienen`. Las cuatro tardaron 6 segundos, sin omisiones. Se usaron los binarios existentes de Integration/CodeQuality (`--no-build`); no cambió C#. El simulador separado se compiló sin errores ni advertencias. La primera pasada del caso de procesos falló por falta del endpoint TCP de prueba; tras levantar el simulador real aislado, la repetición completa pasó sin modificar los tests. No se repitieron navegador ni todas las suites de la solución por este ajuste de configuración.
 
 Entorno temporal: MariaDB `solaruy_req007_test_relevo` en 33329, contenedor `solaruy-req016-relevo` y simulador TCP en 15017. Se detienen y eliminan al finalizar. No se recrearon las aplicaciones habituales ni se migró su base. `git diff --check` sin errores.
+
+## Corrección de borrado de inventario — 17/11/2026
+
+Se corrigió el borrado de parques con inversores: las dependencias se eliminan en orden y la baja final no provoca conflictos con entidades ya seguidas por EF. El borrado físico de parques o nodos que tengan evaluación, cambios o alertas de salud se rechaza antes de eliminar dependencias, con un mensaje que indica usar la baja lógica de paneles.
+
+Tres integraciones contra MariaDB aislada verifican el rechazo sin pérdida de datos para parque/nodo y el borrado correcto con inversor cuando no existe historial de salud. No se migró ni restableció la base habitual. Evidencia: `artifacts/correcciones/paneles-final/`.

@@ -13,7 +13,7 @@ Fuente funcional: `requirements.md` de esta carpeta. El alcance comprende una pa
 - Consultar el inventario persistido: parque obligatorio y nodo opcional perteneciente al parque. Sin nodo, el reporte representa el parque completo; con nodo, únicamente ese nodo. No agregar filtro por panel, comparación entre períodos, PDF ni exportación de imágenes a este requerimiento.
 - La card Mantenimiento de `Home.razor` enlaza a `MantenimientoPaneles.razor`. Esta página usa `ITareaMantenimientoService` y `TareaMantenimientoDto`; no existe un componente independiente que pueda reutilizarse como resumen. Reutilizar sus registros, conceptos y campos de consulta, sin copiar el flujo de gestión al reporte.
 - El servicio de mantenimiento actual permite Administrador y Tecnico, y limita al técnico a sus tareas. El criterio 8 de req8 autoriza a los tres roles a leer reportes de todos los parques: incorporar una consulta específica de solo lectura para el reporte, conservando los permisos de gestión y la página `/mantenimiento`.
-- No modificar el recolector, reconstruir mediciones faltantes ni corregir como parte de este alcance el rendimiento pendiente de req7, tarea 6.8. Registrar esa dependencia al verificar la solución.
+- No modificar el recolector ni reconstruir mediciones faltantes desde reportes. La consulta y su rendimiento pertenecen a req7; la tarea 6.8 quedó verificada allí en la revisión del 17/11/2026.
 
 ### Q1. Definición de mantenimiento realizado
 
@@ -177,4 +177,4 @@ Registrar comandos, configuración no secreta, resultados, omisiones y fallos. L
 
 ### C1. Documentación de implementación
 
-La última tarea crea `implementations.md` en esta carpeta con cambios realizados, archivos tocados y resultados de las pruebas. Registrar las respuestas a Q1/Q2 en esta especificación antes de cerrar sus tareas dependientes. Actualizar `tasks.md` solo con evidencia de ejecución y declarar los bloqueos o verificaciones pendientes.
+La última tarea crea `implementations.md` en esta carpeta con cambios realizados, archivos tocados y resultados de las pruebas. Q1/Q2 ya están resueltas en esta especificación. Actualizar `tasks.md` solo con evidencia de ejecución y declarar los bloqueos o verificaciones pendientes.

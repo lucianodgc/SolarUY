@@ -86,6 +86,8 @@ public sealed class ChatbotPanelIntegrationTests(HistoricoDatabase database) : I
         var cierre = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         await using var app = ChatbotPruebasHost.Crear(5217, cierre);
         await app.StartAsync();
+        using var cliente = new HttpClient { BaseAddress = new Uri("http://127.0.0.1:5217") };
+        Assert.Equal(HttpStatusCode.Unauthorized, (await cliente.GetAsync("/chatbot")).StatusCode);
         await cierre.Task.WaitAsync(TimeSpan.FromMinutes(10));
     }
 

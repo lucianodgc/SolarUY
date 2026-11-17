@@ -49,3 +49,8 @@ Los datos de configuración actualmente definidos para `ParqueSolar` en el model
 - Ejecutar las pruebas unitarias de Domain, incluidas las nuevas pruebas de actualización de `ParqueSolar`.
 - Ejecutar `dotnet test CodeQuality.Tests/CodeQuality.Tests.csproj` para comprobar las reglas de arquitectura y nomenclatura. No se modificarán los tests estructurales para lograr su aprobación.
 - Comprobar manualmente con un usuario Administrador el alta, listado, búsqueda, edición, baja y los mensajes; y con un usuario sin ese rol, la denegación de las operaciones restringidas.
+
+
+## Protección del historial al eliminar inventario
+
+La eliminación física de un nodo o parque con estado, transiciones o alertas de salud se rechaza antes de modificar dependencias y conserva todo el historial. Para retirar paneles se utiliza la baja lógica de req18. Si no existe historial de salud, la baja administrativa mantiene el comportamiento transaccional previo y elimina también los inversores asociados.

@@ -28,8 +28,11 @@ public sealed class RecoleccionMigracionIntegrationTests
             var panel = HistoricoDatabase.CrearPanel(new Nodo(new ParqueSolar("Verificado", "Salto"), "Original", "Norte"), "Verificado");
             var lectura = new LecturaPanel(panel, new DateTime(2026, 10, 22, 15, 0, 0, DateTimeKind.Utc), 123.456789m,
                 SolarUY.Domain.Enums.EstadoSaludLectura.Fallado);
-            context.LecturasPanel.Add(lectura);
-            await context.SaveChangesAsync();
+            await SembrarPanelLegadoAsync(context, panel);
+            await context.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO LecturasPanel (Id, PanelId, NodoId, FechaHora, PotenciaGeneradaW, EstadoSalud)
+                VALUES ({lectura.Id}, {panel.Id}, {panel.NodoId}, {lectura.FechaHora}, {lectura.PotenciaGeneradaW}, {(int)lectura.EstadoSalud})
+                """);
             await migrador.MigrateAsync();
             context.ChangeTracker.Clear();
             var despues = await context.LecturasPanel.SingleAsync();
@@ -61,8 +64,7 @@ public sealed class RecoleccionMigracionIntegrationTests
             var migrador = context.GetService<IMigrator>();
             await migrador.MigrateAsync("20261022130747_AddLecturaPanel");
             var panel = HistoricoDatabase.CrearPanel(new Nodo(new ParqueSolar("Migración", "Salto"), "Nodo", "Norte"), "Migración");
-            context.Paneles.Add(panel);
-            await context.SaveChangesAsync();
+            await SembrarPanelLegadoAsync(context, panel);
             var id = Guid.NewGuid();
             var fecha = new DateTime(2026, 10, 28, 12, 0, 0, DateTimeKind.Utc);
             await context.Database.ExecuteSqlInterpolatedAsync($"""
@@ -140,5 +142,23 @@ public sealed class RecoleccionMigracionIntegrationTests
             // Solo la base temporal creada por esta prueba; nunca la base configurada por el usuario.
             await context.Database.EnsureDeletedAsync();
         }
+    }
+    // Preparar el esquema histórico sin pedir al modelo EF actual columnas de migraciones posteriores.
+    private static async Task SembrarPanelLegadoAsync(ApplicationDbContext context, Panel panel)
+    {
+        var nodo = panel.Nodo;
+        var parque = nodo.Parque;
+        await context.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO ParquesSolares (Id, Nombre, Ubicacion, CapacidadEstimadaMW, FechaCreacion)
+            VALUES ({parque.Id}, {parque.Nombre}, {parque.Ubicacion}, {parque.CapacidadEstimadaMW}, {parque.FechaCreacion})
+            """);
+        await context.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO Nodos (Id, ParqueId, Nombre, UbicacionEnParque, CantidadPanelesPrevista)
+            VALUES ({nodo.Id}, {parque.Id}, {nodo.Nombre}, {nodo.UbicacionEnParque}, {nodo.CantidadPanelesPrevista})
+            """);
+        await context.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO Paneles (Id, NodoId, NumeroSerie, Marca, Modelo, PotenciaNominalW, FechaInstalacion, Estado)
+            VALUES ({panel.Id}, {nodo.Id}, {panel.NumeroSerie}, {panel.Marca}, {panel.Modelo}, {panel.PotenciaNominalW}, {panel.FechaInstalacion}, {(int)panel.Estado})
+            """);
     }
 }

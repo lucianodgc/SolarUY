@@ -14,7 +14,7 @@ No se modifica el dominio. La alta disponibilidad es una propiedad del despliegu
 
 No se modifican casos de uso ni contratos de Application. Las dos instancias consultan la misma base de datos mediante la configuración existente.
 
-El worker de recolección histórica se habilita solo en `solaruy-a`: el worker actual no tiene elección distribuida de propietario y habilitarlo en ambas instancias podría duplicar la recolección.
+El worker de recolección está habilitado en A/B. La exclusión de MariaDB evita adquisiciones concurrentes del mismo intervalo y permite relevo sin promoción manual.
 
 ## Infrastructure
 
@@ -53,3 +53,8 @@ El worker de recolección histórica se habilita solo en `solaruy-a`: el worker 
 - Validar el Compose con `docker compose config --quiet` después de completar las variables requeridas del `.env`.
 - Verificar manualmente salud, identificador de instancia y continuidad al detener y reemplazar una instancia por vez.
 - No se requiere modificar ni ejecutar pruebas automatizadas para esta especificación.
+
+
+## Simulador compartido y chatbot
+
+Compose ejecuta un único servicio `simulador`, sin publicar TCP al host, y ambas webs lo consultan por ese nombre. El chat usa Ollama del host mediante el endpoint y permiso explícitos de req17. El proxy confiable se configura con la IP del Nginx del Compose.

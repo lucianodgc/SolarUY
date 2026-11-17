@@ -2,7 +2,7 @@
 
 ## Actualización de integración frontend
 
-Mantenimiento se integra en el inicio y menú por rol, con cabeceras compartidas, filtros, tabla con paginación/ordenación y acciones compactas. Creación presenta notificación de éxito. En navegador se comprobó la carga de tareas reales y de opciones de panel/técnico sin modificar las tareas existentes. Las transiciones conservan su implementación y verificación original. Detalle en [frontend_integracion.md](../frontend_integracion.md).
+Mantenimiento se integra en el inicio y menú por rol, con cabeceras compartidas, filtros, tabla con paginación/ordenación y acciones compactas. Creación presenta notificación de éxito. En navegador se comprobó la carga de tareas reales y de opciones de panel/técnico sin modificar las tareas existentes. Las transiciones conservan su implementación y verificación original. Detalle en [frontend_integracion.md](../Reportes%20de%20codex/frontend_integracion.md).
 
 ## Resultado
 
@@ -54,7 +54,7 @@ Se completaron el modelo, persistencia incremental, directorio de técnicos, per
 - SolarUY.Presentation/Components/Layout/NavMenu.razor: acceso por roles al mantenimiento.
 - keycloak/realm/solaruy-realm.json: cliente confidencial de directorio y service account con view-users/query-users, sin secreto fijo.
 - .gitignore: retirada de la exclusión concreta de App.razor para recuperar un componente requerido.
-- requierements.md, specs.md y tasks.md de esta carpeta: decisiones confirmadas, diseño final y avance verificable.
+- requirements.md, specs.md y tasks.md de esta carpeta: decisiones vigentes, diseño final y avance verificable.
 
 No se modificaron reglas, skills, guardarraíles de CodeQuality.Tests ni las versiones autorizadas. En la corrección posterior de EF CLI se incorporó el proveedor oficial Microsoft.Extensions.Configuration.UserSecrets 8.0.1 solicitado para compartir la configuración de diseño. Los cambios se guardaron en UTF-8 sin BOM. Las altas de Nodo/Panel, Inversor, LecturaPanel y el resto de req3/req5 permanecen fuera del alcance.
 

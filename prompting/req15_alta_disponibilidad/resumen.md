@@ -1,3 +1,5 @@
 # Resumen
 
-Se preparó SolarUY para ejecutarse en dos instancias Docker detrás de Nginx, compartir las claves de Data Protection y comprobar salud y continuidad durante reemplazos. Compose requiere el secreto OIDC del cliente `solaruy-web` en `.env`. La validación de configuración pasó; queda demostrar caída y actualización con Docker Desktop y las credenciales locales.
+Dos instancias web comparten MariaDB, claves de sesión y simulador TCP detrás de Nginx. El arranque se realiza con Iniciar-Demo.ps1 -AltaDisponibilidad tras preparar .env y los dos secretos de Keycloak. Ollama del host debe estar accesible desde Docker.
+
+Se validaron configuración, sintaxis y construcción de las imágenes. El usuario había informado una demostración de caída/actualización correcta; en esta corrección no se repitió ese recorrido ni el login real. El detalle y sus límites están en implementations.md.

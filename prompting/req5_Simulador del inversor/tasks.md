@@ -34,7 +34,7 @@
 
 - [x] 4.1 Registrar el puerto desde `AddSolarInfrastructure`, sin referencias de Application/Domain a la clase concreta.
 - [x] 4.2 Incorporar `/simulador`, acceso desde inicio/menú, selector de nodos, potencia/estado de paneles y volcado, controles de actualización y mensajes de carga/error.
-- [x] 4.3 Incorporar casos de uso de Application que validan identidad/roles: Administrador opera; Técnico y Consulta solo consultan, según confirmación del usuario.
+- [x] 4.3 Incorporar casos de uso de Application que validan identidad/roles: Administrador opera; Técnico y Consulta solo consultan.
 - [x] 4.4 Enumerar los nodos y paneles del inventario persistido mediante Application y sincronizarlo con el simulador por TCP.
 - [x] 4.5 Actualizar automáticamente las lecturas cada cinco segundos y detener el refresco al salir de la página.
 

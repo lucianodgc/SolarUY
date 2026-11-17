@@ -55,7 +55,7 @@ Las dos pueden tener habilitada la recolección: el bloqueo compartido mantiene 
 
 El Compose raíz habilita ambas como candidatas, con evaluación y observación de salud activas e identificadores distintos. Solo quien obtiene el bloqueo MariaDB adquiere las lecturas pendientes del intervalo UTC compartido. Si cae esa instancia, la restante puede adquirirlo en un ciclo posterior sin promoción manual; al volver, ambas siguen compitiendo por la misma exclusión. No existe una primaria fija ni se reconstruyen automáticamente los intervalos perdidos. Un bloqueo de sesión se libera cuando MariaDB detecta el cierre de la conexión: no se promete relevo instantáneo ante una partición de red.
 
-B depende de MariaDB y Keycloak, no de que A esté sana. Ambas usan la imagen construida para `solaruy-a`; conservar esa imagen disponible al arrancar B por separado. La elección quedó registrada en [la coordinación de req016](../../prompting/req016_Estado_de_Salud_y_Alertas_de_Fallas/coordinacion_despliegue.md).
+B depende de MariaDB y Keycloak, no de que A esté sana. Ambas usan la imagen construida para `solaruy-a`; conservar esa imagen disponible al arrancar B por separado. La elección está documentada en [la especificación de req16](../../prompting/req16_Estado_De_Salud_Y_Alertas_De_Fallas/specs.md).
 
 ## Arranque mediante Docker Compose
 
@@ -93,7 +93,7 @@ La guía de demostración para detener una instancia y reemplazar las imágenes 
 
 - Si se desea una instancia sin adquisición, establecer además `RecoleccionLecturas__Habilitada=false`. La verificación distribuida deshabilita ambas funciones en la instancia receptora para demostrar que no depende de procesamiento local.
 
-- Las credenciales, certificados TLS y claves de Data Protection permanecen externos. Integrar el bloque de proxy con el listener HTTPS existente de Luciano.
+- Las credenciales, certificados TLS y claves de Data Protection permanecen externos. Integrar el bloque de proxy con el listener HTTPS del entorno.
 
 - Para interpretar `X-Forwarded-Proto`/`X-Forwarded-For`, configurar `ReverseProxy__Direccion` con la dirección real del proxy confiable; no confiar indiscriminadamente en cualquier cliente.
 
@@ -115,7 +115,7 @@ La guía de demostración para detener una instancia y reemplazar las imágenes 
 
    La exclusión compartida evita dos adquisiciones del mismo panel/intervalo si se solapan.
 
-3. Verificar `X-SolarUY-Instancia`, cookie de afinidad, autorización y salud vigente.
+3. Verificar `X-SolarUY-Instancia`, afinidad por IP, autorización y salud vigente.
 
    El circuito perdido de Blazor se reconstruye desde MariaDB conservando el parque de la URL; el cliente que ya estaba en B sigue conectado.
 
@@ -150,4 +150,4 @@ Definir:
 
 Resultados y límites en:
 
-`prompting/req016_Estado_de_Salud_y_Alertas_de_Fallas/implementations.md`
+`prompting/req16_Estado_De_Salud_Y_Alertas_De_Fallas/implementations.md`

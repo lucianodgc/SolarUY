@@ -4,7 +4,7 @@
 
 Se ejecutó `dotnet ef database update --project SolarUY.Infrastructure --startup-project SolarUY.Presentation --no-build` sobre `solaruy_audit_cli`, inicialmente vacía, en una MariaDB 11.8 temporal. Se aplicaron las dos migraciones existentes. También se comprobó la idempotencia y ausencia de cambios pendientes del modelo mediante integración real.
 
-El volcado `solaruy.sql` fallaba al consultarlo con EF en Linux porque sus tablas estaban en minúsculas. Se corrigieron únicamente los identificadores de tablas para coincidir con las migraciones; la importación corregida conserva los seis paneles y las seis tareas. No se modificaron migraciones ni datos reales. Se corrigió además la rehidratación UTC de `ParqueSolar.FechaCreacion`, sin cambiar el esquema. Permanece pendiente el acuerdo de distribución de configuración al equipo. Evidencia y límites en [auditoria_integral.md](../auditoria_integral.md).
+El volcado `solaruy.sql` fallaba al consultarlo con EF en Linux porque sus tablas estaban en minúsculas. Se corrigieron únicamente los identificadores de tablas para coincidir con las migraciones; la importación corregida conserva los seis paneles y las seis tareas. No se modificaron migraciones ni datos reales. Se corrigió además la rehidratación UTC de `ParqueSolar.FechaCreacion`, sin cambiar el esquema. Evidencia y límites en [auditoria_integral.md](../Reportes%20de%20codex/auditoria_integral.md).
 
 ## Registro de la revisión anterior
 
@@ -22,4 +22,4 @@ La revisión completa pasó 59 pruebas existentes. Se comprobó por lectura el h
 
 Quedan pendientes el acuerdo de distribución de configuración al equipo y la reproducción del aprovisionamiento en una base vacía, señalados en `tasks.md`. .NET utiliza user-secrets/variables de entorno y no importa automáticamente el `.env` de Compose.
 
-Ver [frontend_integracion.md](../frontend_integracion.md) para el detalle de alcance y las limitaciones de la revisión.
+Ver [frontend_integracion.md](../Reportes%20de%20codex/frontend_integracion.md) para el detalle de alcance y las limitaciones de la revisión.

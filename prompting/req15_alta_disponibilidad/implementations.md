@@ -105,3 +105,9 @@ La dirección pública debe seguir respondiendo durante los dos reemplazos. El e
 - `git diff --check`: sin errores de whitespace.
 - No se ejecutaron pruebas automatizadas. La construcción Docker aún debe repetirse después de la corrección.
 - El usuario confirmó que ejecutó las demostraciones de caída de una instancia y actualización secuencial, comprobando la disponibilidad pública.
+
+## Arranque reproducible corregido — 17/11/2026
+
+Compose incluye un simulador TCP en la red privada; A y B se conectan al mismo servicio y conservan la exclusión mutua de adquisición. Ollama del host se resuelve mediante host.docker.internal con permiso explícito limitado a ese nombre. Se configura la dirección de Nginx como proxy de confianza y MariaDB con buffer pool de 512 MiB.
+
+Se añadió `Iniciar-Demo.ps1 -AltaDisponibilidad`: valida la configuración efectiva de Compose sin imprimir secretos, inicia dependencias, espera MariaDB, aplica migraciones y construye/levanta el conjunto. El modo no restablece datos. Se verificaron sintaxis PowerShell, `docker compose config --quiet` y construcción de las imágenes web/simulador. No se ejecutó este arranque contra la base habitual ni se repitió el login real o el relevo en navegador durante esta corrección; se conserva la demostración anterior informada por el usuario.

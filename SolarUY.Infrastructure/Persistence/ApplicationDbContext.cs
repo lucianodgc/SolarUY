@@ -5,6 +5,7 @@ using MySqlConnector;
 using SolarUY.Application.Abstractions;
 using SolarUY.Application.Exceptions;
 using SolarUY.Domain.Entities;
+using SolarUY.Domain.Salud;
 
 namespace SolarUY.Infrastructure.Persistence;
 
@@ -43,9 +44,10 @@ public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
         CancellationToken cancellationToken = default)
     {
         await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
+        await VerificarBorradoPanelesAsync(Paneles.Where(panel => panel.Nodo.ParqueId == parque.Id), cancellationToken);
         await EliminarDependenciasAsync(parque.Id, cancellationToken);
-        ParquesSolares.Remove(parque);
-        await SaveChangesAsync(cancellationToken);
+        await ParquesSolares.Where(actual => actual.Id == parque.Id).ExecuteDeleteAsync(cancellationToken);
+        Entry(parque).State = EntityState.Detached;
         await transaction.CommitAsync(cancellationToken);
     }
 
@@ -111,10 +113,28 @@ public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
                 """, cancellationToken);
         }
 
+        if (await ExisteTablaAsync("Inversores", cancellationToken))
+        {
+            await Database.ExecuteSqlInterpolatedAsync($"DELETE FROM Inversores WHERE NodoId IN (SELECT Id FROM Nodos WHERE ParqueId = {parqueId})", cancellationToken);
+        }
+
         if (await ExisteTablaAsync("Nodos", cancellationToken))
         {
             await Database.ExecuteSqlInterpolatedAsync($"DELETE FROM Nodos WHERE ParqueId = {parqueId}", cancellationToken);
         }
+    }
+
+    internal async Task VerificarBorradoPanelesAsync(IQueryable<Panel> paneles, CancellationToken cancellationToken)
+    {
+        if (!await ExisteTablaAsync("Paneles", cancellationToken)) return;
+        var tieneHistorial = (await ExisteTablaAsync("SaludPaneles", cancellationToken)
+                && await Set<SaludPanel>().AnyAsync(salud => paneles.Any(panel => panel.Id == salud.PanelId), cancellationToken))
+            || (await ExisteTablaAsync("CambiosEstadoSaludPanel", cancellationToken)
+                && await Set<CambioEstadoSaludPanel>().AnyAsync(cambio => paneles.Any(panel => panel.Id == cambio.PanelId), cancellationToken))
+            || (await ExisteTablaAsync("AlertasPanel", cancellationToken)
+                && await Set<AlertaPanel>().AnyAsync(alerta => paneles.Any(panel => panel.Id == alerta.PanelId), cancellationToken));
+        if (tieneHistorial)
+            throw new InvalidOperationException("No se puede eliminar un parque o nodo con historial de salud. Da de baja sus paneles para conservar el historial.");
     }
 
     private async Task<bool> ExisteTablaAsync(string nombreTabla, CancellationToken cancellationToken)

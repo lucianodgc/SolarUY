@@ -109,6 +109,7 @@ else
             _parques = await Service.BuscarParquesSolaresAsync(_criterioBusqueda);
         }
         catch (ParqueSolarNoEncontradoException exception) { _error = exception.Message; }
+        catch (InvalidOperationException exception) { _error = exception.Message; }
         catch (Exception exception)
         {
             Logger.LogError(exception, "Error al eliminar el parque solar {ParqueId}", id);
