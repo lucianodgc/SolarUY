@@ -19,8 +19,8 @@
 
 - [x] 3.1 Documentar el inicio de la pila y las direcciones públicas de SolarUY.
 - [x] 3.2 Validar `docker compose config --quiet` con la configuración de Compose y un valor temporal para la variable obligatoria.
-- [ ] 3.3 Demostrar que Nginx sigue respondiendo al detener una instancia.
-- [ ] 3.4 Demostrar una actualización de A y B de forma secuencial, comprobando la disponibilidad pública durante el proceso.
+- [x] 3.3 Demostrar que Nginx sigue respondiendo al detener una instancia.
+- [x] 3.4 Demostrar una actualización de A y B de forma secuencial, comprobando la disponibilidad pública durante el proceso.
 
 ## 4. Cierre y documentación
 

@@ -104,4 +104,4 @@ La dirección pública debe seguir respondiendo durante los dos reemplazos. El e
 - Mantenimiento mostró la validación de URL de Keycloak aunque el secreto estaba presente en A y B: la regla HTTPS bloqueaba `http://keycloak:8080` en Development. Se limitó la excepción a ese hostname interno y entorno; `dotnet build SolarUY.Infrastructure/SolarUY.Infrastructure.csproj --no-restore` compiló correctamente, con advertencias de NuGet por falta de conexión al índice de vulnerabilidades.
 - `git diff --check`: sin errores de whitespace.
 - No se ejecutaron pruebas automatizadas. La construcción Docker aún debe repetirse después de la corrección.
-- Pendiente ejecutar la pila con las credenciales locales y mostrar la caída y la actualización secuencial; estas acciones requieren Docker Desktop y el secreto real del Keycloak local.
+- El usuario confirmó que ejecutó las demostraciones de caída de una instancia y actualización secuencial, comprobando la disponibilidad pública.
