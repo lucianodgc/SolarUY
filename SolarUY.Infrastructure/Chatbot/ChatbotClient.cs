@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using System.ClientModel;
 using ModelContextProtocol.Protocol;
+using ModelContextProtocol.Client;
 using SolarUY.Application.Chatbot;
 using SolarUY.Application.Monitoreo;
 
@@ -32,62 +33,7 @@ public sealed class ChatbotClient : IChatbotClient
         limite.CancelAfter(TimeSpan.FromSeconds(_opciones.Value.TiempoMaximoSegundos));
         try
         {
-            await using var sesion = await _conexion.AbrirAsync(limite.Token);
-            var descubiertas = await sesion.Cliente.ListToolsAsync(cancellationToken: limite.Token);
-            var esperadas = CatalogoMcpChatbot.Crear().ToDictionary(t => t.Name);
-            var resultados = new List<ResultadoConsultaChatDto>();
-            var herramientas = new List<AITool>();
-            foreach (var recibida in descubiertas)
-            {
-                if (!esperadas.TryGetValue(recibida.Name, out var esperada)
-                    || !JsonElement.DeepEquals(recibida.JsonSchema, esperada.InputSchema))
-                    return NoDisponible();
-                herramientas.Add(new ConsultaMcpFunction(esperada, sesion.Cliente, resultados));
-            }
-            if (herramientas.Count != esperadas.Count) return NoDisponible();
-            var agente = new ChatClientAgent(modelo, new ChatClientAgentOptions
-            {
-                Name = "AsistenteSolarUY", AllowConcurrentInvocation = false,
-                ChatOptions = new ChatOptions
-                {
-                    ModelId = _opciones.Value.Modelo, Instructions = Instrucciones(), Tools = herramientas,
-                    AllowMultipleToolCalls = true, MaxOutputTokens = 4096
-                }
-            });
-            var entrada = mensajes.Select(m => new ChatMessage(m.EsUsuario ? ChatRole.User : ChatRole.Assistant, m.Texto)).ToList();
-            int? cantidadParques = null;
-            if (mensajes.LastOrDefault()?.ResumenDiario == true)
-                await PrepararResumenAsync(herramientas.OfType<AIFunction>().ToDictionary(h => h.Name), entrada, limite.Token);
-            else
-            {
-                var plan = await PlanificacionChatbot.CrearAsync(modelo, _opciones.Value.Modelo, mensajes, limite.Token);
-                if (plan.Accion == "aclarar") return Aclaracion([]);
-                if (plan.Accion != "herramientas")
-                {
-                    var preparacion = await PrepararPlanAsync(plan,
-                        herramientas.OfType<AIFunction>().ToDictionary(h => h.Name), entrada, limite.Token);
-                    if (preparacion.RequiereAclaracion) return Aclaracion(resultados);
-                    cantidadParques = preparacion.Cantidad;
-                }
-            }
-            var respuesta = await agente.RunAsync(entrada, cancellationToken: limite.Token);
-            if (resultados.Count == 0)
-            {
-                entrada.Add(new(ChatRole.System, """
-                    El intento anterior no ejecutó ninguna consulta y no puede respaldar una respuesta operativa.
-                    Antes de contestar debés invocar las herramientas MCP adecuadas en ESTE turno.
-                    Usá la conversación para resolver referencias como 'agregale más información', 'cada uno' o 'esos parques'.
-                    Si antes listaste parques y piden ampliarlos, consultá el estado, generación diaria, fallas y pendientes
-                    de cada parque de esa lista. Si piden cantidad y detalle, respondé AMBAS partes con las herramientas.
-                    No repitas una respuesta anterior sin consultar y no inventes información para completar apartados.
-                    """));
-                respuesta = await agente.RunAsync(entrada, cancellationToken: limite.Token);
-            }
-            limite.Token.ThrowIfCancellationRequested();
-            var fundamentada = Fundamentar(respuesta.Text, resultados);
-            return cantidadParques is { } cantidad && fundamentada.Estado == EstadoConsultaChat.Correcto
-                ? fundamentada with { Texto = $"Cantidad de parques autorizados: {cantidad}.\n\n" + fundamentada.Texto }
-                : fundamentada;
+            return await ConsultarConModeloAsync(modelo, mensajes, limite.Token);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { return NoDisponible(); }
         catch (OperationCanceledException) { throw; }
@@ -111,6 +57,86 @@ public sealed class ChatbotClient : IChatbotClient
             _logger.LogWarning("Chatbot: consulta no disponible ({Tipo}); no se registra contenido ni credenciales.", error.GetType().Name);
             return NoDisponible();
         }
+    }
+
+    private async Task<RespuestaChatDto> ConsultarConModeloAsync(IChatClient modelo, IReadOnlyList<MensajeChatDto> mensajes,
+        CancellationToken cancellationToken)
+    {
+        await using var sesion = await _conexion.AbrirAsync(cancellationToken);
+        var resultados = new List<ResultadoConsultaChatDto>();
+        var herramientas = await ValidarCatalogoAsync(sesion.Cliente, resultados, cancellationToken);
+        if (herramientas is null) return NoDisponible();
+        var agente = new ChatClientAgent(modelo, new ChatClientAgentOptions
+        {
+            Name = "AsistenteSolarUY", AllowConcurrentInvocation = false,
+            ChatOptions = new ChatOptions
+            {
+                ModelId = _opciones.Value.Modelo, Instructions = Instrucciones(), Tools = herramientas,
+                AllowMultipleToolCalls = true, MaxOutputTokens = 4096
+            }
+        });
+        var entrada = mensajes.Select(m => new ChatMessage(m.EsUsuario ? ChatRole.User : ChatRole.Assistant, m.Texto)).ToList();
+        var preparacion = await PrepararTurnoAsync(modelo, mensajes, herramientas, entrada, cancellationToken);
+        if (preparacion.RequiereAclaracion) return Aclaracion(resultados);
+        return await ResponderAsync(agente, entrada, resultados, preparacion.Cantidad, cancellationToken);
+    }
+
+    private static async Task<RespuestaChatDto> ResponderAsync(ChatClientAgent agente, List<ChatMessage> entrada,
+        List<ResultadoConsultaChatDto> resultados, int? cantidadParques, CancellationToken cancellationToken)
+    {
+        var respuesta = await agente.RunAsync(entrada, cancellationToken: cancellationToken);
+        if (resultados.Count == 0)
+        {
+            entrada.Add(new(ChatRole.System, """
+                El intento anterior no ejecutó ninguna consulta y no puede respaldar una respuesta operativa.
+                Antes de contestar debés invocar las herramientas MCP adecuadas en ESTE turno.
+                Usá la conversación para resolver referencias como 'agregale más información', 'cada uno' o 'esos parques'.
+                Si antes listaste parques y piden ampliarlos, consultá el estado, generación diaria, fallas y pendientes
+                de cada parque de esa lista. Si piden cantidad y detalle, respondé AMBAS partes con las herramientas.
+                No repitas una respuesta anterior sin consultar y no inventes información para completar apartados.
+                """));
+            respuesta = await agente.RunAsync(entrada, cancellationToken: cancellationToken);
+        }
+        cancellationToken.ThrowIfCancellationRequested();
+        var fundamentada = Fundamentar(respuesta.Text, resultados);
+        return cantidadParques is { } cantidad && fundamentada.Estado == EstadoConsultaChat.Correcto
+            ? fundamentada with { Texto = $"Cantidad de parques autorizados: {cantidad}.\n\n" + fundamentada.Texto }
+            : fundamentada;
+    }
+
+    private static async Task<List<AITool>?> ValidarCatalogoAsync(McpClient cliente,
+        List<ResultadoConsultaChatDto> resultados, CancellationToken cancellationToken)
+    {
+        var descubiertas = await cliente.ListToolsAsync(cancellationToken: cancellationToken);
+        var esperadas = CatalogoMcpChatbot.Crear().ToDictionary(t => t.Name);
+        var herramientas = new List<AITool>();
+        foreach (var recibida in descubiertas)
+        {
+            if (!esperadas.Remove(recibida.Name, out var esperada)
+                || !JsonElement.DeepEquals(recibida.JsonSchema, esperada.InputSchema))
+                return null;
+            herramientas.Add(new ConsultaMcpFunction(esperada, cliente, resultados));
+        }
+        return esperadas.Count == 0 ? herramientas : null;
+    }
+
+    private async Task<(int? Cantidad, bool RequiereAclaracion)> PrepararTurnoAsync(IChatClient modelo,
+        IReadOnlyList<MensajeChatDto> mensajes, List<AITool> herramientas, List<ChatMessage> entrada,
+        CancellationToken cancellationToken)
+    {
+        var funciones = herramientas.OfType<AIFunction>().ToDictionary(h => h.Name);
+        if (mensajes.Count > 0 && mensajes[^1].ResumenDiario)
+        {
+            await PrepararResumenAsync(funciones, entrada, cancellationToken);
+            return (null, false);
+        }
+        var plan = await PlanificacionChatbot.CrearAsync(modelo, _opciones.Value.Modelo, mensajes, cancellationToken);
+        return plan.Accion switch
+        {
+            "aclarar" => (null, true),
+            "herramientas" => (null, false),
+            _ => await PrepararPlanAsync(plan, funciones, entrada, cancellationToken)
+        };
     }
 
     private string Instrucciones() => """
@@ -170,25 +196,38 @@ public sealed class ChatbotClient : IChatbotClient
         var listado = await AdjuntarConsultaAsync(herramientas["ListarParquesAsync"], [], entrada, cancellationToken);
         if (listado.Estado != EstadoConsultaChat.Correcto || listado.Datos is not JsonElement datos) return (null, false);
         var disponibles = datos.Deserialize<ParqueMonitoreoDto[]>(CatalogoMcpChatbot.Json) ?? [];
+        var seleccionados = SeleccionarParques(plan, disponibles);
+        if (seleccionados is null) return (null, true);
+        await AdjuntarPlanAsync(plan, seleccionados, herramientas, entrada, cancellationToken);
+        entrada.Add(new(ChatRole.System, $"Las consultas del plan ya se ejecutaron por MCP. Hay {disponibles.Length} parques autorizados; "
+            + $"este turno incluye {seleccionados.Count}. Respondé con esos resultados, cubrí cada parque incluido y todas las partes pedidas. "
+            + "Los fallos o permisos denegados deben figurar como apartados no disponibles. No repitas consultas ya adjuntadas."));
+        return (disponibles.Length, false);
+    }
+
+    private static IReadOnlyList<ParqueMonitoreoDto>? SeleccionarParques(PlanConsultaChatbot plan, ParqueMonitoreoDto[] disponibles)
+    {
+        if (plan.Parques.Count == 0) return disponibles;
         var seleccionados = new List<ParqueMonitoreoDto>();
         foreach (var referencia in plan.Parques)
         {
             var coincidencias = disponibles.Where(p => Guid.TryParse(referencia, out var id) ? p.Id == id
                 : string.Equals(p.Nombre, referencia, StringComparison.OrdinalIgnoreCase)).ToArray();
-            if (coincidencias.Length != 1) return (null, true);
+            if (coincidencias.Length != 1) return null;
             if (!seleccionados.Any(p => p.Id == coincidencias[0].Id)) seleccionados.Add(coincidencias[0]);
         }
-        if (plan.Parques.Count == 0) seleccionados.AddRange(disponibles);
+        return seleccionados;
+    }
+
+    private static async Task AdjuntarPlanAsync(PlanConsultaChatbot plan, IReadOnlyList<ParqueMonitoreoDto> seleccionados,
+        IReadOnlyDictionary<string, AIFunction> herramientas, List<ChatMessage> entrada, CancellationToken cancellationToken)
+    {
         if (plan.Accion == "detallar_parques")
             foreach (var consulta in PlanResumenChatbot.Crear(seleccionados))
                 await AdjuntarConsultaAsync(herramientas[consulta.Herramienta], new() { ["parque"] = consulta.Parque }, entrada, cancellationToken);
         else if (plan.Accion == "estado_parques")
             foreach (var parque in seleccionados)
                 await AdjuntarConsultaAsync(herramientas["ConsultarEstadoActualAsync"], new() { ["parque"] = parque.Id.ToString("D") }, entrada, cancellationToken);
-        entrada.Add(new(ChatRole.System, $"Las consultas del plan ya se ejecutaron por MCP. Hay {disponibles.Length} parques autorizados; "
-            + $"este turno incluye {seleccionados.Count}. Respondé con esos resultados, cubrí cada parque incluido y todas las partes pedidas. "
-            + "Los fallos o permisos denegados deben figurar como apartados no disponibles. No repitas consultas ya adjuntadas."));
-        return (disponibles.Length, false);
     }
 
     private static async Task PrepararResumenAsync(IReadOnlyDictionary<string, AIFunction> herramientas,

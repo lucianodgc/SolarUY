@@ -13,7 +13,7 @@ public sealed class Panel
         ArgumentException.ThrowIfNullOrWhiteSpace(numeroSerie);
         ArgumentException.ThrowIfNullOrWhiteSpace(marca);
         ArgumentException.ThrowIfNullOrWhiteSpace(modelo);
-        if (potenciaNominalW <= 0) throw new ArgumentOutOfRangeException(nameof(potenciaNominalW));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(potenciaNominalW);
         if (fechaInstalacion == default || fechaInstalacion.Kind != DateTimeKind.Utc)
             throw new ArgumentException("La fecha de instalación debe ser un instante UTC.", nameof(fechaInstalacion));
         if (!Enum.IsDefined(estado))
@@ -72,7 +72,7 @@ public sealed class Panel
         ArgumentException.ThrowIfNullOrWhiteSpace(numeroSerie);
         ArgumentException.ThrowIfNullOrWhiteSpace(marca);
         ArgumentException.ThrowIfNullOrWhiteSpace(modelo);
-        if (potenciaNominalW <= 0) throw new ArgumentOutOfRangeException(nameof(potenciaNominalW));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(potenciaNominalW);
         if (fechaInstalacion == default || fechaInstalacion.Kind != DateTimeKind.Utc)
             throw new ArgumentException("La fecha de instalación debe ser un instante UTC.", nameof(fechaInstalacion));
         if (!Enum.IsDefined(estado)) throw new ArgumentOutOfRangeException(nameof(estado));

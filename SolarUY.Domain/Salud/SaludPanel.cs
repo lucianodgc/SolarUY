@@ -28,15 +28,8 @@ public sealed class SaludPanel
     {
         ValidarUtc(referenciaUtc);
         if (referenciaUtc < EvaluadoUtc) return null;
-        if (resultado.Suficiente != resultado.Estado.HasValue) throw new ArgumentException("Clasificación inconsistente.", nameof(resultado));
-        if (resultado.Estado.HasValue && !Enum.IsDefined(resultado.Estado.Value)) throw new ArgumentOutOfRangeException(nameof(resultado));
-        if (string.IsNullOrWhiteSpace(resultado.Motivo) || resultado.Motivo.Length > 500) throw new ArgumentException("Motivo inválido.", nameof(resultado));
-        if (resultado.EvidenciaUtc is { } evidencia)
-        {
-            ValidarUtc(evidencia);
-            if (evidencia > referenciaUtc) throw new ArgumentException("La evidencia no puede ser futura.", nameof(resultado));
-            if (NodoEvaluadoId == nodoActualId && EvidenciaUtc.HasValue && evidencia < EvidenciaUtc.Value) return null;
-        }
+        ValidarResultado(resultado, referenciaUtc);
+        if (NodoEvaluadoId == nodoActualId && resultado.EvidenciaUtc < EvidenciaUtc) return null;
         if (nodoActualId == Guid.Empty) throw new ArgumentException("Se requiere el nodo actual.", nameof(nodoActualId));
         var mismoNodo = NodoEvaluadoId == nodoActualId;
         if (!mismoNodo) PrimeraObservacionUtc = referenciaUtc;
@@ -46,6 +39,16 @@ public sealed class SaludPanel
         if (!resultado.Suficiente || resultado.Estado == Estado) return null;
         var anterior = Estado; Estado = resultado.Estado; Version++;
         return new CambioEstadoSaludPanel(Panel, anterior, Estado!.Value, referenciaUtc, Version);
+    }
+
+    private static void ValidarResultado(ResultadoSalud resultado, DateTime referenciaUtc)
+    {
+        if (resultado.Suficiente != resultado.Estado.HasValue) throw new ArgumentException("Clasificación inconsistente.", nameof(resultado));
+        if (resultado.Estado is { } estado && !Enum.IsDefined(estado)) throw new ArgumentOutOfRangeException(nameof(resultado));
+        if (string.IsNullOrWhiteSpace(resultado.Motivo) || resultado.Motivo.Length > 500) throw new ArgumentException("Motivo inválido.", nameof(resultado));
+        if (resultado.EvidenciaUtc is not { } evidencia) return;
+        ValidarUtc(evidencia);
+        if (evidencia > referenciaUtc) throw new ArgumentException("La evidencia no puede ser futura.", nameof(resultado));
     }
 
     internal static void ValidarUtc(DateTime fecha)

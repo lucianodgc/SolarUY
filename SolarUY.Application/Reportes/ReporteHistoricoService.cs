@@ -33,30 +33,36 @@ public sealed class ReporteHistoricoService : IReporteHistoricoService
         var opciones = await _historico.ListarOpcionesAsync(cancellationToken);
         var parque = opciones.SingleOrDefault(o => o.Tipo == TipoObjetivoHistorico.Parque && o.Id == filtro.ParqueId)
             ?? throw new KeyNotFoundException("El parque seleccionado no existe.");
-        OpcionHistoricoDto? nodo = null;
-        if (filtro.NodoId is { } nodoId)
-        {
-            nodo = opciones.SingleOrDefault(o => o.Tipo == TipoObjetivoHistorico.Nodo && o.Id == nodoId)
-                ?? throw new KeyNotFoundException("El nodo seleccionado no existe.");
-            if (nodo.ParqueId != filtro.ParqueId)
-                throw new ArgumentException("El nodo seleccionado no pertenece al parque.");
-        }
-        OpcionHistoricoDto? panel = null;
-        if (filtro.PanelId is { } panelId)
-        {
-            panel = opciones.SingleOrDefault(o => o.Tipo == TipoObjetivoHistorico.Panel && o.Id == panelId)
-                ?? throw new KeyNotFoundException("El panel seleccionado no existe.");
-            if (panel.ParqueId != filtro.ParqueId || (filtro.NodoId.HasValue && panel.NodoId != filtro.NodoId))
-                throw new ArgumentException("El panel no pertenece al parque o nodo seleccionado.");
-        }
-        var tipo = panel is not null ? TipoObjetivoHistorico.Panel : nodo is not null ? TipoObjetivoHistorico.Nodo : TipoObjetivoHistorico.Parque;
-        var generacion = await _historico.ConsultarAsync(new(tipo,
-            panel?.Id ?? nodo?.Id ?? parque.Id, filtro.Periodo, filtro.InicioLocal, filtro.FinLocal), cancellationToken);
+        var nodo = BuscarNodo(filtro, opciones);
+        var panel = BuscarPanel(filtro, opciones);
+        var objetivo = panel ?? nodo ?? parque;
+        var generacion = await _historico.ConsultarAsync(new(objetivo.Tipo,
+            objetivo.Id, filtro.Periodo, filtro.InicioLocal, filtro.FinLocal), cancellationToken);
         var consulta = generacion.Consulta;
         var mantenimientos = await _mantenimientos.ListarRealizadosParaReporteAsync(
             new(filtro.ParqueId, filtro.NodoId, consulta.InicioUtc, consulta.FinUtc, filtro.PanelId), cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         return new(filtro, parque.Etiqueta, nodo?.Etiqueta, generacion, mantenimientos, panel?.Etiqueta);
+    }
+
+    private static OpcionHistoricoDto? BuscarNodo(FiltroReporteDto filtro, IReadOnlyList<OpcionHistoricoDto> opciones)
+    {
+        if (filtro.NodoId is not { } id) return null;
+        var nodo = opciones.SingleOrDefault(o => o.Tipo == TipoObjetivoHistorico.Nodo && o.Id == id)
+            ?? throw new KeyNotFoundException("El nodo seleccionado no existe.");
+        if (nodo.ParqueId != filtro.ParqueId)
+            throw new ArgumentException("El nodo seleccionado no pertenece al parque.");
+        return nodo;
+    }
+
+    private static OpcionHistoricoDto? BuscarPanel(FiltroReporteDto filtro, IReadOnlyList<OpcionHistoricoDto> opciones)
+    {
+        if (filtro.PanelId is not { } id) return null;
+        var panel = opciones.SingleOrDefault(o => o.Tipo == TipoObjetivoHistorico.Panel && o.Id == id)
+            ?? throw new KeyNotFoundException("El panel seleccionado no existe.");
+        if (panel.ParqueId != filtro.ParqueId || (filtro.NodoId.HasValue && panel.NodoId != filtro.NodoId))
+            throw new ArgumentException("El panel no pertenece al parque o nodo seleccionado.");
+        return panel;
     }
 
     public async Task<ArchivoReporteCsvDto> ExportarCsvAsync(ResultadoReporteDto reporte,
@@ -65,7 +71,12 @@ public sealed class ReporteHistoricoService : IReporteHistoricoService
         await AutorizarAsync(cancellationToken);
         ArgumentNullException.ThrowIfNull(reporte);
         var consulta = reporte.Generacion.Consulta;
-        var tipo = reporte.Filtro.PanelId.HasValue ? TipoObjetivoHistorico.Panel : reporte.Filtro.NodoId.HasValue ? TipoObjetivoHistorico.Nodo : TipoObjetivoHistorico.Parque;
+        var tipo = (reporte.Filtro.PanelId, reporte.Filtro.NodoId) switch
+        {
+            (not null, _) => TipoObjetivoHistorico.Panel,
+            (_, not null) => TipoObjetivoHistorico.Nodo,
+            _ => TipoObjetivoHistorico.Parque
+        };
         if (consulta.Tipo != tipo || consulta.ObjetivoId != (reporte.Filtro.PanelId ?? reporte.Filtro.NodoId ?? reporte.Filtro.ParqueId)
             || consulta.InicioUtc >= consulta.FinUtc || string.IsNullOrWhiteSpace(reporte.Parque))
             throw new ArgumentException("El resultado no corresponde a un reporte válido.");

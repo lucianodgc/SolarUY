@@ -2,6 +2,7 @@ namespace SolarUY.Domain.Entities;
 
 public enum AccionOrdenInversor { ActivarPanel, DesactivarPanel, ActivarVolcadoRed, DesactivarVolcadoRed }
 public enum EstadoOrdenInversor { Pendiente, Confirmada, Rechazada, Fallida, Indeterminada }
+public readonly record struct ActorOrdenInversor(string? Sub, bool Autenticado, bool Administrador);
 
 public sealed class IntentoOrdenInversor
 {
@@ -22,16 +23,16 @@ public sealed class IntentoOrdenInversor
     public EstadoOrdenInversor Estado { get; private set; }
     public string Codigo { get; private set; } = "pendiente";
 
-    public IntentoOrdenInversor(Guid correlacion, string? actorSub, bool autenticado, bool administrador,
+    public IntentoOrdenInversor(Guid correlacion, ActorOrdenInversor actor,
         AccionOrdenInversor accion, string? nodoSolicitado, string? panelSolicitado, DateTime solicitadaUtc)
     {
         if (correlacion == Guid.Empty) throw new ArgumentException("La correlación es obligatoria.", nameof(correlacion));
         if (!Enum.IsDefined(accion)) throw new ArgumentOutOfRangeException(nameof(accion));
         ValidarUtc(solicitadaUtc);
-        if (actorSub?.Length > 255 || nodoSolicitado?.Length > 128 || panelSolicitado?.Length > 128)
+        if (actor.Sub?.Length > 255 || nodoSolicitado?.Length > 128 || panelSolicitado?.Length > 128)
             throw new ArgumentException("Identificador demasiado largo.");
-        Id = Guid.NewGuid(); Correlacion = correlacion; ActorSub = string.IsNullOrWhiteSpace(actorSub) ? null : actorSub;
-        Autenticado = autenticado; Administrador = administrador; Accion = accion;
+        Id = Guid.NewGuid(); Correlacion = correlacion; ActorSub = string.IsNullOrWhiteSpace(actor.Sub) ? null : actor.Sub;
+        Autenticado = actor.Autenticado; Administrador = actor.Administrador; Accion = accion;
         NodoSolicitado = nodoSolicitado; PanelSolicitado = panelSolicitado; SolicitadaUtc = solicitadaUtc;
         if (accion is AccionOrdenInversor.ActivarPanel or AccionOrdenInversor.DesactivarPanel)
             DestinoNombre = "Panel solicitado";

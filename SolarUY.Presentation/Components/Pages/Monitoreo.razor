@@ -7,7 +7,6 @@
 @using SolarUY.Application.Inversores
 @implements IAsyncDisposable
 @inject IMonitoreoService Servicio
-@inject TelemetriaMonitoreoMapper MapeadorTelemetria
 @inject SerieMonitoreoService Serie
 @inject ConfiguracionRecoleccion Configuracion
 @inject IJSRuntime Js
@@ -146,7 +145,7 @@
         {
             _parques = await Servicio.ListarParquesAsync(_fin.Token); _parqueId = _parques.FirstOrDefault()?.Id ?? Guid.Empty;
             if (ParqueSeleccionado is { } solicitado && _parques.Any(p => p.Id == solicitado)) _parqueId = solicitado;
-            if (_parqueId != Guid.Empty) await ActualizarAsync(false);
+            if (_parqueId != Guid.Empty) await ActualizarAsync();
         }
         catch (Exception ex) { RegistrarError(ex); }
     }
@@ -179,7 +178,7 @@
             try { await _puente.InvokeVoidAsync("seleccionar", _parqueId.ToString("D")); }
             catch (JSException) { _conexion = "Sin suscripción"; }
         }
-        await ActualizarAsync(false);
+        await ActualizarAsync();
     }
 
     [JSInvokable]
@@ -188,7 +187,7 @@
         if (Guid.TryParse(parqueId, out var parqueSalud) && parqueSalud == _parqueId && _salud is not null)
             await _salud.ActualizarAsync();
         if (_ultimaTelemetriaUtc == default && Guid.TryParse(parqueId, out var id) && id == _parqueId)
-            await ActualizarAsync(false);
+            await ActualizarAsync();
     });
 
     [JSInvokable]
@@ -196,7 +195,7 @@
     {
         Logger.LogDebug("Muestra de telemetría recibida: {Nodos} nodos.", nodos.Count);
         if (nodos.Count == 0 || nodos[0].ParqueId != _parqueId) return;
-        var estado = MapeadorTelemetria.Mapear(_parqueId, nodos);
+        var estado = TelemetriaMonitoreoMapper.Mapear(_parqueId, nodos);
         _estado = estado;
         _puntos = Serie.Actualizar(estado);
         _ultimaTelemetriaUtc = DateTime.UtcNow;
@@ -213,35 +212,45 @@
         StateHasChanged();
     });
 
-    private async Task ActualizarAsync(bool reevaluar)
+    private async Task ActualizarAsync()
     {
         if (_fin.IsCancellationRequested || _parqueId == Guid.Empty || _conexion == "Sesión no autorizada") return;
-        if (_actualizando) { if (!reevaluar) _pendiente = true; return; }
+        if (_actualizando)
+        {
+            _pendiente = true;
+            return;
+        }
         _actualizando = true;
         try
         {
             do
             {
                 _pendiente = false;
-                var version = Interlocked.Read(ref _version); var parque = _parqueId;
-                _carga?.Dispose(); _carga = CancellationTokenSource.CreateLinkedTokenSource(_fin.Token);
-                try
-                {
-                    var nuevo = reevaluar ? await Servicio.ReevaluarAsync(parque, _carga.Token)
-                        : await Servicio.ConsultarAsync(parque, _carga.Token);
-                    if (_ultimaTelemetriaUtc == default && version == Interlocked.Read(ref _version) && parque == _parqueId && !_fin.IsCancellationRequested
-                        && (_estado is null || nuevo.EvaluadoUtc >= _estado.EvaluadoUtc))
-                    {
-                        _estado = nuevo; _puntos = Serie.Actualizar(nuevo); _error = null;
-                        if (!reevaluar) _ultimaConsultaUtc = DateTime.UtcNow;
-                    }
-                }
-                catch (OperationCanceledException) when (_carga.IsCancellationRequested) { }
-                catch (Exception ex) { if (version == Interlocked.Read(ref _version)) RegistrarError(ex); }
-                reevaluar = false;
+                await ConsultarPersistidosAsync();
             } while (_pendiente && !_fin.IsCancellationRequested);
         }
         finally { _actualizando = false; if (!_fin.IsCancellationRequested) StateHasChanged(); }
+    }
+
+    private async Task ConsultarPersistidosAsync()
+    {
+        var version = Interlocked.Read(ref _version);
+        var parque = _parqueId;
+        _carga?.Dispose();
+        var carga = CancellationTokenSource.CreateLinkedTokenSource(_fin.Token);
+        _carga = carga;
+        try
+        {
+            var nuevo = await Servicio.ConsultarAsync(parque, carga.Token);
+            if (_ultimaTelemetriaUtc != default || _fin.IsCancellationRequested || !Corresponde(nuevo, version, parque))
+                return;
+            _estado = nuevo;
+            _puntos = Serie.Actualizar(nuevo);
+            _error = null;
+            _ultimaConsultaUtc = DateTime.UtcNow;
+        }
+        catch (OperationCanceledException) when (carga.IsCancellationRequested) { /* Se canceló la consulta. */ }
+        catch (Exception ex) { if (version == Interlocked.Read(ref _version)) RegistrarError(ex); }
     }
 
     private async Task ReevaluarPeriodicamenteAsync()
@@ -249,40 +258,45 @@
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(Opciones.Value.ReevaluacionSegundos));
         try
         {
-            while (await timer.WaitForNextTickAsync(_fin.Token)) await InvokeAsync(async () =>
-            {
-                if (_estado is null || _conexion == "Sesión no autorizada") return;
-                if (_ultimaTelemetriaUtc != default)
-                {
-                    if (DateTime.UtcNow - _ultimaTelemetriaUtc > TimeSpan.FromSeconds(6))
-                    {
-                        _conexion = "Sin datos recientes";
-                        _estado = null;
-                        StateHasChanged();
-                    }
-                    return;
-                }
-                var version = Interlocked.Read(ref _version); var parque = _parqueId;
-                try
-                {
-                    var consultarPersistencia = DateTime.UtcNow - _ultimaConsultaUtc >= Configuracion.Intervalo;
-                    var nuevo = consultarPersistencia
-                        ? await Servicio.ConsultarAsync(parque, _fin.Token)
-                        : await Servicio.ReevaluarAsync(parque, _fin.Token);
-                    if (version == Interlocked.Read(ref _version) && parque == _parqueId
-                        && (_estado is null || nuevo.EvaluadoUtc >= _estado.EvaluadoUtc))
-                    {
-                        _estado = nuevo; _puntos = Serie.Actualizar(nuevo);
-                        if (consultarPersistencia) _ultimaConsultaUtc = DateTime.UtcNow;
-                        StateHasChanged();
-                    }
-                }
-                catch (OperationCanceledException) when (_fin.IsCancellationRequested) { }
-                catch (Exception ex) { RegistrarError(ex); }
-            });
+            while (await timer.WaitForNextTickAsync(_fin.Token)) await InvokeAsync(ReevaluarEstadoAsync);
         }
-        catch (OperationCanceledException) when (_fin.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (_fin.IsCancellationRequested) { /* La cancelación termina el trabajo pendiente. */ }
     }
+
+    private async Task ReevaluarEstadoAsync()
+    {
+        if (_estado is null || _conexion == "Sesión no autorizada") return;
+        if (_ultimaTelemetriaUtc != default)
+        {
+            if (DateTime.UtcNow - _ultimaTelemetriaUtc > TimeSpan.FromSeconds(6))
+            {
+                _conexion = "Sin datos recientes";
+                _estado = null;
+                StateHasChanged();
+            }
+            return;
+        }
+        var version = Interlocked.Read(ref _version);
+        var parque = _parqueId;
+        try
+        {
+            var consultarPersistencia = DateTime.UtcNow - _ultimaConsultaUtc >= Configuracion.Intervalo;
+            var nuevo = consultarPersistencia
+                ? await Servicio.ConsultarAsync(parque, _fin.Token)
+                : await Servicio.ReevaluarAsync(parque, _fin.Token);
+            if (!Corresponde(nuevo, version, parque)) return;
+            _estado = nuevo;
+            _puntos = Serie.Actualizar(nuevo);
+            if (consultarPersistencia) _ultimaConsultaUtc = DateTime.UtcNow;
+            StateHasChanged();
+        }
+        catch (OperationCanceledException) when (_fin.IsCancellationRequested) { /* La vista se cerró. */ }
+        catch (Exception ex) { RegistrarError(ex); }
+    }
+
+    private bool Corresponde(EstadoMonitoreoDto estado, long version, Guid parque)
+        => version == Interlocked.Read(ref _version) && parque == _parqueId
+            && (_estado is null || estado.EvaluadoUtc >= _estado.EvaluadoUtc);
 
     private void RegistrarError(Exception ex) { Logger.LogError(ex, "No se pudo actualizar el monitoreo."); _error = "No se pudo consultar el monitoreo. Los valores conservan su fecha original."; }
     private static string Potencia(decimal? valor) => valor.HasValue ? $"{valor.Value:N2} W" : "Sin datos vigentes";
@@ -308,7 +322,7 @@
             if (_puente is not null) { await _puente.InvokeVoidAsync("dispose"); await _puente.DisposeAsync(); }
             if (_modulo is not null) await _modulo.DisposeAsync();
         }
-        catch (JSDisconnectedException) { }
+        catch (JSDisconnectedException) { /* El circuito ya se cerró. */ }
         _referencia?.Dispose(); _carga?.Dispose(); _fin.Dispose();
     }
 }

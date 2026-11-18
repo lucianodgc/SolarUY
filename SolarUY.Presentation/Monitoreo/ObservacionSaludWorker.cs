@@ -32,7 +32,7 @@ public sealed class ObservacionSaludWorker(IServiceScopeFactory scopes, INotific
                 { logger.LogWarning(ex, "No se confirmó la entrega de salud en {Instancia}; se reintentará el snapshot.", options.Value.InstanciaId); }
             } while (await timer.WaitForNextTickAsync(stoppingToken));
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { /* La cancelación termina el trabajo pendiente. */ }
     }
 
     private async Task ObservarAsync(CancellationToken cancellationToken)
@@ -59,8 +59,8 @@ public sealed class ObservacionSaludWorker(IServiceScopeFactory scopes, INotific
             }
             avisos.Add(new(actual.ParqueId, actual.PanelId, actual.Version));
         }
-        foreach (var anterior in _confirmados.Values)
-            if (!actuales.ContainsKey(anterior.PanelId)) avisos.Add(new(anterior.ParqueId, anterior.PanelId, anterior.Version));
+        foreach (var anterior in _confirmados.Values.Where(a => !actuales.ContainsKey(a.PanelId)))
+            avisos.Add(new(anterior.ParqueId, anterior.PanelId, anterior.Version));
         if (avisos.Count > 0) await notificador.NotificarAsync(avisos, cancellationToken);
         // Solo después de la entrega completa. Reiniciar el proceso permite repetir sin perder el estado vigente.
         _confirmados = actuales;

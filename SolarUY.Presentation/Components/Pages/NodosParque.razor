@@ -2,6 +2,8 @@
 @attribute [Authorize(Roles = "Administrador,Tecnico,Consulta")]
 @rendermode InteractiveServer
 @inject INodoService Service
+@inject DialogService Dialogs
+@inject NotificationService Notifications
 
 <PageTitle>Nodos del parque</PageTitle>
 <PageHeader Title="Nodos" Section="Gestión del parque" Description="Consultá los nodos y sus inversores asociados.">
@@ -30,7 +32,7 @@ else
                     <tr><td>@nodo.Nombre</td><td>@nodo.UbicacionEnParque</td><td>@(nodo.CantidadPanelesPrevista?.ToString() ?? "Sin especificar")</td>
                         <td>@(nodo.Inversor is null ? "No registrado" : $"{nodo.Inversor.Marca} {nodo.Inversor.Modelo}")</td>
                         <td>@(nodo.Inversor?.Estado.ToString() ?? "No disponible")</td>
-                        <td>@(nodo.Inversor is null ? "No disponible" : nodo.Inversor.VolcadoRedActivo ? "Activo" : "Inactivo")</td>
+                        <td>@(nodo.Inversor?.VolcadoRedActivo switch { true => "Activo", false => "Inactivo", null => "No disponible" })</td>
                         <AuthorizeView Roles="Administrador"><td><div class="action-buttons"><a class="btn btn-outline-primary btn-sm" href="@($"/nodos/{nodo.Id}/editar")">Editar</a><RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Text="Eliminar" Disabled="_ocupado" Click="async () => await EliminarAsync(nodo.Id)" /></div></td></AuthorizeView>
                     </tr>
                 }
@@ -41,8 +43,6 @@ else
 
 @code {
     [Parameter] public Guid ParqueId { get; set; }
-    [Inject] private DialogService Dialogs { get; set; } = null!;
-    [Inject] private NotificationService Notifications { get; set; } = null!;
     private IReadOnlyList<NodoDto>? _nodos;
     private string? _error;
     private bool _ocupado;

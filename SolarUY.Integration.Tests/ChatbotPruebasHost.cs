@@ -97,7 +97,7 @@ internal static class ChatbotPruebasHost
                     throw new IOException("sk-ficticia-no-exponer");
                 var resultado = mensajes.SelectMany(m => m.Contents).OfType<FunctionResultContent>().LastOrDefault();
                 if (resultado is null) return "No se obtuvieron datos.";
-                var datos = JsonSerializer.SerializeToElement(resultado.Result, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+                var datos = JsonSerializer.SerializeToElement(resultado.Result, JsonSerializerOptions.Web);
                 var nombres = datos.GetProperty("datos").EnumerateArray().Select(p => p.GetProperty("nombre").GetString());
                 return "Parques disponibles: " + string.Join(", ", nombres) + ".";
             };

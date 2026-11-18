@@ -4,7 +4,7 @@ public sealed class ConfiguracionRecoleccion
 {
     public ConfiguracionRecoleccion(int intervaloSegundos)
     {
-        if (intervaloSegundos <= 0) throw new ArgumentOutOfRangeException(nameof(intervaloSegundos));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(intervaloSegundos);
         Intervalo = TimeSpan.FromSeconds(intervaloSegundos);
     }
 

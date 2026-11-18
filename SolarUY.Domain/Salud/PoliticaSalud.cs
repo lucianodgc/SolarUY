@@ -5,7 +5,7 @@ public sealed class PoliticaSalud
     public PoliticaSalud(TimeSpan plazoSinDatos, decimal umbralFalla = 0.5m,
         decimal umbralDegradado = 0.8m, decimal factorEsperado = 1m, bool evaluarPotenciaBaja = false)
     {
-        if (plazoSinDatos <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(plazoSinDatos));
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(plazoSinDatos, TimeSpan.Zero);
         if (umbralFalla <= 0 || umbralFalla >= umbralDegradado || umbralDegradado > 1)
             throw new ArgumentOutOfRangeException(nameof(umbralFalla));
         if (factorEsperado <= 0 || factorEsperado > 1) throw new ArgumentOutOfRangeException(nameof(factorEsperado));

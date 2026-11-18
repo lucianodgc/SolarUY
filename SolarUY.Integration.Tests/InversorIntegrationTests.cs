@@ -10,8 +10,16 @@ using SolarUY.Infrastructure.Inversores;
 namespace SolarUY.Integration.Tests;
 
 [Collection("MariaDB histórico")]
-public sealed class InversorIntegrationTests : IClassFixture<HistoricoDatabase>
+public sealed class InversorIntegrationTests(HistoricoDatabase database) : IClassFixture<HistoricoDatabase>
 {
+    private static readonly string[] NodoTres = ["00000000-0000-0000-0000-000000000003"];
+    private static readonly string[] PrimerosNodos = ["00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002"];
+    private static readonly string[] PanelesNodoTres =
+    [
+        "00000000-0000-0000-0000-000000000006", "00000000-0000-0000-0000-000000000007",
+        "00000000-0000-0000-0000-000000000008", "00000000-0000-0000-0000-000000000009"
+    ];
+
     [MariaDbHistoricoFact]
     public async Task Composicion_UsaLaTopologiaEntregadaPorElInventario()
     {
@@ -20,12 +28,12 @@ public sealed class InversorIntegrationTests : IClassFixture<HistoricoDatabase>
         var service = scope.ServiceProvider.GetRequiredService<IInversorService>();
 
         var nodos = await service.ListarNodosAsync();
-        Assert.Equal(new[] { "00000000-0000-0000-0000-000000000003" }, nodos.Select(nodo => nodo.Id));
+        Assert.Equal(NodoTres, nodos.Select(nodo => nodo.Id));
         var estado = await service.ConsultarAsync("00000000-0000-0000-0000-000000000003");
 
         Assert.Equal("Nodo existente", estado.NodoNombre);
         Assert.Equal("Parque existente", estado.ParqueNombre);
-        Assert.Equal(new[] { "00000000-0000-0000-0000-000000000006", "00000000-0000-0000-0000-000000000007", "00000000-0000-0000-0000-000000000008", "00000000-0000-0000-0000-000000000009" }, estado.Paneles.Select(p => p.PanelId));
+        Assert.Equal(PanelesNodoTres, estado.Paneles.Select(p => p.PanelId));
         Assert.All(estado.Paneles, p => Assert.True(p.EstaActivo));
         Assert.InRange(estado.PotenciaGeneradaW, 1440m, 1600m);
         Assert.True(estado.InversorEncendido);
@@ -79,7 +87,7 @@ public sealed class InversorIntegrationTests : IClassFixture<HistoricoDatabase>
         await using var provider = CrearProvider(new RelojPrueba(12));
         await using var scope = provider.CreateAsyncScope();
         var service = scope.ServiceProvider.GetRequiredService<IInversorService>();
-        Assert.Equal(new[] { "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002" }, (await service.ListarNodosAsync()).Select(nodo => nodo.Id));
+        Assert.Equal(PrimerosNodos, (await service.ListarNodosAsync()).Select(nodo => nodo.Id));
 
         await service.EstablecerPanelActivoAsync("00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000004", false);
         await service.EstablecerPanelActivoAsync("00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000004", false);
@@ -214,11 +222,11 @@ public sealed class InversorIntegrationTests : IClassFixture<HistoricoDatabase>
         Assert.InRange(encendido.PotenciaGeneradaW, 720m, 800m);
     }
 
-    private static ServiceProvider CrearProvider(RelojPrueba reloj, bool predeterminado = false,
+    private ServiceProvider CrearProvider(RelojPrueba reloj, bool predeterminado = false,
         string? falla = null, string rol = "Administrador", bool autenticado = true, string id = "usuario-prueba")
     {
         var valores = new Dictionary<string, string?>
-        { ["ConnectionStrings:SolarUY"] = Environment.GetEnvironmentVariable(HistoricoDatabase.VariableConexion) };
+        { ["ConnectionStrings:SolarUY"] = database.ConexionConfigurada };
         if (!predeterminado)
         {
             valores["InversorSimulador:Nodos:nodo-a"] = "panel-a,panel-b";
@@ -243,7 +251,7 @@ public sealed class InversorIntegrationTests : IClassFixture<HistoricoDatabase>
         return services.BuildServiceProvider(validateScopes: true);
     }
 
-    private static IInversorInventarioRepository CrearInventarioPrueba(params (string Id, string Nombre, string Parque, string[] Paneles)[] valores)
+    private static InventarioPrueba CrearInventarioPrueba(params (string Id, string Nombre, string Parque, string[] Paneles)[] valores)
         => new InventarioPrueba(valores.Select(nodo => new InventarioNodoInversorDto(nodo.Id, nodo.Nombre, nodo.Parque, Guid.NewGuid(),
             nodo.Paneles.Select(id => new InventarioPanelInversorDto(id, id, 400m, EstadoPanel.Activo)).ToArray())).ToArray());
 

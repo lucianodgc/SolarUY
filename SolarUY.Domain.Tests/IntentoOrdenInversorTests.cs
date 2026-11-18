@@ -5,7 +5,7 @@ namespace SolarUY.Domain.Tests;
 public sealed class IntentoOrdenInversorTests
 {
     private static readonly DateTime Ahora = new(2026, 11, 16, 12, 0, 0, DateTimeKind.Utc);
-    private static IntentoOrdenInversor Crear() => new(Guid.NewGuid(), "sub-real", true, true,
+    private static IntentoOrdenInversor Crear() => new(Guid.NewGuid(), new("sub-real", true, true),
         AccionOrdenInversor.DesactivarPanel, "nodo", "panel", Ahora);
 
     [Fact]
@@ -28,7 +28,7 @@ public sealed class IntentoOrdenInversorTests
     {
         Assert.Throws<InvalidOperationException>(() => Crear().Finalizar(EstadoOrdenInversor.Confirmada, "ack", Ahora));
         Assert.Throws<InvalidOperationException>(() => Crear().Finalizar(EstadoOrdenInversor.Confirmada, "ack", Ahora, true));
-        var anonimo = new IntentoOrdenInversor(Guid.NewGuid(), null, false, false, AccionOrdenInversor.ActivarVolcadoRed, null, null, Ahora);
+        var anonimo = new IntentoOrdenInversor(Guid.NewGuid(), new(null, false, false), AccionOrdenInversor.ActivarVolcadoRed, null, null, Ahora);
         Assert.Throws<InvalidOperationException>(() => anonimo.Finalizar(EstadoOrdenInversor.Confirmada, "ack", Ahora, true));
         anonimo.Finalizar(EstadoOrdenInversor.Rechazada, "sin-permiso", Ahora);
         Assert.Null(anonimo.ActorSub);
@@ -48,7 +48,7 @@ public sealed class IntentoOrdenInversorTests
     [Fact]
     public void RechazaFechasNoUtcYCodigosInseguros()
     {
-        Assert.Throws<ArgumentException>(() => new IntentoOrdenInversor(Guid.NewGuid(), "sub", true, true,
+        Assert.Throws<ArgumentException>(() => new IntentoOrdenInversor(Guid.NewGuid(), new("sub", true, true),
             AccionOrdenInversor.ActivarVolcadoRed, null, null, DateTime.SpecifyKind(Ahora, DateTimeKind.Unspecified)));
         Assert.Throws<ArgumentException>(() => Crear().Finalizar(EstadoOrdenInversor.Fallida, "mensaje con secretos", Ahora));
         Assert.Throws<ArgumentException>(() => Crear().Finalizar(EstadoOrdenInversor.Fallida, "error", Ahora.AddSeconds(-1)));

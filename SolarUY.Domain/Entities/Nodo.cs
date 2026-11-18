@@ -44,7 +44,7 @@ public sealed class Nodo
 
     public void ValidarCapacidadPaneles(int cantidadResultante)
     {
-        if (cantidadResultante < 0) throw new ArgumentOutOfRangeException(nameof(cantidadResultante));
+        ArgumentOutOfRangeException.ThrowIfNegative(cantidadResultante);
         if (CantidadPanelesPrevista.HasValue && cantidadResultante > CantidadPanelesPrevista.Value)
             throw new InvalidOperationException("El nodo no tiene capacidad disponible para otro panel.");
     }

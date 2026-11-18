@@ -28,7 +28,9 @@ public sealed class KeycloakTecnicoDirectory : ITecnicoDirectory
             var conexion = ObtenerConexion();
             var token = await ObtenerTokenAsync(conexion, cancellationToken);
             var tecnicos = new List<TecnicoDto>();
-            for (var offset = 0; ; offset += PageSize)
+            var offset = 0;
+            int totalPagina;
+            do
             {
                 var usuarios = await ObtenerJsonAsync<List<UsuarioRepresentation>>(conexion,
                     $"users?enabled=true&first={offset}&max={PageSize}", token, cancellationToken)
@@ -39,8 +41,9 @@ public sealed class KeycloakTecnicoDirectory : ITecnicoDirectory
                         && await TieneRolTecnicoAsync(conexion, usuario.Id, token, cancellationToken))
                         tecnicos.Add(new TecnicoDto(usuario.Id, usuario.Username ?? usuario.Id));
                 }
-                if (usuarios.Count < PageSize) break;
-            }
+                offset += PageSize;
+                totalPagina = usuarios.Count;
+            } while (totalPagina >= PageSize);
             return tecnicos.DistinctBy(tecnico => tecnico.Id).OrderBy(tecnico => tecnico.Nombre).ToArray();
         }
         catch (Exception exception) when (exception is HttpRequestException or JsonException)

@@ -12,7 +12,7 @@ public sealed class Inversor
         ArgumentNullException.ThrowIfNull(nodo);
         ArgumentException.ThrowIfNullOrWhiteSpace(marca);
         ArgumentException.ThrowIfNullOrWhiteSpace(modelo);
-        if (potenciaNominalKW <= 0) throw new ArgumentOutOfRangeException(nameof(potenciaNominalKW));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(potenciaNominalKW);
         if (!Enum.IsDefined(estado)) throw new ArgumentOutOfRangeException(nameof(estado));
 
         Id = Guid.NewGuid();

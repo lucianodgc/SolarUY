@@ -11,9 +11,9 @@ public sealed record EstadoMonitoreoDto(Guid ParqueId, string Nombre, DateTime E
     DateTime? InstanteUtc, ResumenGeneracion Generacion, IReadOnlyList<NodoMonitoreoDto> Nodos);
 public sealed record PuntoGeneracionDto(DateTime FechaHoraUtc, decimal PotenciaW, bool Parcial);
 
-public sealed class TelemetriaMonitoreoMapper
+public static class TelemetriaMonitoreoMapper
 {
-    public EstadoMonitoreoDto Mapear(Guid parqueId, IReadOnlyList<TelemetriaNodoDto> nodos)
+    public static EstadoMonitoreoDto Mapear(Guid parqueId, IReadOnlyList<TelemetriaNodoDto> nodos)
     {
         ArgumentNullException.ThrowIfNull(nodos);
         if (parqueId == Guid.Empty || nodos.Count == 0 || nodos.Any(n => n.ParqueId != parqueId))
@@ -133,8 +133,8 @@ public sealed class SerieMonitoreoService
 
     public SerieMonitoreoService(int maximoPuntos, TimeSpan intervalo)
     {
-        if (maximoPuntos <= 0) throw new ArgumentOutOfRangeException(nameof(maximoPuntos));
-        if (intervalo <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(intervalo));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximoPuntos);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(intervalo, TimeSpan.Zero);
         _maximoPuntos = maximoPuntos; _intervalo = intervalo;
     }
 

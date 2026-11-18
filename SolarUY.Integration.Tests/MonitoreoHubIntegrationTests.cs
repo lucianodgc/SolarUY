@@ -212,7 +212,7 @@ public sealed class MonitoreoHubIntegrationTests(HistoricoDatabase database) : I
         Assert.False(limite.IsCancellationRequested);
     }
 
-    private async Task<WebApplication> CrearHostAsync(bool pagina = false, INotificadorLecturasConfirmadas? notificador = null)
+    private static async Task<WebApplication> CrearHostAsync(bool pagina = false, INotificadorLecturasConfirmadas? notificador = null)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
@@ -249,7 +249,6 @@ public sealed class MonitoreoHubIntegrationTests(HistoricoDatabase database) : I
             builder.Services.AddSingleton(new SolarUY.Application.Salud.ConfiguracionConsultaSalud(TimeSpan.FromSeconds(15)));
             builder.Services.AddScoped<SolarUY.Application.Salud.IConsultaSaludService, SolarUY.Application.Salud.ConsultaSaludService>();
             builder.Services.Configure<SaludPanelOptions>(o => o.EvaluacionSegundos = 1);
-            builder.Services.AddSingleton<TelemetriaMonitoreoMapper>();
             builder.Services.AddSingleton<GeneracionActualService>();
             builder.Services.AddSingleton(new PoliticaMonitoreo(2, 2));
             builder.Services.AddScoped(_ => new SerieMonitoreoService(120, TimeSpan.FromSeconds(2)));

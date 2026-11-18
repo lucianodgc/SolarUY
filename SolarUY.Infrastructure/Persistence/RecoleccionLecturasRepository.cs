@@ -108,7 +108,7 @@ public sealed class RecoleccionLecturasRepository : IRecoleccionLecturasReposito
                 await command.ExecuteScalarAsync(CancellationToken.None);
             }
             // Cerrar la conexión física libera el bloqueo; no ocultar el fallo original del ciclo.
-            catch (DbException) { }
+            catch (DbException) { /* Cerrar la conexión libera el bloqueo aunque falle la consulta de liberación. */ }
             finally { await context.DisposeAsync(); }
         }
     }

@@ -14,7 +14,7 @@ public sealed class EvaluacionSaludService
         if (referenciaUtc.Kind != DateTimeKind.Utc || primeraObservacionUtc.Kind != DateTimeKind.Utc
             || primeraObservacionUtc > referenciaUtc) throw new ArgumentException("Se requieren referencias UTC ordenadas.");
         ArgumentNullException.ThrowIfNull(politica);
-        if (nominalW < 0) throw new ArgumentOutOfRangeException(nameof(nominalW));
+        ArgumentOutOfRangeException.ThrowIfNegative(nominalW);
         if (evidencia is { } e && (e.FechaUtc.Kind != DateTimeKind.Utc || e.FechaUtc > referenciaUtc))
             return new(null, false, "La fecha de evidencia no es válida.", e.FechaUtc);
         var valida = evidencia is { ProcedenciaValida: true };
@@ -26,6 +26,11 @@ public sealed class EvaluacionSaludService
             return new(EstadoSaludPanel.Falla, true, "Falla informada por el inversor.", ultima);
         if (evidencia.Senal != EstadoSaludLectura.Sano || evidencia.PotenciaW < 0)
             return new(null, false, "La evidencia no permite clasificar la salud.", ultima);
+        return EvaluarPotencia(evidencia, nominalW, ultima, politica);
+    }
+
+    private static ResultadoSalud EvaluarPotencia(EvidenciaSalud evidencia, decimal nominalW, DateTime ultima, PoliticaSalud politica)
+    {
         if (politica.EvaluarPotenciaBaja && evidencia.GeneracionEsperada == true && nominalW > 0)
         {
             var ratio = evidencia.PotenciaW / nominalW / politica.FactorEsperado;

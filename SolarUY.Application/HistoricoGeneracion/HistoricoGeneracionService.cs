@@ -88,8 +88,8 @@ public sealed class HistoricoGeneracionService : IHistoricoGeneracionService
         return filtro.Periodo switch
         {
             PeriodoHistorico.Diario => (fecha.Date, fecha.Date.AddDays(1)),
-            PeriodoHistorico.Mensual => (new(fecha.Year, fecha.Month, 1), new DateTime(fecha.Year, fecha.Month, 1).AddMonths(1)),
-            PeriodoHistorico.Anual => (new(fecha.Year, 1, 1), new DateTime(fecha.Year, 1, 1).AddYears(1)),
+            PeriodoHistorico.Mensual => (new(fecha.Year, fecha.Month, 1, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(fecha.Year, fecha.Month, 1, 0, 0, 0, DateTimeKind.Unspecified).AddMonths(1)),
+            PeriodoHistorico.Anual => (new(fecha.Year, 1, 1, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(fecha.Year, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).AddYears(1)),
             _ => (fecha, filtro.FinLocal ?? throw new ArgumentException("Indica el fin exclusivo del rango."))
         };
     }
@@ -101,7 +101,7 @@ public sealed class HistoricoGeneracionService : IHistoricoGeneracionService
         return TimeZoneInfo.ConvertTimeToUtc(fecha, Zona);
     }
 
-    private static IReadOnlyList<IntervaloHistoricoDto> CrearIntervalos(DateTime inicioUtc, DateTime finUtc, PeriodoHistorico periodo)
+    private static List<IntervaloHistoricoDto> CrearIntervalos(DateTime inicioUtc, DateTime finUtc, PeriodoHistorico periodo)
     {
         var intervalos = new List<IntervaloHistoricoDto>();
         var inicio = inicioUtc;
@@ -111,7 +111,7 @@ public sealed class HistoricoGeneracionService : IHistoricoGeneracionService
             var siguiente = periodo switch
             {
                 PeriodoHistorico.Diario => inicio.AddHours(1),
-                PeriodoHistorico.Anual => ConvertirAUtc(new DateTime(local.Year, local.Month, 1).AddMonths(1)),
+                PeriodoHistorico.Anual => ConvertirAUtc(new DateTime(local.Year, local.Month, 1, 0, 0, 0, DateTimeKind.Unspecified).AddMonths(1)),
                 _ => ConvertirAUtc(local.Date.AddDays(1))
             };
             var fin = siguiente < finUtc ? siguiente : finUtc;

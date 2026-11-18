@@ -48,6 +48,6 @@ public sealed class SaludPanelWorker(IServiceScopeFactory scopes, INotificadorSa
                 { logger.LogError(ex, "No se completó la evaluación de salud; se reintentará sin adquirir nuevas lecturas."); }
             } while (await timer.WaitForNextTickAsync(stoppingToken));
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { /* La cancelación termina el trabajo pendiente. */ }
     }
 }

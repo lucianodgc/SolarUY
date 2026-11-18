@@ -60,7 +60,7 @@ public sealed class SesionMcpChatbot : IAsyncDisposable
         {
             await _servidor.DisposeAsync();
             try { await _ejecucion; }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException) { /* La cancelación termina el trabajo pendiente. */ }
             finally { _vida.Dispose(); }
         }
     }

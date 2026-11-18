@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-export default async function () {
+export default async function finalizarPruebas() {
   const runtime = path.resolve('.runtime/salud-distribuida');
   await fs.mkdir(runtime, { recursive: true });
   await fs.writeFile(path.join(runtime, 'control.json'), JSON.stringify({ id: randomUUID(), accion: 'terminar' }));

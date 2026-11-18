@@ -1,5 +1,5 @@
 # Resumen de calidad — req19
 
-La verificación final tiene 420 pruebas aprobadas, cero fallidas y 14 omitidas. Los nueve controles de arquitectura pasan y no se modificaron sus guardarraíles.
+SonarQube aprobó el Quality Gate con **84,5 % de cobertura en código nuevo** y cero hallazgos abiertos en ese código. La cobertura subió desde 68,3 % con 27 casos nuevos de integración.
 
-SonarQube ya publica el análisis actual de SolarUY. Security, Reliability y Maintainability están en A y quedan cero bloqueantes. El Gate sigue rojo: cobertura nueva de 66,4 % frente al 80 % exigido y 138 hallazgos nuevos de mantenibilidad. Ese cierre y las capturas del panel siguen pendientes; los límites no se cambiaron.
+Pasaron 469 pruebas, incluidas las 9 de arquitectura. Hubo 0 fallidas y 14 omitidas. El informe y los límites de la verificación se registran en [implementations.md](implementations.md).

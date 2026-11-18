@@ -86,4 +86,4 @@ Las capturas y los resultados deben corresponder a ejecuciones reales del análi
 
 ## Estado de verificación
 
-Las convenciones y proyectos de pruebas vigentes, y el script de análisis utilizado, están identificados en `implementations.md`. La última ejecución intentada de Sonar no llegó a publicar un análisis de esta entrega; por tanto, el Quality Gate y los indicadores actuales siguen pendientes de verificación. No se usan resultados históricos como evidencia de esta entrega.
+El análisis publicado, los resultados de las pruebas y los escenarios pendientes de verificación se registran en [implementations.md](implementations.md).

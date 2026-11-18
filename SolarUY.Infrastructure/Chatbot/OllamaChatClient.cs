@@ -9,6 +9,7 @@ namespace SolarUY.Infrastructure.Chatbot;
 // la coordinación y cada herramienta sigue ejecutándose mediante MCP.
 public sealed class OllamaChatClient : IChatClient
 {
+    private const string CampoContenido = "content";
     private readonly HttpClient _http;
     private readonly ChatbotOptions _opciones;
 
@@ -29,7 +30,7 @@ public sealed class OllamaChatClient : IChatClient
             .GroupBy(c => c.CallId).ToDictionary(g => g.Key, g => g.Last().Name);
         var entrada = mensajes.SelectMany(m => ConvertirMensajes(m, nombres)).ToList();
         if (!string.IsNullOrWhiteSpace(options?.Instructions))
-            entrada.Insert(0, new() { ["role"] = "system", ["content"] = options.Instructions });
+            entrada.Insert(0, new() { ["role"] = "system", [CampoContenido] = options.Instructions });
         var herramientas = options?.Tools?.OfType<AIFunction>().Select(f => new
         { type = "function", function = new { name = f.Name, description = f.Description, parameters = f.JsonSchema } }).ToArray();
         using var respuesta = await _http.PostAsJsonAsync("api/chat", new
@@ -50,16 +51,18 @@ public sealed class OllamaChatClient : IChatClient
         if (!documento.RootElement.TryGetProperty("message", out var mensaje))
             throw new InvalidOperationException("Respuesta del proveedor local inválida.");
         var contenido = new List<AIContent>();
-        if (mensaje.TryGetProperty("content", out var texto) && !string.IsNullOrWhiteSpace(texto.GetString()))
+        if (mensaje.TryGetProperty(CampoContenido, out var texto) && !string.IsNullOrWhiteSpace(texto.GetString()))
             contenido.Add(new TextContent(texto.GetString()!));
         if (mensaje.TryGetProperty("tool_calls", out var llamadas))
-        foreach (var llamada in llamadas.EnumerateArray())
         {
-            var funcion = llamada.GetProperty("function");
-            var argumentos = funcion.GetProperty("arguments");
-            if (argumentos.ValueKind != JsonValueKind.Object) throw new InvalidOperationException("Argumentos locales inválidos.");
-            contenido.Add(new FunctionCallContent(Guid.NewGuid().ToString("N"), funcion.GetProperty("name").GetString()!,
-                argumentos.EnumerateObject().ToDictionary(p => p.Name, p => (object?)p.Value.Clone())));
+            foreach (var llamada in llamadas.EnumerateArray())
+            {
+                var funcion = llamada.GetProperty("function");
+                var argumentos = funcion.GetProperty("arguments");
+                if (argumentos.ValueKind != JsonValueKind.Object) throw new InvalidOperationException("Argumentos locales inválidos.");
+                contenido.Add(new FunctionCallContent(Guid.NewGuid().ToString("N"), funcion.GetProperty("name").GetString()!,
+                    argumentos.EnumerateObject().ToDictionary(p => p.Name, p => (object?)p.Value.Clone())));
+            }
         }
         return new ChatResponse(new ChatMessage(ChatRole.Assistant, contenido))
         { FinishReason = contenido.Any(c => c is FunctionCallContent) ? ChatFinishReason.ToolCalls : ChatFinishReason.Stop };
@@ -75,11 +78,11 @@ public sealed class OllamaChatClient : IChatClient
                 {
                     ["role"] = "tool",
                     ["tool_name"] = nombres.GetValueOrDefault(respuesta.CallId) ?? throw new InvalidOperationException("Resultado de herramienta sin invocación."),
-                    ["content"] = JsonSerializer.Serialize(respuesta.Result, CatalogoMcpChatbot.Json)
+                    [CampoContenido] = JsonSerializer.Serialize(respuesta.Result, CatalogoMcpChatbot.Json)
                 };
             yield break;
         }
-        var resultado = new Dictionary<string, object?> { ["role"] = mensaje.Role.Value, ["content"] = mensaje.Text };
+        var resultado = new Dictionary<string, object?> { ["role"] = mensaje.Role.Value, [CampoContenido] = mensaje.Text };
         var llamadas = mensaje.Contents.OfType<FunctionCallContent>().ToArray();
         if (llamadas.Length > 0)
             resultado["tool_calls"] = llamadas.Select(c => new { function = new { name = c.Name, arguments = c.Arguments } }).ToArray();
@@ -87,8 +90,11 @@ public sealed class OllamaChatClient : IChatClient
     }
 
     public object? GetService(Type serviceType, object? serviceKey = null)
-        => serviceType == typeof(ChatClientMetadata) ? new ChatClientMetadata("ollama", new Uri(_opciones.EndpointOllama), _opciones.Modelo)
-            : serviceType.IsInstanceOfType(this) ? this : null;
+    {
+        if (serviceType == typeof(ChatClientMetadata))
+            return new ChatClientMetadata("ollama", new Uri(_opciones.EndpointOllama), _opciones.Modelo);
+        return serviceType.IsInstanceOfType(this) ? this : null;
+    }
     public void Dispose() => _http.Dispose();
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages,
         ChatOptions? options = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)

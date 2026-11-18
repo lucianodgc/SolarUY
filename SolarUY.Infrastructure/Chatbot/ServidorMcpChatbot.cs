@@ -44,7 +44,6 @@ public sealed class ServidorMcpChatbot
                         await AutorizarAsync(propietario, ct);
                         return Convertir(resultado);
                     }
-                    catch (OperationCanceledException) { throw; }
                     catch (UnauthorizedAccessException)
                     { return Convertir(new(nombre, EstadoConsultaChat.NoAutorizado, "No tienes permiso para esta consulta.")); }
                     catch (ArgumentException)
@@ -58,12 +57,12 @@ public sealed class ServidorMcpChatbot
         CancellationToken cancellationToken) => nombre switch
     {
         "ListarParquesAsync" => _consultas.ListarParquesAsync(cancellationToken),
-        "ConsultarEstadoActualAsync" => _consultas.ConsultarEstadoActualAsync(Texto(argumentos, "parque"), cancellationToken),
-        "ConsultarPanelesConFallaAsync" => _consultas.ConsultarPanelesConFallaAsync(Texto(argumentos, "parque"), cancellationToken),
-        "ConsultarGeneracionDiariaAsync" => _consultas.ConsultarGeneracionDiariaAsync(Texto(argumentos, "parque"), Fecha(argumentos, false), cancellationToken),
+        "ConsultarEstadoActualAsync" => _consultas.ConsultarEstadoActualAsync(Texto(argumentos, CatalogoMcpChatbot.ArgumentoParque), cancellationToken),
+        "ConsultarPanelesConFallaAsync" => _consultas.ConsultarPanelesConFallaAsync(Texto(argumentos, CatalogoMcpChatbot.ArgumentoParque), cancellationToken),
+        "ConsultarGeneracionDiariaAsync" => _consultas.ConsultarGeneracionDiariaAsync(Texto(argumentos, CatalogoMcpChatbot.ArgumentoParque), Fecha(argumentos, false), cancellationToken),
         "ConsultarGeneracionHistoricaAsync" => _consultas.ConsultarGeneracionHistoricaAsync(Texto(argumentos, "objetivo"),
             Texto(argumentos, "tipo"), Texto(argumentos, "periodo"), Fecha(argumentos, true)!.Value, cancellationToken),
-        "ConsultarMantenimientosPendientesAsync" => _consultas.ConsultarMantenimientosPendientesAsync(Texto(argumentos, "parque"), cancellationToken),
+        "ConsultarMantenimientosPendientesAsync" => _consultas.ConsultarMantenimientosPendientesAsync(Texto(argumentos, CatalogoMcpChatbot.ArgumentoParque), cancellationToken),
         _ => throw new McpException("Herramienta no permitida.")
     };
 
@@ -82,8 +81,8 @@ public sealed class ServidorMcpChatbot
 
     private static DateTime? Fecha(IReadOnlyDictionary<string, JsonElement>? argumentos, bool requerida)
     {
-        if (!requerida && argumentos?.ContainsKey("fechaLocal") != true) return null;
-        if (DateTime.TryParseExact(Texto(argumentos, "fechaLocal"), "yyyy-MM-dd", CultureInfo.InvariantCulture,
+        if (!requerida && argumentos?.ContainsKey(CatalogoMcpChatbot.ArgumentoFechaLocal) != true) return null;
+        if (DateTime.TryParseExact(Texto(argumentos, CatalogoMcpChatbot.ArgumentoFechaLocal), "yyyy-MM-dd", CultureInfo.InvariantCulture,
             DateTimeStyles.None, out var fecha)) return fecha;
         throw new ArgumentException("Fecha local inválida.");
     }

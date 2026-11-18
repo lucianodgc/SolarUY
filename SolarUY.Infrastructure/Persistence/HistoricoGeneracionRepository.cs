@@ -142,7 +142,7 @@ public sealed class HistoricoGeneracionRepository : IHistoricoGeneracionReposito
         var fin = reader.GetDateTime(1);
         var desde = consulta.InicioUtc.AddMinutes(-5) > inicio ? consulta.InicioUtc.AddMinutes(-5) : inicio;
         var hasta = consulta.FinUtc < fin ? consulta.FinUtc : fin;
-        // Los rangos cortos evitan recorrer todo el índice; para rangos amplios el join evita cientos de rangos.
+        // Los rangos cortos evitan recorrer el índice completo; para rangos amplios el join evita cientos de rangos.
         return hasta > desde && (hasta - desde).Ticks > (fin - inicio).Ticks / 2;
     }
 

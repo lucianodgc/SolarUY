@@ -71,7 +71,7 @@
             if (respuesta.Estado == EstadoConsultaChat.NoAutorizado) _mensajes.Clear();
             _mensajes.Add(new(false, respuesta.Texto));
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException) { /* La cancelación termina el trabajo pendiente. */ }
         catch (Exception)
         { if (!_destruido && version == _version) _error = "No se pudo completar la consulta. Podés volver a intentar."; }
         finally
@@ -102,8 +102,8 @@
                 if (!_destruido) StateHasChanged();
             });
         }
-        catch (ObjectDisposedException) { }
-        catch (OperationCanceledException) { }
+        catch (ObjectDisposedException) { /* El componente ya se desmontó. */ }
+        catch (OperationCanceledException) { /* La cancelación termina el trabajo pendiente. */ }
     }
 
     public ValueTask DisposeAsync()

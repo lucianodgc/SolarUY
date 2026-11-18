@@ -1,26 +1,28 @@
 @using SolarUY.Application.HistoricoGeneracion
 
+@if (Resultado is { } resultado)
+{
 <section class="surface" aria-label="@Titulo">
     <h2>@Titulo</h2>
-    <p>@Resultado.InicioLocal → @Resultado.FinLocal (fin exclusivo) · @Resultado.ZonaHoraria</p>
-    <p><strong>Energía observada: @(Resultado.EnergiaKWh?.ToString("N3") ?? "Sin datos") @Resultado.Unidad</strong></p>
-    <p role="status">Cobertura: @Resultado.Cobertura</p>
-    @if (Resultado.LecturasSinNodoHistorico > 0)
+    <p>@resultado.InicioLocal → @resultado.FinLocal (fin exclusivo) · @resultado.ZonaHoraria</p>
+    <p><strong>Energía observada: @(resultado.EnergiaKWh?.ToString("N3") ?? "Sin datos") @resultado.Unidad</strong></p>
+    <p role="status">Cobertura: @resultado.Cobertura</p>
+    @if (resultado.LecturasSinNodoHistorico > 0)
     {
-        <p role="status" class="note">Hay @Resultado.LecturasSinNodoHistorico lecturas sin nodo histórico verificado en el período consultado.
+        <p role="status" class="note">Hay @resultado.LecturasSinNodoHistorico lecturas sin nodo histórico verificado en el período consultado.
             Se conservan y pueden consultarse por panel. No se atribuyen a nodos ni parques; en esas consultas el aviso abarca toda la base.</p>
     }
-    @if (Resultado.Cobertura == CoberturaHistorico.Parcial)
+    @if (resultado.Cobertura == CoberturaHistorico.Parcial)
     {
         <p class="note">La medición es parcial. El total y los extremos incluyen únicamente la energía observada; los huecos no se estiman.</p>
     }
-    @if (Resultado.Cobertura == CoberturaHistorico.SinDatos)
+    @if (resultado.Cobertura == CoberturaHistorico.SinDatos)
     {
         <p class="empty-state">No hay lecturas con cobertura en este período.</p>
     }
     @if (MostrarDetalle)
     {
-    <RadzenDataGrid Data="@Resultado.Serie" TItem="PuntoHistoricoDto" AllowPaging="true" PageSize="31" AllowSorting="false" AllowColumnResize="true">
+    <RadzenDataGrid Data="@resultado.Serie" TItem="PuntoHistoricoDto" AllowPaging="true" PageSize="31" AllowSorting="false" AllowColumnResize="true">
         <Columns>
             <RadzenDataGridColumn TItem="PuntoHistoricoDto" Title="Intervalo (Uruguay)">
                 <Template Context="punto">@punto.Intervalo.Etiqueta</Template>
@@ -39,9 +41,10 @@
     </RadzenDataGrid>
     }
 </section>
+}
 
 @code {
-    [Parameter, EditorRequired] public ResultadoHistoricoDto Resultado { get; set; } = null!;
+    [Parameter, EditorRequired] public ResultadoHistoricoDto? Resultado { get; set; }
     [Parameter] public string Titulo { get; set; } = "Generación histórica";
     [Parameter] public bool MostrarDetalle { get; set; } = true;
 }

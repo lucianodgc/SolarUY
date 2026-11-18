@@ -12,7 +12,9 @@ Mantener la calidad de SolarUY mediante pruebas xUnit de Domain, controles arqui
 
 ## Application, Infrastructure y Presentation
 
-No se agrega cobertura unitaria nueva en estas capas como parte de este requerimiento. Se ejecutan las suites existentes de Application e integración para detectar regresiones cuando corresponda.
+Se ejecutan las suites de Application e integración. La cobertura adicional del Quality Gate se obtiene con pruebas de integración de autenticación y permisos, directorio de técnicos, gestión de inventario, mantenimiento, monitoreo, simulador y reportes.
+
+Las pruebas de pantallas ejecutan los callbacks de Blazor y Radzen con los servicios y repositorios de la aplicación y una MariaDB aislada. Las pruebas de autenticación usan respuestas controladas de OpenID Connect y Keycloak. Los recorridos en navegador se verifican con su propia suite.
 
 ## Análisis estático y arquitectura
 

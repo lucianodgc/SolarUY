@@ -20,8 +20,8 @@ public sealed class PoliticaMonitoreo
 {
     public PoliticaMonitoreo(int intervaloSegundos, int intervalosVigencia)
     {
-        if (intervaloSegundos <= 0) throw new ArgumentOutOfRangeException(nameof(intervaloSegundos));
-        if (intervalosVigencia <= 0) throw new ArgumentOutOfRangeException(nameof(intervalosVigencia));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(intervaloSegundos);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(intervalosVigencia);
         Intervalo = TimeSpan.FromSeconds(intervaloSegundos);
         Vigencia = TimeSpan.FromTicks(checked(Intervalo.Ticks * intervalosVigencia));
     }
@@ -59,11 +59,14 @@ public sealed class GeneracionActualService
         DateTime? intervalo, PoliticaMonitoreo politica)
     {
         if (lectura is null) return new(panel.Id, null, null, DisponibilidadMonitoreo.SinDatos);
-        var disponibilidad = lectura.NodoId is null ? DisponibilidadMonitoreo.NodoHistoricoDesconocido
-            : lectura.NodoId != panel.NodoId ? DisponibilidadMonitoreo.NodoAnterior
-            : referencia - lectura.FechaHora >= politica.Vigencia ? DisponibilidadMonitoreo.FueraDeVigencia
-            : politica.ObtenerIntervalo(lectura.FechaHora) != intervalo ? DisponibilidadMonitoreo.IntervaloIncompatible
-            : DisponibilidadMonitoreo.Vigente;
+        var disponibilidad = lectura.NodoId switch
+        {
+            null => DisponibilidadMonitoreo.NodoHistoricoDesconocido,
+            var nodo when nodo != panel.NodoId => DisponibilidadMonitoreo.NodoAnterior,
+            _ when referencia - lectura.FechaHora >= politica.Vigencia => DisponibilidadMonitoreo.FueraDeVigencia,
+            _ when politica.ObtenerIntervalo(lectura.FechaHora) != intervalo => DisponibilidadMonitoreo.IntervaloIncompatible,
+            _ => DisponibilidadMonitoreo.Vigente
+        };
         return new(panel.Id, lectura.FechaHora,
             disponibilidad == DisponibilidadMonitoreo.Vigente ? lectura.PotenciaGeneradaW : null, disponibilidad);
     }
