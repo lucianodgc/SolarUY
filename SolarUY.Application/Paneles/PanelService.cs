@@ -33,6 +33,12 @@ public sealed class PanelService : IPanelService
         return panel.Id;
     }
 
+    public async Task<IReadOnlyList<NodoParaPanelDto>> ListarNodosParaAltaAsync(CancellationToken cancellationToken = default)
+    {
+        await ExigirAdministradorAsync(cancellationToken);
+        return await _paneles.ListarNodosParaAltaAsync(cancellationToken);
+    }
+
     public async Task<PanelDto?> ObtenerAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await ExigirConsultaAsync(cancellationToken);

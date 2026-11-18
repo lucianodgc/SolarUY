@@ -66,20 +66,40 @@ public sealed class InventarioPantallasIntegrationTests(HistoricoDatabase databa
     public async Task Panel_AltaYEdicionGuardanElNodoYLaPotenciaElegidos()
     {
         await database.ReiniciarAsync();
+        await using (var preparacion = database.CrearContexto())
+        {
+            var nodoConCupo = await preparacion.Nodos.SingleAsync(nodo => nodo.Id == database.Panel.NodoId);
+            nodoConCupo.ActualizarDatos(nodoConCupo.Nombre, nodoConCupo.UbicacionEnParque, 3);
+            var nodoLleno = await preparacion.Nodos.SingleAsync(nodo => nodo.Id == database.PanelAjeno.NodoId);
+            nodoLleno.ActualizarDatos(nodoLleno.Nombre, nodoLleno.UbicacionEnParque, 1);
+            await preparacion.SaveChangesAsync();
+        }
         await using var app = EntornoPantallas.Crear(database, "Administrador");
         await using var scope = app.Services.CreateAsyncScope();
         await using var vista = EntornoPantallas.Renderizador(scope.ServiceProvider);
         await vista.AbrirAsync<AltaPanel>();
         await vista.EnviarAsync<CrearPanelDto>();
-        await vista.EscribirAsync("nodoId", database.Panel.NodoId.ToString());
+        Assert.Contains("Seleccioná un nodo.", await vista.TextoAsync());
+        var selector = vista.Control<RadzenDropDown<Guid?>>(control => control.Name == "NodoId");
+        var nodos = Assert.IsAssignableFrom<IEnumerable<NodoParaPanelDto>>(selector.Data);
+        var destino = Assert.Single(nodos, nodo => nodo.Id == database.Panel.NodoId);
+        Assert.Contains(database.Parque.Nombre, destino.Etiqueta);
+        Assert.Contains(destino.Nombre, destino.Etiqueta);
+        Assert.Equal(1, destino.CuposDisponibles);
+        Assert.True(Assert.Single(nodos, nodo => nodo.Id == database.PanelAjeno.NodoId).SinCupo);
+        Assert.Null(Assert.Single(nodos, nodo => nodo.Id == database.TercerPanel.NodoId).CuposDisponibles);
+        Assert.Equal(nameof(NodoParaPanelDto.SinCupo), selector.DisabledProperty);
+        await vista.SeleccionarAsync<Guid?>("NodoId", destino.Id);
         await vista.EscribirAsync("NumeroSerie", "SERIE-INTERFAZ");
         await vista.EscribirAsync("Marca", "Marca prueba");
         await vista.EscribirAsync("Modelo", "Modelo prueba");
         await vista.Dispatcher.InvokeAsync(() => vista.Control<RadzenNumeric<decimal>>(n => n.Name == "PotenciaNominalW")
             .ValueChanged.InvokeAsync(505.25m));
         await vista.EnviarAsync<CrearPanelDto>();
-        var id = Assert.Single(await scope.ServiceProvider.GetRequiredService<SolarUY.Application.Paneles.IPanelService>()
-            .ListarAsync(), item => item.NumeroSerie == "SERIE-INTERFAZ").Id;
+        var registrado = Assert.Single(await scope.ServiceProvider.GetRequiredService<SolarUY.Application.Paneles.IPanelService>()
+            .ListarAsync(), item => item.NumeroSerie == "SERIE-INTERFAZ");
+        Assert.Equal(destino.Id, registrado.NodoId);
+        var id = registrado.Id;
 
         await vista.AbrirAsync<EditarPanel>(new() { [nameof(EditarPanel.PanelId)] = id });
         await vista.EscribirAsync("nodoId", "no-es-un-guid");
