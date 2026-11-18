@@ -35,3 +35,9 @@ Se reprodujo y corrigió un error real al crear o trasladar paneles: adjuntar el
 La migración se aplicó desde cero en MariaDB aislada. Cuatro integraciones comprobaron creación, traslado con procedencia histórica intacta, mantenimiento conservado, baja lógica excluida del inventario, dos altas simultáneas para el último cupo y rechazo de escrituras por Tecnico/Consulta con lectura permitida. Las cuatro aprobaron; también los tres escenarios de borrado protegido. Arquitectura: 9 aprobadas, guardarraíles sin cambios. Evidencia: `artifacts/correcciones/paneles-final/` y `artifacts/correcciones/arquitectura-final/`.
 
 La revisión visual con sesiones OIDC reales sigue pendiente en 6.4; estas comprobaciones no la sustituyen.
+
+## Selector de nodo en el alta de paneles
+
+`AltaPanel.razor` permite buscar por parque o nodo y muestra los cupos disponibles. Los nodos llenos aparecen deshabilitados y los nodos sin máximo aparecen como «Sin límite». Los contratos de `SolarUY.Application/Paneles/` y `PanelRepository` proveen los datos del selector con el mismo criterio de conteo usado al guardar.
+
+Pasaron las nueve pruebas de arquitectura y cinco integraciones contra MariaDB 11.8 temporal. Se verificó el formulario Blazor mediante el renderizador interactivo, incluidos el nodo seleccionado, los cupos, un nodo lleno y otro sin límite. La prueba de concurrencia confirmó la reserva del último cupo. Queda pendiente la revisión en navegador con OIDC real.

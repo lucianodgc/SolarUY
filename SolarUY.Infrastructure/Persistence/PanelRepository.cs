@@ -34,6 +34,18 @@ public sealed class PanelRepository : IPanelRepository, PanelesApplication.IPane
             .SingleOrDefaultAsync(nodo => nodo.Id == id, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<PanelesApplication.NodoParaPanelDto>> ListarNodosParaAltaAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var panelesVigentes = ConsultarPanelesVigentes(context);
+        return await context.Nodos.AsNoTracking()
+            .OrderBy(nodo => nodo.Parque.Nombre).ThenBy(nodo => nodo.Nombre).ThenBy(nodo => nodo.Id)
+            .Select(nodo => new PanelesApplication.NodoParaPanelDto(nodo.Id, nodo.Parque.Nombre, nodo.Nombre,
+                nodo.CantidadPanelesPrevista, panelesVigentes.Count(panel => panel.NodoId == nodo.Id)))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<PanelesApplication.PanelDto>> ListarDetallesAsync(CancellationToken cancellationToken = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -94,7 +106,10 @@ public sealed class PanelRepository : IPanelRepository, PanelesApplication.IPane
 
     private static Task<int> ContarPanelesActivosAsync(ApplicationDbContext context, Guid nodoId,
         CancellationToken cancellationToken)
-        => context.Paneles.CountAsync(panel => panel.NodoId == nodoId && !panel.EstaDadoDeBaja, cancellationToken);
+        => ConsultarPanelesVigentes(context).CountAsync(panel => panel.NodoId == nodoId, cancellationToken);
+
+    private static IQueryable<Panel> ConsultarPanelesVigentes(ApplicationDbContext context)
+        => context.Paneles.Where(panel => !panel.EstaDadoDeBaja);
 
     private static async Task<Nodo> BloquearNodoAsync(ApplicationDbContext context, Guid nodoId,
         CancellationToken cancellationToken)

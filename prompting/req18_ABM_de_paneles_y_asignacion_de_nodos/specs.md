@@ -57,6 +57,7 @@ Las verificaciones de cantidad y las escrituras correspondientes se realizarán 
 
 - Crear o completar páginas/componentes Blazor Server con Radzen para el listado general y la consulta por nodo, mostrando claramente el nodo de cada panel.
 - Incorporar formularios de alta y edición para los campos aprobados, selección de nodo y mensajes claros de éxito, validación, inexistencia y conflicto. El formulario permite traslado con capacidad disponible según C3.
+- En el alta, usar un selector con el nombre del parque, el nombre del nodo y sus cupos disponibles. Indicar cuando un nodo no tiene límite y deshabilitar la selección de nodos sin cupos. La disponibilidad se calcula con los paneles que siguen dados de alta y se vuelve a validar al guardar según I2.
 - Incluir confirmación de baja para Administrador y presentar el resultado real de la operación, sin informar éxito cuando Application la rechace.
 - Proteger rutas, acciones y controles según A2. Los componentes consumirán exclusivamente servicios de Application y no contendrán cálculos de cantidades ni reglas de negocio.
 

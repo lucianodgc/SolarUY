@@ -1,15 +1,32 @@
 @page "/paneles/alta"
 @attribute [Authorize(Roles = "Administrador")]
 @rendermode InteractiveServer
-@inject SolarUY.Application.Paneles.IPanelService Service
+@using SolarUY.Application.Paneles
+@inject IPanelService Service
 @inject NavigationManager Navigation
 
 <PageTitle>Registrar panel</PageTitle>
-<PageHeader Title="Registrar panel" Section="Gestión del parque" Description="Ingresá los datos y el identificador del nodo de destino."></PageHeader>
+<PageHeader Title="Registrar panel" Section="Gestión del parque" Description="Elegí el nodo de destino e ingresá los datos del panel."></PageHeader>
 @if (_error is not null) { <p role="alert" class="alert alert-danger">@_error</p> }
-<RadzenTemplateForm TItem="SolarUY.Application.Paneles.CrearPanelDto" Data="_modelo" Submit="GuardarAsync"><div class="surface form-surface form-stack">
+<RadzenTemplateForm TItem="CrearPanelDto" Data="_modelo" Submit="GuardarAsync"><div class="surface form-surface form-stack">
 
-<div class="form-field"><RadzenLabel Text="Id del nodo" Component="nodoId" /><RadzenTextBox @bind-Value="_nodoId" Style="width:100%" Name="nodoId" /></div>
+<div class="form-field">
+    <RadzenLabel Text="Nodo" Component="NodoId" />
+    <RadzenDropDown TValue="Guid?" @bind-Value="_nodoId" Data="_nodos" Name="NodoId"
+                    TextProperty="@nameof(NodoParaPanelDto.Etiqueta)" ValueProperty="@nameof(NodoParaPanelDto.Id)"
+                    DisabledProperty="@nameof(NodoParaPanelDto.SinCupo)" Disabled="@(_ocupado || _nodos is not { Count: > 0 })"
+                    Placeholder="@(_cargandoNodos ? "Cargando nodos…" : "Seleccioná un nodo")"
+                    AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    FilterPlaceholder="Buscar por parque o nodo" Style="width:100%" />
+    @if (_nodos is { Count: 0 })
+    {
+        <p role="status">Todavía no hay nodos registrados.</p>
+    }
+    else if (_nodos is not null && _nodos.All(nodo => nodo.SinCupo))
+    {
+        <p role="status">Ningún nodo tiene cupos disponibles.</p>
+    }
+</div>
 
 <div class="form-field"><RadzenLabel Text="Número de serie" Component="NumeroSerie" /><RadzenTextBox @bind-Value="_modelo.NumeroSerie" Style="width:100%" Name="NumeroSerie" /></div>
 
@@ -23,19 +40,29 @@
 
 <div class="form-field"><RadzenLabel Text="Estado" Component="Estado" /><RadzenDropDown @bind-Value="_modelo.Estado" Data="_estados" Style="width:100%" Name="Estado" /></div>
 
-    <div class="action-buttons"><RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" IsBusy="_ocupado" Disabled="_ocupado" /> <a class="btn btn-light" href="/paneles">Cancelar</a></div>
+    <div class="action-buttons"><RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" IsBusy="_ocupado" Disabled="@(_ocupado || !_nodoId.HasValue)" /> <a class="btn btn-light" href="/paneles">Cancelar</a></div>
 </div></RadzenTemplateForm>
 
 @code {
-    private readonly SolarUY.Application.Paneles.CrearPanelDto _modelo = new() { FechaInstalacion = DateTime.UtcNow, Estado = EstadoPanel.Activo };
+    private readonly CrearPanelDto _modelo = new() { FechaInstalacion = DateTime.UtcNow, Estado = EstadoPanel.Activo };
     private readonly EstadoPanel[] _estados = [EstadoPanel.Activo, EstadoPanel.Inactivo, EstadoPanel.Falla];
-    private string _nodoId = string.Empty;
+    private IReadOnlyList<NodoParaPanelDto>? _nodos;
+    private Guid? _nodoId;
     private string? _error;
     private bool _ocupado;
-    private async Task GuardarAsync(SolarUY.Application.Paneles.CrearPanelDto modelo)
+    private bool _cargandoNodos = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _nodos = await Service.ListarNodosParaAltaAsync(); }
+        catch (Exception) { _error = "No se pudieron cargar los nodos. Volvé a abrir el formulario para reintentar."; }
+        finally { _cargandoNodos = false; }
+    }
+
+    private async Task GuardarAsync(CrearPanelDto modelo)
     {
         if (_ocupado) return;
-        if (!Guid.TryParse(_nodoId, out var nodoId)) { _error = "El identificador del nodo no es válido."; return; }
+        if (_nodoId is not Guid nodoId) { _error = "Seleccioná un nodo."; return; }
         _ocupado = true; _error = null; modelo.NodoId = nodoId; modelo.FechaInstalacion = DateTime.SpecifyKind(modelo.FechaInstalacion, DateTimeKind.Utc);
         try { await Service.CrearAsync(modelo); Navigation.NavigateTo("/paneles"); }
         catch (Exception exception) { _error = exception.Message; }
