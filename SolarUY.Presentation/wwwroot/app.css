@@ -30,14 +30,13 @@ a { color: #236b4b; }
 .table .action-buttons { min-width: 150px; }
 .table td > .btn + .rz-button, .rz-button + .rz-button, .rz-button + .btn { margin-left: 8px; }
 .action-buttons > .rz-button, .action-buttons > .btn { margin-left: 0; }
-.filter-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.filter-toolbar { margin-bottom: 20px; }
+.filter-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 20px; }
 .filter-toolbar .rz-textbox { max-width: 100%; }
 .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 20px; }
 .module-card { display: flex; flex-direction: column; align-items: flex-start; min-height: 260px; transition: border-color .15s; }
 .module-card:hover { border-color: #adc4ac; }
 .module-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 11px; color: #3f7556; background: #edf4ec; margin-bottom: 20px; flex-shrink: 0; }
-.module-icon-amber { color: #946715; background: #fbf2dd; }
+.module-icon-amber { color: #815810; background: #fbf2dd; }
 .module-card h2 { margin-bottom: 12px; }
 .module-card p { color: #6e7e72; font-size: .83rem; line-height: 1.7; }
 .module-card > a, .module-links { margin-top: auto; font-size: .81rem; font-weight: 650; }
@@ -50,7 +49,7 @@ a { color: #236b4b; }
 .metric-value { font-size: 1.75rem; font-weight: 650; letter-spacing: -.7px; }
 .metric-value small { font-size: .85rem; color: #778777; font-weight: 400; }
 .state-badge { display: inline-block; padding: 5px 10px; border-radius: 6px; background: #eaf3e9; color: #3b7347; font-size: .72rem; font-weight: 600; }
-.state-neutral { background: #edf0ed; color: #6f7a71; }
+.state-neutral { background: #edf0ed; color: #58665a; }
 .state-danger { background: #fdebea; color: #a9423b; }
 .profile-panel { display: flex; align-items: center; gap: 20px; }
 .profile-panel .module-icon { margin: 0; width: 60px; height: 60px; }
@@ -59,7 +58,7 @@ a { color: #236b4b; }
 .note { border-left: 3px solid #e4b64d; background: #fbf7ec; padding: 14px 18px; color: #7a6b45; font-size: .8rem; line-height: 1.65; border-radius: 0 8px 8px 0; }
 .loading-state, .empty-state { padding: 35px 20px; text-align: center; color: #748173; }
 .table { color: #314637; font-size: .82rem; margin-bottom: 0; }
-.table > thead { color: #6c7e70; font-size: .74rem; background: #f7f9f5; }
+.table > thead { color: #56695a; font-size: .74rem; background: #f7f9f5; }
 .table > :not(caption) > * > * { padding: 14px 12px; border-color: #e9eee7; vertical-align: middle; }
 .rz-data-grid { border-radius: 10px; border-color: #e1e8e0; }
 .rz-button { border-radius: 7px; }

@@ -103,7 +103,7 @@ public sealed class OrdenInversorIntegrationTests(HistoricoDatabase database) : 
             Assert.Equal("inversor-ocupado", resultado.Codigo);
             Assert.False(await tcp.Cliente.ObtenerEstadoVolcadoRedAsync());
         }
-        var pendiente = new IntentoOrdenInversor(Guid.NewGuid(), "sub-keycloak", true, true, AccionOrdenInversor.ActivarVolcadoRed, null, null, DateTime.UtcNow);
+        var pendiente = new IntentoOrdenInversor(Guid.NewGuid(), new("sub-keycloak", true, true), AccionOrdenInversor.ActivarVolcadoRed, null, null, DateTime.UtcNow);
         await repo.GuardarAsync(pendiente, default);
         var recuperado = await Servicio(tcp.Cliente, tcp.Opciones).EjecutarAsync(new(pendiente.Correlacion, pendiente.Accion));
         Assert.Equal(EstadoOrdenInversor.Indeterminada, recuperado.Estado);

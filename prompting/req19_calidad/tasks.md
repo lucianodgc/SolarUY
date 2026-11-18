@@ -14,9 +14,9 @@ Fuente técnica: `specs.md`. Las casillas reflejan el estado documentado en `imp
 
 ## Análisis estático
 
-- [x] 5. Completar una ejecución de SonarQube de esta entrega y publicar el análisis. Se publicó; su Quality Gate se registra por separado y no se declara aprobado.
-- [x] 6. Corregir los hallazgos del código nuevo y aumentar su cobertura hasta cumplir el Quality Gate. Consultar las cifras vigentes en el panel de SonarQube.
-- [x] 7. Completar evidencia del panel: Quality Gate e indicadores ya registrados desde la API de la ejecución publicada; faltan las capturas correspondientes.
+- [x] 5. Completar una ejecución de SonarQube y publicar el análisis. La ejecución final aprobó el Quality Gate.
+- [x] 6. Corregir los hallazgos del código nuevo y llevar su cobertura a 80 % o más. El análisis registra 0 hallazgos abiertos y 84,5 % de cobertura.
+- [x] 7. Registrar el Quality Gate y los indicadores verificados del análisis publicado. Quedan pendientes las capturas del panel para la defensa.
 
 ## Cierre
 

@@ -21,15 +21,18 @@ public sealed class SaludPanelRepository(IDbContextFactory<ApplicationDbContext>
     {
         if (paneles.Count == 0) return [];
         if (paneles.Count > 100 || referenciaUtc.Kind != DateTimeKind.Utc) throw new ArgumentException("Lote o referencia inválidos.");
-        for (var intento = 0; ; intento++)
+        for (var intento = 1; intento <= 2; intento++)
         {
             try { return await ConfirmarLoteAsync(paneles, referenciaUtc, politica, cancellationToken); }
-            catch (MySqlException ex) when (intento < 2 && ex.Number is 1213 or 1205)
-            { await Task.Delay(50 * (intento + 1), cancellationToken); }
-            catch (DbUpdateException ex) when (intento < 2 && ex.InnerException is MySqlException { Number: 1213 or 1205 })
-            { await Task.Delay(50 * (intento + 1), cancellationToken); }
+            catch (Exception ex) when (EsBloqueoTransitorio(ex))
+            { await Task.Delay(50 * intento, cancellationToken); }
         }
+        return await ConfirmarLoteAsync(paneles, referenciaUtc, politica, cancellationToken);
     }
+
+    private static bool EsBloqueoTransitorio(Exception exception)
+        => exception is MySqlException { Number: 1213 or 1205 }
+            or DbUpdateException { InnerException: MySqlException { Number: 1213 or 1205 } };
 
     private async Task<IReadOnlyList<AvisoSaludConfirmada>> ConfirmarLoteAsync(IReadOnlyList<Guid> ids,
         DateTime referencia, PoliticaSalud politica, CancellationToken ct)
@@ -50,27 +53,18 @@ public sealed class SaludPanelRepository(IDbContextFactory<ApplicationDbContext>
             .ToDictionaryAsync(l => l.PanelId, ct);
         var avisos = new List<AvisoSaludConfirmada>();
         var nuevasAlertas = new List<AlertaPanel>();
-        foreach (var panel in paneles)
+        foreach (var panel in paneles.Where(p => p.FechaInstalacion <= referencia))
         {
-            if (panel.FechaInstalacion > referencia) continue;
             if (!estados.TryGetValue(panel.Id, out var salud))
             { salud = new SaludPanel(panel, referencia); db.Add(salud); }
             if (referencia < salud.EvaluadoUtc) continue;
-            lecturas.TryGetValue(panel.Id, out var lectura);
-            var inicio = salud.NodoEvaluadoId == panel.NodoId ? salud.PrimeraObservacionUtc : referencia;
-            var evidencia = lectura is null ? null : new EvidenciaSalud(lectura.FechaHora, lectura.PotenciaGeneradaW,
-                lectura.EstadoSalud, lectura.NodoId == panel.NodoId && lectura.FechaHora >= panel.FechaInstalacion);
-            var resultado = evaluador.Evaluar(evidencia, panel.PotenciaNominalW, inicio, referencia, politica);
-            // El futuro se conserva como motivo, nunca como fecha confirmada de evidencia.
-            if (resultado.EvidenciaUtc > referencia) resultado = resultado with { EvidenciaUtc = null };
-            var cambio = salud.Aplicar(resultado, referencia, panel.NodoId);
-            if (cambio is not null)
-            {
-                db.Add(cambio);
-                if (activas.TryGetValue(panel.Id, out var activa)) activa.Cerrar(referencia);
-                if (salud.Estado != EstadoSaludPanel.Normal) nuevasAlertas.Add(new AlertaPanel(panel, salud.Estado!.Value, referencia));
-            }
+            var cambio = EvaluarPanel(panel, salud, lecturas.GetValueOrDefault(panel.Id), referencia, politica);
             avisos.Add(new(nodos[panel.NodoId].ParqueId, panel.Id, salud.Version));
+            if (cambio is null) continue;
+            db.Add(cambio);
+            if (activas.TryGetValue(panel.Id, out var activa)) activa.Cerrar(referencia);
+            if (cambio.EstadoNuevo != EstadoSaludPanel.Normal)
+                nuevasAlertas.Add(new AlertaPanel(panel, cambio.EstadoNuevo, referencia));
         }
         // Liberar la clave activa antes de insertar el episodio siguiente, dentro de la misma transacción.
         await db.SaveChangesAsync(ct);
@@ -79,18 +73,30 @@ public sealed class SaludPanelRepository(IDbContextFactory<ApplicationDbContext>
         return avisos;
     }
 
-    public async Task<DatosConsultaSaludDto?> ConsultarAsync(Guid parqueId, DateTime referenciaUtc,
-        TimeSpan vigenciaEvaluacion, CancellationToken ct)
+    private CambioEstadoSaludPanel? EvaluarPanel(Panel panel, SaludPanel salud, LecturaPanel? lectura,
+        DateTime referencia, PoliticaSalud politica)
     {
-        await using var db = await factory.CreateDbContextAsync(ct);
-        await using var transaccion = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, ct);
-        var parque = await db.ParquesSolares.AsNoTracking().SingleOrDefaultAsync(p => p.Id == parqueId, ct);
+        var inicio = salud.NodoEvaluadoId == panel.NodoId ? salud.PrimeraObservacionUtc : referencia;
+        var evidencia = lectura is null ? null : new EvidenciaSalud(lectura.FechaHora, lectura.PotenciaGeneradaW,
+            lectura.EstadoSalud, lectura.NodoId == panel.NodoId && lectura.FechaHora >= panel.FechaInstalacion);
+        var resultado = evaluador.Evaluar(evidencia, panel.PotenciaNominalW, inicio, referencia, politica);
+        // El futuro se conserva como motivo, nunca como fecha confirmada de evidencia.
+        if (resultado.EvidenciaUtc > referencia) resultado = resultado with { EvidenciaUtc = null };
+        return salud.Aplicar(resultado, referencia, panel.NodoId);
+    }
+
+    public async Task<DatosConsultaSaludDto?> ConsultarAsync(Guid parqueId, DateTime referenciaUtc,
+        TimeSpan vigenciaEvaluacion, CancellationToken cancellationToken)
+    {
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        await using var transaccion = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
+        var parque = await db.ParquesSolares.AsNoTracking().SingleOrDefaultAsync(p => p.Id == parqueId, cancellationToken);
         if (parque is null) return null;
-        var nodos = await db.Nodos.AsNoTracking().Where(n => n.ParqueId == parqueId).OrderBy(n => n.Nombre).ToArrayAsync(ct);
-        var paneles = await db.Paneles.AsNoTracking().Where(p => p.Nodo.ParqueId == parqueId).OrderBy(p => p.NumeroSerie).ToArrayAsync(ct);
-        var estados = await db.Set<SaludPanel>().AsNoTracking().Where(s => s.Panel.Nodo.ParqueId == parqueId).ToDictionaryAsync(s => s.PanelId, ct);
+        var nodos = await db.Nodos.AsNoTracking().Where(n => n.ParqueId == parqueId).OrderBy(n => n.Nombre).ToArrayAsync(cancellationToken);
+        var paneles = await db.Paneles.AsNoTracking().Where(p => p.Nodo.ParqueId == parqueId).OrderBy(p => p.NumeroSerie).ToArrayAsync(cancellationToken);
+        var estados = await db.Set<SaludPanel>().AsNoTracking().Where(s => s.Panel.Nodo.ParqueId == parqueId).ToDictionaryAsync(s => s.PanelId, cancellationToken);
         var activas = await db.Set<AlertaPanel>().AsNoTracking().Where(a => a.Panel.Nodo.ParqueId == parqueId && a.CierreUtc == null)
-            .OrderByDescending(a => a.DeteccionUtc).ToArrayAsync(ct);
+            .OrderByDescending(a => a.DeteccionUtc).ToArrayAsync(cancellationToken);
         var porNodo = nodos.ToDictionary(n => n.Id);
         var dtos = paneles.Select(p =>
         {
@@ -107,19 +113,19 @@ public sealed class SaludPanelRepository(IDbContextFactory<ApplicationDbContext>
             return new AlertaActivaDto(a.Id, a.PanelId, p.NumeroSerie, p.NodoId, p.Nodo, parque.Id, parque.Nombre,
                 a.Condicion, a.DeteccionUtc, p.Vigente);
         }).ToArray();
-        await transaccion.CommitAsync(ct);
+        await transaccion.CommitAsync(cancellationToken);
         return new(dtos, nodos.Select(n => (n.Id, n.Nombre)).ToArray(), alertas);
     }
 
-    public async Task<PaginaCambiosSaludDto> HistorialAsync(Guid parqueId, Guid panelId, int pagina, int tamano, CancellationToken ct)
+    public async Task<PaginaCambiosSaludDto> HistorialAsync(Guid parqueId, Guid panelId, int pagina, int tamano, CancellationToken cancellationToken)
     {
-        await using var db = await factory.CreateDbContextAsync(ct);
-        if (!await db.Paneles.AnyAsync(p => p.Id == panelId && p.Nodo.ParqueId == parqueId, ct))
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        if (!await db.Paneles.AnyAsync(p => p.Id == panelId && p.Nodo.ParqueId == parqueId, cancellationToken))
             throw new KeyNotFoundException("El panel no pertenece al parque seleccionado.");
         var consulta = db.Set<CambioEstadoSaludPanel>().AsNoTracking().Where(c => c.PanelId == panelId);
-        var total = await consulta.CountAsync(ct);
+        var total = await consulta.CountAsync(cancellationToken);
         var items = await consulta.OrderByDescending(c => c.FechaUtc).ThenByDescending(c => c.Version)
-            .Skip(pagina * tamano).Take(tamano).Select(c => new CambioEstadoSaludDto(c.EstadoAnterior, c.EstadoNuevo, c.FechaUtc, c.Version)).ToArrayAsync(ct);
+            .Skip(pagina * tamano).Take(tamano).Select(c => new CambioEstadoSaludDto(c.EstadoAnterior, c.EstadoNuevo, c.FechaUtc, c.Version)).ToArrayAsync(cancellationToken);
         return new(items, total);
     }
 }

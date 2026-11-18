@@ -76,7 +76,7 @@ public sealed class IntentoOrdenInversorRepository(IDbContextFactory<Application
                 using var limite = new CancellationTokenSource(TimeSpan.FromSeconds(2));
                 await comando.ExecuteScalarAsync(limite.Token);
             }
-            catch { }
+            catch { /* Al cerrar la conexión, MariaDB libera el bloqueo de la sesión. */ }
             finally { await conexion.DisposeAsync(); }
         }
     }

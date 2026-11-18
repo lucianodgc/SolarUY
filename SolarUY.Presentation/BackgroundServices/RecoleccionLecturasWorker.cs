@@ -49,7 +49,7 @@ public sealed class RecoleccionLecturasWorker : BackgroundService
             do { await RecolectarAsync(stoppingToken); }
             while (await timer.WaitForNextTickAsync(stoppingToken));
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { /* La cancelación termina el trabajo pendiente. */ }
     }
 
     private async Task EsperarArranqueAsync(CancellationToken cancellationToken)

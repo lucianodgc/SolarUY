@@ -16,7 +16,7 @@ public sealed class OrdenInversorService(
         if (solicitud.Correlacion == Guid.Empty || !Enum.IsDefined(solicitud.Accion)
             || solicitud.NodoId?.Length > 128 || solicitud.PanelId?.Length > 128 || usuario.Sub?.Length > 255)
             return new(null, EstadoOrdenInversor.Rechazada, "solicitud-invalida", false);
-        IntentoOrdenInversor intento = new(solicitud.Correlacion, usuario.Sub, usuario.EstaAutenticado, admin,
+        IntentoOrdenInversor intento = new(solicitud.Correlacion, new(usuario.Sub, usuario.EstaAutenticado, admin),
             solicitud.Accion, solicitud.NodoId, solicitud.PanelId, Ahora());
         IAsyncDisposable? bloqueo;
         try { bloqueo = await repository.IntentarBloqueoAsync(cancellationToken); }
@@ -24,51 +24,70 @@ public sealed class OrdenInversorService(
         await using var lease = bloqueo;
         try
         {
-            if (usuario.Sub is not null)
-            {
-                var anterior = await repository.BuscarAsync(usuario.Sub, solicitud.Correlacion, cancellationToken);
-                if (anterior is not null)
-                {
-                    if (!admin) return new(anterior.Id, EstadoOrdenInversor.Rechazada, "sin-permiso", true);
-                    if (anterior.Accion != solicitud.Accion || anterior.NodoSolicitado != solicitud.NodoId || anterior.PanelSolicitado != solicitud.PanelId)
-                        return new(anterior.Id, EstadoOrdenInversor.Rechazada, "correlacion-incompatible", true);
-                    if (bloqueo is not null && anterior.Estado == EstadoOrdenInversor.Pendiente)
-                    {
-                        await repository.RecuperarPendientesAsync(Ahora(), cancellationToken);
-                        anterior = (await repository.BuscarAsync(usuario.Sub, solicitud.Correlacion, cancellationToken))!;
-                    }
-                    return Resultado(anterior, true);
-                }
-            }
-            if (!admin || string.IsNullOrWhiteSpace(usuario.Sub))
-                intento.Finalizar(EstadoOrdenInversor.Rechazada, "sin-permiso", Ahora());
-            else if (bloqueo is null)
-                intento.Finalizar(EstadoOrdenInversor.Rechazada, "inversor-ocupado", Ahora());
-            else
-            {
-                await repository.RecuperarPendientesAsync(Ahora(), cancellationToken);
-                var esPanel = solicitud.Accion is AccionOrdenInversor.ActivarPanel or AccionOrdenInversor.DesactivarPanel;
-                if (esPanel)
-                {
-                    var nodos = await inventario.ListarAsync(cancellationToken);
-                    var nodo = nodos.SingleOrDefault(n => n.Id == solicitud.NodoId);
-                    var panel = nodo?.Paneles.SingleOrDefault(p => p.Id == solicitud.PanelId);
-                    if (panel is null || !Guid.TryParse(nodo!.Id, out var nodoId) || !Guid.TryParse(panel.Id, out var panelId))
-                        intento.Finalizar(EstadoOrdenInversor.Rechazada, "destino-no-vigente", Ahora());
-                    else
-                    {
-                        var nombre = $"{nodo.Parque} / {nodo.Nombre} / {panel.NumeroSerie}";
-                        intento.ValidarDestino(nodoId, panelId, nombre[..Math.Min(300, nombre.Length)]);
-                    }
-                }
-                else if (solicitud.NodoId is not null || solicitud.PanelId is not null)
-                    intento.Finalizar(EstadoOrdenInversor.Rechazada, "volcado-es-global", Ahora());
-            }
+            var anterior = await ConsultarOrdenAnteriorAsync(solicitud, usuario, admin, bloqueo is not null, cancellationToken);
+            if (anterior is not null) return anterior;
+            await ValidarOrdenAsync(intento, usuario.Sub, bloqueo is not null, cancellationToken);
             await repository.GuardarAsync(intento, cancellationToken);
         }
         catch { return new(null, EstadoOrdenInversor.Fallida, "auditoria-inicial-fallida", false); }
         if (intento.Estado != EstadoOrdenInversor.Pendiente) return Resultado(intento, true);
 
+        await EnviarOrdenAsync(solicitud, intento, cancellationToken);
+        return await GuardarResultadoAsync(intento);
+    }
+
+    private async Task<ResultadoOrdenInversorDto?> ConsultarOrdenAnteriorAsync(SolicitudOrdenInversorDto solicitud,
+        UsuarioActualDto usuario, bool admin, bool tieneBloqueo, CancellationToken cancellationToken)
+    {
+        if (usuario.Sub is not { } actor) return null;
+        var anterior = await repository.BuscarAsync(actor, solicitud.Correlacion, cancellationToken);
+        if (anterior is null) return null;
+        if (!admin) return new(anterior.Id, EstadoOrdenInversor.Rechazada, "sin-permiso", true);
+        if (anterior.Accion != solicitud.Accion || anterior.NodoSolicitado != solicitud.NodoId || anterior.PanelSolicitado != solicitud.PanelId)
+            return new(anterior.Id, EstadoOrdenInversor.Rechazada, "correlacion-incompatible", true);
+        if (tieneBloqueo && anterior.Estado == EstadoOrdenInversor.Pendiente)
+        {
+            await repository.RecuperarPendientesAsync(Ahora(), cancellationToken);
+            anterior = await repository.BuscarAsync(actor, solicitud.Correlacion, cancellationToken)
+                ?? throw new InvalidOperationException("No se encontró el intento de orden recuperado.");
+        }
+        return Resultado(anterior, true);
+    }
+
+    private async Task ValidarOrdenAsync(IntentoOrdenInversor intento, string? actor, bool tieneBloqueo,
+        CancellationToken cancellationToken)
+    {
+        if (!intento.Administrador || string.IsNullOrWhiteSpace(actor))
+            intento.Finalizar(EstadoOrdenInversor.Rechazada, "sin-permiso", Ahora());
+        else if (!tieneBloqueo)
+            intento.Finalizar(EstadoOrdenInversor.Rechazada, "inversor-ocupado", Ahora());
+        else
+        {
+            await repository.RecuperarPendientesAsync(Ahora(), cancellationToken);
+            if (intento.Accion is AccionOrdenInversor.ActivarPanel or AccionOrdenInversor.DesactivarPanel)
+                await ValidarDestinoAsync(intento, cancellationToken);
+            else if (intento.NodoSolicitado is not null || intento.PanelSolicitado is not null)
+                intento.Finalizar(EstadoOrdenInversor.Rechazada, "volcado-es-global", Ahora());
+        }
+    }
+
+    private async Task ValidarDestinoAsync(IntentoOrdenInversor intento, CancellationToken cancellationToken)
+    {
+        var nodos = await inventario.ListarAsync(cancellationToken);
+        var nodo = nodos.SingleOrDefault(n => n.Id == intento.NodoSolicitado);
+        var panel = nodo?.Paneles.SingleOrDefault(p => p.Id == intento.PanelSolicitado);
+        if (nodo is null || panel is null || !Guid.TryParse(nodo.Id, out var nodoId) || !Guid.TryParse(panel.Id, out var panelId))
+        {
+            intento.Finalizar(EstadoOrdenInversor.Rechazada, "destino-no-vigente", Ahora());
+            return;
+        }
+        var nombre = $"{nodo.Parque} / {nodo.Nombre} / {panel.NumeroSerie}";
+        intento.ValidarDestino(nodoId, panelId, nombre[..Math.Min(300, nombre.Length)]);
+    }
+
+    private async Task EnviarOrdenAsync(SolicitudOrdenInversorDto solicitud, IntentoOrdenInversor intento,
+        CancellationToken cancellationToken)
+    {
         var envioPosible = false;
         try
         {
@@ -96,7 +115,10 @@ public sealed class OrdenInversorService(
         catch
         { intento.Finalizar(envioPosible ? EstadoOrdenInversor.Indeterminada : EstadoOrdenInversor.Fallida,
             envioPosible ? "sin-confirmacion" : "sin-envio", Ahora()); }
+    }
 
+    private async Task<ResultadoOrdenInversorDto> GuardarResultadoAsync(IntentoOrdenInversor intento)
+    {
         using var cierre = new CancellationTokenSource(TimeSpan.FromSeconds(opciones.CierreAuditoriaSegundos));
         for (var numero = 0; numero < opciones.IntentosPersistencia && !cierre.IsCancellationRequested; numero++)
         {

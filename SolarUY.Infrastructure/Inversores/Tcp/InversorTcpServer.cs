@@ -10,6 +10,7 @@ namespace SolarUY.Infrastructure.Inversores.Tcp;
 
 public sealed class InversorTcpServer
 {
+    private const string CampoNodoId = "nodoId";
     private readonly IInversorClient _simulador;
     private readonly InversorTcpOptions _options;
     private readonly ILogger<InversorTcpServer> _logger;
@@ -41,9 +42,9 @@ public sealed class InversorTcpServer
                 {
                     await ProcesarClienteAsync(cliente, tiempoLimite.Token);
                 }
-                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
                 {
-                    _logger.LogWarning("El cliente del simulador TCP superó el tiempo de espera.");
+                    _logger.LogWarning(ex, "El cliente del simulador TCP superó el tiempo de espera.");
                 }
             }
         }
@@ -117,14 +118,14 @@ public sealed class InversorTcpServer
             case OperacionesInversorTcp.ListarNodos:
                 return await _simulador.ListarNodosAsync(cancellationToken);
             case OperacionesInversorTcp.ObtenerEstadoPaneles:
-                return await _simulador.ObtenerEstadoPanelesAsync(Exigir(solicitud.NodoId, "nodoId"), cancellationToken);
+                return await _simulador.ObtenerEstadoPanelesAsync(Exigir(solicitud.NodoId, CampoNodoId), cancellationToken);
             case OperacionesInversorTcp.ObtenerPotencia:
-                return await _simulador.ObtenerPotenciaGeneradaAsync(Exigir(solicitud.NodoId, "nodoId"), cancellationToken);
+                return await _simulador.ObtenerPotenciaGeneradaAsync(Exigir(solicitud.NodoId, CampoNodoId), cancellationToken);
             case OperacionesInversorTcp.ActivarPanel:
-                await _simulador.ActivarPanelAsync(Exigir(solicitud.NodoId, "nodoId"), Exigir(solicitud.PanelId, "panelId"), cancellationToken);
+                await _simulador.ActivarPanelAsync(Exigir(solicitud.NodoId, CampoNodoId), Exigir(solicitud.PanelId, "panelId"), cancellationToken);
                 return true;
             case OperacionesInversorTcp.DesactivarPanel:
-                await _simulador.DesactivarPanelAsync(Exigir(solicitud.NodoId, "nodoId"), Exigir(solicitud.PanelId, "panelId"), cancellationToken);
+                await _simulador.DesactivarPanelAsync(Exigir(solicitud.NodoId, CampoNodoId), Exigir(solicitud.PanelId, "panelId"), cancellationToken);
                 return true;
             case OperacionesInversorTcp.ActivarVolcado:
                 await _simulador.ActivarVolcadoRedAsync(cancellationToken);

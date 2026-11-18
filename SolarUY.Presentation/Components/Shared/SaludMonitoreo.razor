@@ -85,8 +85,10 @@
     protected override async Task OnParametersSetAsync()
     {
         if (ParqueId == _parque) return;
-        _parque = ParqueId; Interlocked.Increment(ref _version); _carga?.Cancel();
+        _parque = ParqueId;
+        Interlocked.Increment(ref _version);
         _estado = null; _historial = null; _panelHistorial = null; _error = null;
+        if (_carga is not null) await _carga.CancelAsync();
         await ActualizarAsync();
         _reloj ??= ReevaluarVistaAsync();
     }
@@ -99,28 +101,43 @@
         {
             do
             {
-                _pendiente = false; var parque = _parque; var version = Interlocked.Read(ref _version);
-                _carga?.Dispose(); _carga = CancellationTokenSource.CreateLinkedTokenSource(_fin.Token);
-                try
-                {
-                    var nuevo = await Consultas.ConsultarAsync(parque, _carga.Token);
-                    if (version != Interlocked.Read(ref _version)) continue;
-                    _estado = nuevo; _error = null;
-                    if (_panelHistorial.HasValue && !nuevo.Paneles.Any(p => p.PanelId == _panelHistorial.Value))
-                    { _panelHistorial = null; _historial = null; }
-                    if (_panelHistorial.HasValue) await CargarHistorialAsync();
-                }
-                catch (OperationCanceledException) when (_carga.IsCancellationRequested) { }
-                catch (Exception ex)
-                {
-                    if (version != Interlocked.Read(ref _version)) continue;
-                    Logger.LogWarning(ex, "No se pudo consultar la salud.");
-                    _error = "No se pudo consultar la salud. Los datos conservan su fecha original.";
-                    if (ex is UnauthorizedAccessException) { _estado = null; _historial = null; }
-                }
+                _pendiente = false;
+                await ConsultarSaludAsync();
             } while (_pendiente && !_fin.IsCancellationRequested);
         }
         finally { _cargando = false; if (!_fin.IsCancellationRequested) StateHasChanged(); }
+    }
+
+    private async Task ConsultarSaludAsync()
+    {
+        var parque = _parque;
+        var version = Interlocked.Read(ref _version);
+        _carga?.Dispose();
+        var carga = CancellationTokenSource.CreateLinkedTokenSource(_fin.Token);
+        _carga = carga;
+        try
+        {
+            var nuevo = await Consultas.ConsultarAsync(parque, carga.Token);
+            if (version != Interlocked.Read(ref _version)) return;
+            _estado = nuevo;
+            _error = null;
+            if (_panelHistorial is not { } panel) return;
+            if (nuevo.Paneles.Any(p => p.PanelId == panel))
+                await CargarHistorialAsync(carga.Token);
+            else
+            {
+                _panelHistorial = null;
+                _historial = null;
+            }
+        }
+        catch (OperationCanceledException) when (carga.IsCancellationRequested) { /* Se canceló la consulta. */ }
+        catch (Exception ex)
+        {
+            if (version != Interlocked.Read(ref _version)) return;
+            Logger.LogWarning(ex, "No se pudo consultar la salud.");
+            _error = "No se pudo consultar la salud. Los datos conservan su fecha original.";
+            if (ex is UnauthorizedAccessException) { _estado = null; _historial = null; }
+        }
     }
     private async Task AbrirHistorialAsync(Guid id, string serie)
     {
@@ -131,11 +148,11 @@
     {
         _pagina = args.PageIndex; await ActualizarAsync();
     }
-    private async Task CargarHistorialAsync()
+    private async Task CargarHistorialAsync(CancellationToken cancellationToken)
     {
         var panel = _panelHistorial; var parque = _parque; var pagina = _pagina;
         if (!panel.HasValue) return;
-        var resultado = await Consultas.HistorialAsync(parque, panel.Value, pagina, 20, _carga!.Token);
+        var resultado = await Consultas.HistorialAsync(parque, panel.Value, pagina, 20, cancellationToken);
         if (panel == _panelHistorial && parque == _parque && pagina == _pagina) _historial = resultado;
     }
     private async Task ReevaluarVistaAsync()
@@ -148,7 +165,7 @@
                 if (_estado is not null) { _estado = Consultas.Reevaluar(_estado); StateHasChanged(); }
             });
         }
-        catch (OperationCanceledException) when (_fin.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (_fin.IsCancellationRequested) { /* La cancelación termina el trabajo pendiente. */ }
     }
     private static string Fecha(DateTime? fecha) => fecha?.ToString("yyyy-MM-dd HH:mm:ss 'UTC'") ?? "Sin evidencia";
     public async ValueTask DisposeAsync()

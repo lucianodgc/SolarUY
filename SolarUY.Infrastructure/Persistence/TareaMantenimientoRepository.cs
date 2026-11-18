@@ -9,6 +9,7 @@ namespace SolarUY.Infrastructure.Persistence;
 
 public sealed class TareaMantenimientoRepository : ITareaMantenimientoRepository
 {
+    private const string ColacionIdentificador = "utf8mb4_bin";
     private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
 
     public TareaMantenimientoRepository(IDbContextFactory<ApplicationDbContext> contextFactory)
@@ -55,7 +56,7 @@ public sealed class TareaMantenimientoRepository : ITareaMantenimientoRepository
         if (filtro.Estado is { } estado) query = query.Where(tarea => tarea.Estado == estado);
         if (filtro.PanelId is { } panelId) query = query.Where(tarea => tarea.PanelId == panelId);
         if (!string.IsNullOrWhiteSpace(filtro.ResponsableId))
-            query = query.Where(tarea => EF.Functions.Collate(tarea.ResponsableId, "utf8mb4_bin") == filtro.ResponsableId);
+            query = query.Where(tarea => EF.Functions.Collate(tarea.ResponsableId, ColacionIdentificador) == filtro.ResponsableId);
         if (filtro.SoloVencidas)
             query = query.Where(tarea => tarea.FechaProgramada < referenciaUtc
                 && (tarea.Estado == EstadoTareaMantenimiento.Pendiente || tarea.Estado == EstadoTareaMantenimiento.EnCurso));
@@ -69,12 +70,12 @@ public sealed class TareaMantenimientoRepository : ITareaMantenimientoRepository
         var query = context.TareasMantenimiento.Where(actual => actual.Id == tarea.Id
             && (actual.Estado == EstadoTareaMantenimiento.Pendiente || actual.Estado == EstadoTareaMantenimiento.EnCurso)
             && actual.Estado == original.Estado
-            && EF.Functions.Collate(actual.ResponsableId, "utf8mb4_bin") == original.ResponsableId
-            && EF.Functions.Collate(actual.Tipo, "utf8mb4_bin") == original.Tipo
-            && EF.Functions.Collate(actual.Descripcion, "utf8mb4_bin") == original.Descripcion
+            && EF.Functions.Collate(actual.ResponsableId, ColacionIdentificador) == original.ResponsableId
+            && EF.Functions.Collate(actual.Tipo, ColacionIdentificador) == original.Tipo
+            && EF.Functions.Collate(actual.Descripcion, ColacionIdentificador) == original.Descripcion
             && actual.FechaProgramada == original.FechaProgramada && actual.FechaRealizacion == original.FechaRealizacion);
         if (responsableAutorizado is not null)
-            query = query.Where(actual => EF.Functions.Collate(actual.ResponsableId, "utf8mb4_bin") == responsableAutorizado);
+            query = query.Where(actual => EF.Functions.Collate(actual.ResponsableId, ColacionIdentificador) == responsableAutorizado);
         var filas = await query.ExecuteUpdateAsync(setters => setters
             .SetProperty(actual => actual.Tipo, tarea.Tipo)
             .SetProperty(actual => actual.Descripcion, tarea.Descripcion)
@@ -90,6 +91,6 @@ public sealed class TareaMantenimientoRepository : ITareaMantenimientoRepository
         var query = context.TareasMantenimiento.AsNoTracking().Include(tarea => tarea.Panel)
             .ThenInclude(panel => panel.Nodo).ThenInclude(nodo => nodo.Parque).AsQueryable();
         return responsableAutorizado is null ? query
-            : query.Where(tarea => EF.Functions.Collate(tarea.ResponsableId, "utf8mb4_bin") == responsableAutorizado);
+            : query.Where(tarea => EF.Functions.Collate(tarea.ResponsableId, ColacionIdentificador) == responsableAutorizado);
     }
 }

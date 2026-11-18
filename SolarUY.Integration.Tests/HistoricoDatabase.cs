@@ -41,8 +41,8 @@ public sealed class HistoricoDatabase : IAsyncLifetime
             ? throw new DirectoryNotFoundException("No se encontró SolarUY.sln para los recursos de integración.")
             : Path.Combine(directorio.FullName, nombre);
     }
-    private string Conexion => Environment.GetEnvironmentVariable(VariableConexion)
-        ?? throw new InvalidOperationException($"Falta {VariableConexion}.");
+    public string? ConexionConfigurada { get; } = Environment.GetEnvironmentVariable(VariableConexion);
+    private string Conexion => ConexionConfigurada ?? throw new InvalidOperationException($"Falta {VariableConexion}.");
     public ParqueSolar Parque { get; private set; } = null!;
     public ParqueSolar OtroParque { get; private set; } = null!;
     public Panel Panel { get; private set; } = null!;
@@ -52,7 +52,7 @@ public sealed class HistoricoDatabase : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(VariableConexion))) return;
+        if (string.IsNullOrWhiteSpace(ConexionConfigurada)) return;
         // Ninguna operación de preparación/borrado puede apuntar a la base habitual.
         if (!new MySqlConnectionStringBuilder(Conexion).Database.StartsWith("solaruy_req007_test", StringComparison.Ordinal))
             throw new InvalidOperationException("La base de integración debe comenzar con solaruy_req007_test.");

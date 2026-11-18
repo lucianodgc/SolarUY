@@ -8,6 +8,12 @@ public sealed record ConsultaResumenChatDto(string Herramienta, string Parque);
 
 public static class PlanResumenChatbot
 {
+    private static readonly string[] Herramientas =
+    [
+        "ConsultarEstadoActualAsync", "ConsultarGeneracionDiariaAsync",
+        "ConsultarPanelesConFallaAsync", "ConsultarMantenimientosPendientesAsync"
+    ];
+
     public static bool EsResumenDiario(string texto)
     {
         var normalizado = string.Concat(texto.Normalize(NormalizationForm.FormD)
@@ -16,7 +22,6 @@ public static class PlanResumenChatbot
     }
 
     public static IReadOnlyList<ConsultaResumenChatDto> Crear(IReadOnlyList<ParqueMonitoreoDto> parques)
-        => parques.SelectMany(parque => new[] { "ConsultarEstadoActualAsync", "ConsultarGeneracionDiariaAsync",
-                "ConsultarPanelesConFallaAsync", "ConsultarMantenimientosPendientesAsync" }
+        => parques.SelectMany(parque => Herramientas
             .Select(herramienta => new ConsultaResumenChatDto(herramienta, parque.Id.ToString("D")))).ToArray();
 }

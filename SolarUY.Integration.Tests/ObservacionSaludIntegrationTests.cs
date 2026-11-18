@@ -19,7 +19,7 @@ public sealed class ObservacionSaludIntegrationTests(HistoricoDatabase database,
 {
     private static readonly DateTime Ahora = new(2027, 2, 1, 12, 0, 0, DateTimeKind.Utc);
     private ObservacionSaludRepository Repository() => new(new Factory(database));
-    private ObservacionSaludWorker CrearWorker(ServiceProvider provider, INotificadorSaludConfirmada entrega)
+    private static ObservacionSaludWorker CrearWorker(ServiceProvider provider, INotificadorSaludConfirmada entrega)
         => new(provider.GetRequiredService<IServiceScopeFactory>(), entrega,
             Options.Create(new SaludDistribucionOptions()), NullLogger<ObservacionSaludWorker>.Instance);
     private ServiceProvider Provider()

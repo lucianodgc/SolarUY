@@ -98,7 +98,7 @@ public sealed class NodoServiceIntegrationTests
         Assert.Empty(await repository.ListarPorParqueAsync(parque.Id));
     }
 
-    private static INodoService CrearServicio(RepositorioNodosPrueba repository, string rol) => new NodoService(
+    private static NodoService CrearServicio(RepositorioNodosPrueba repository, string rol) => new NodoService(
         repository, new UsuarioPrueba(rol), new CrearNodoDtoValidator(), new ActualizarNodoDtoValidator());
 
     private sealed class UsuarioPrueba(string rol, bool autenticado = true) : IUsuarioActual

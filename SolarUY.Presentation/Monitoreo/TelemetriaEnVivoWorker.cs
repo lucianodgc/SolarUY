@@ -57,6 +57,6 @@ public sealed class TelemetriaEnVivoWorker : BackgroundService
                 }
             }
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { /* La cancelación termina el trabajo pendiente. */ }
     }
 }

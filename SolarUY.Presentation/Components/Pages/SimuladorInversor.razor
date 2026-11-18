@@ -224,7 +224,7 @@ else if (_error is null)
             if (_puente is not null) { await _puente.InvokeVoidAsync("dispose"); await _puente.DisposeAsync(); }
             if (_modulo is not null) await _modulo.DisposeAsync();
         }
-        catch (JSDisconnectedException) { }
+        catch (JSDisconnectedException) { /* El circuito ya se cerró. */ }
         _referencia?.Dispose();
     }
 }

@@ -32,11 +32,11 @@ public sealed class RecoleccionLecturasService : IRecoleccionLecturasService
         var mediciones = await _inversor.ObtenerMedicionesRegistradasAsync(solicitudes, instante, cancellationToken);
         var lecturas = CrearLecturas(paneles, mediciones, instante);
         await sesion.GuardarAsync(lecturas, cancellationToken);
-        return new ResultadoRecoleccionDto(true, lecturas.Count, lecturas.Select(l =>
+        return new ResultadoRecoleccionDto(true, lecturas.Length, lecturas.Select(l =>
             new SolarUY.Application.Monitoreo.LecturaConfirmadaDto(l.Panel.Nodo.ParqueId, l.PanelId, l.FechaHora)).ToArray());
     }
 
-    private static IReadOnlyList<LecturaPanel> CrearLecturas(IReadOnlyList<Panel> paneles,
+    private static LecturaPanel[] CrearLecturas(IReadOnlyList<Panel> paneles,
         IReadOnlyList<MedicionPanelDto> mediciones, DateTime instante)
     {
         var porId = paneles.ToDictionary(panel => panel.Id);

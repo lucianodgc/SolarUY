@@ -18,7 +18,11 @@
                 for (let intento = 0; intento < 3 && !cancelar; intento++) {
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     if (cancelar) return;
-                    try { if (await Blazor.reconnect()) return; fallo(); return; } catch { }
+                    try {
+                        if (await Blazor.reconnect()) return;
+                        fallo();
+                        return;
+                    } catch { /* El circuito aún puede recuperarse en el siguiente intento. */ }
                 }
                 if (!cancelar) fallo();
             })();

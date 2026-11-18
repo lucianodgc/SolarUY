@@ -54,7 +54,7 @@ public sealed class SaludNavegadorIntegrationTests(HistoricoDatabase database) :
         builder.Services.AddSingleton(new SolarUY.Application.Inversores.OrdenInversorOptions());
         builder.Services.AddScoped<AccesoMonitoreoService>(); builder.Services.AddScoped<IMonitoreoService, MonitoreoService>();
         builder.Services.AddSingleton<GeneracionActualService>(); builder.Services.AddSingleton(new PoliticaMonitoreo(1, 2));
-        builder.Services.AddSingleton<TelemetriaMonitoreoMapper>(); builder.Services.AddSingleton(new ConfiguracionRecoleccion(1));
+        builder.Services.AddSingleton(new ConfiguracionRecoleccion(1));
         builder.Services.AddScoped(_ => new SerieMonitoreoService(3, TimeSpan.FromSeconds(1)));
         builder.Services.Configure<MonitoreoOptions>(o => o.ReevaluacionSegundos = 1);
         builder.Services.AddSingleton<EvaluacionSaludService>(); builder.Services.AddSingleton<SaludNodoService>();

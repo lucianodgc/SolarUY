@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-export default async function () {
+export default async function finalizarPruebas() {
   await fs.writeFile('.runtime/ordenes/control.json', JSON.stringify({ id: randomUUID(), accion: 'terminar' }));
   const fin = Date.now() + 20000;
   while (Date.now() < fin) {

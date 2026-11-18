@@ -132,7 +132,7 @@
             _parqueId = _parques.FirstOrDefault()?.Id ?? Guid.Empty;
             ActualizarNodos();
         }
-        catch (OperationCanceledException) when (_vida.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (_vida.IsCancellationRequested) { /* La cancelación termina el trabajo pendiente. */ }
         catch (Exception exception) { MostrarError(exception); }
         finally { _inicializando = false; }
         if (_parqueId != Guid.Empty && !_desechado) await ActualizarAsync();
@@ -180,35 +180,32 @@
         {
             if (anterior is not null) await anterior.CancelAsync();
             if (_desechado || version != _version || cancelacion.IsCancellationRequested) return;
-            if (_inicio is null || (_periodo == PeriodoHistorico.Rango && _fin is null)
-                || (_comparar && (_segundoInicio is null || (_periodo == PeriodoHistorico.Rango && _segundoFin is null))))
-                throw new ArgumentException("Completá las fechas del período.");
-            var filtro = new FiltroReporteDto(_parqueId, _nodoId, _periodo,
-                DateTime.SpecifyKind(_inicio.Value, DateTimeKind.Unspecified),
-                _fin.HasValue ? DateTime.SpecifyKind(_fin.Value, DateTimeKind.Unspecified) : null, _panelId);
-            var comparar = _comparar;
-            var segundoInicio = _segundoInicio;
-            var segundoFin = _segundoFin;
+            var filtro = CrearFiltro(_inicio, _fin);
+            var segundoFiltro = _comparar ? CrearFiltro(_segundoInicio, _segundoFin) : null;
             var resultado = await Reportes.ConsultarAsync(filtro, cancelacion.Token);
-            ResultadoReporteDto? comparacion = null;
-            if (comparar)
-                comparacion = await Reportes.ConsultarAsync(filtro with
-                {
-                    InicioLocal = DateTime.SpecifyKind(segundoInicio!.Value, DateTimeKind.Unspecified),
-                    FinLocal = segundoFin.HasValue ? DateTime.SpecifyKind(segundoFin.Value, DateTimeKind.Unspecified) : null
-                }, cancelacion.Token);
+            var comparacion = segundoFiltro is null
+                ? null : await Reportes.ConsultarAsync(segundoFiltro, cancelacion.Token);
             if (!_desechado && version == _version && !cancelacion.IsCancellationRequested)
             {
                 _resultado = resultado;
                 _comparacion = comparacion;
             }
         }
-        catch (OperationCanceledException) when (cancelacion.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (cancelacion.IsCancellationRequested) { /* La cancelación termina el trabajo pendiente. */ }
         catch (Exception exception) { if (!_desechado && version == _version) MostrarError(exception); }
         finally
         {
             if (version == _version) { _ocupado = false; _consulta = null; }
         }
+    }
+
+    private FiltroReporteDto CrearFiltro(DateTime? inicio, DateTime? fin)
+    {
+        if (inicio is null || (_periodo == PeriodoHistorico.Rango && fin is null))
+            throw new ArgumentException("Completá las fechas del período.");
+        return new FiltroReporteDto(_parqueId, _nodoId, _periodo,
+            DateTime.SpecifyKind(inicio.Value, DateTimeKind.Unspecified),
+            fin.HasValue ? DateTime.SpecifyKind(fin.Value, DateTimeKind.Unspecified) : null, _panelId);
     }
 
     private Task ExportarAsync() => _resultado is { } reporte ? ExportarPeriodoAsync(reporte) : Task.CompletedTask;
@@ -226,8 +223,8 @@
             if (_desechado || version != _version) return;
             await modulo.InvokeVoidAsync("descargarCsv", _vida.Token, archivo.NombreArchivo, archivo.TipoContenido, archivo.Contenido);
         }
-        catch (OperationCanceledException) when (_vida.IsCancellationRequested) { }
-        catch (JSDisconnectedException) when (_desechado) { }
+        catch (OperationCanceledException) when (_vida.IsCancellationRequested) { /* La cancelación termina el trabajo pendiente. */ }
+        catch (JSDisconnectedException) when (_desechado) { /* El circuito ya se cerró. */ }
         catch (Exception exception) { if (!_desechado && version == _version) MostrarError(exception); }
         finally { _descargando = false; }
     }
